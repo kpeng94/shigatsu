@@ -20,16 +20,19 @@ public class Rand {
 		x = seed & 0xffffffffL;
 	}
 	
-	public int nextInt() {
-		return (int) ((a * (x & 0xffffffffL)) + (x >>> 32));
+	public int next() {
+		x = (a * (x & 0xffffffffL)) + (x >>> 32);
+		return (int) x;
 	}
 	
 	public int nextInt(int max) {
-		return (int) (((a * (x & 0xffffffffL)) + (x >>> 32)) & 0x7fffffff) % max;
+		x = (((a * (x & 0xffffffffL)) + (x >>> 32)) & 0x7fffffff) % max;
+		return (int) x;
 	}
 	
 	public int nextAnd(int n) {
-		return (int) (((a * (x & 0xffffffffL)) + (x >>> 32)) & n);
+		x = (((a * (x & 0xffffffffL)) + (x >>> 32)) & n);
+		return (int) x;
 	}
 	
 }

@@ -1,4 +1,4 @@
-package genericPlayer;
+package DefenseBot;
 
 import battlecode.common.*;
 

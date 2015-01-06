@@ -1,7 +1,7 @@
-<project name="Battlecode 2014" basedir=".." default="file">
+<project name="Battlecode 2015" basedir=".." default="file">
 
   <description>
-    Build file for Battlecode 2014 players.
+    Build file for Battlecode 2015 players.
   </description>
 
   <property name="path.base" location="."/>
@@ -36,9 +36,10 @@
      classpathref="classpath.run" 
      destdir="${path.bin}" 
      srcdir="${path.teams}"
-   target="1.6"
-   source="1.6"
-     debug="true">
+     target="1.7"
+     source="1.7"
+     debug="true"
+     includeantruntime="false">
       <compilerarg line="-Xlint"/>
     </javac>
   </target>

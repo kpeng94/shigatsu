@@ -5,6 +5,9 @@ DisallowedClasses.txt
 MethodCosts.txt
 version.txt
 
+matchmaker/logs/
+matchmaker/replays/
+matchmaker/output
 Uninstaller/
 doc/
 art/
@@ -15,3 +18,6 @@ lib/
 bin/
 
 /build.xml
+*.jar
+*.class*
+*.project

@@ -1,0 +1,59 @@
+<project name="Battlecode 2014" basedir=".." default="file">
+
+  <description>
+    Build file for Battlecode 2014 players.
+  </description>
+
+  <property name="path.base" location="."/>
+  <property name="path.lib" location="${path.base}/lib"/>
+
+  <property name="path.teams" location="${path.base}/teams"/>
+  <property name="path.maps" location="${path.base}/maps"/>
+  <property name="path.bin" location="${path.base}/bin"/>
+  <property name="path.matches" location="${path.base}/matches"/>
+  
+  <fileset id="files.build" dir="${path.lib}">
+    <include name="*.jar"/>
+  </fileset>
+  
+  <path id="classpath.run">
+    <dirset dir="${path.bin}"/>
+    <dirset dir="${path.lib}"/>
+    <dirset dir="${path.teams}"/>
+    <fileset refid="files.build"/>
+  </path>
+  
+  <target name="-init">
+    <mkdir dir="${path.bin}"/>
+  </target>
+
+  <target name="clean">
+    <delete dir="${path.bin}"/>
+  </target>
+
+  <target name="build" depends="-init">
+    <javac 
+     classpathref="classpath.run" 
+     destdir="${path.bin}" 
+     srcdir="${path.teams}"
+   target="1.6"
+   source="1.6"
+     debug="true">
+      <compilerarg line="-Xlint"/>
+    </javac>
+  </target>
+
+  <target name="file" depends="build">
+    <fail unless="conf">
+      run with "-Dconf=file" where "file" is a configuration file.
+    </fail>
+    <java
+     classpathref="classpath.run"
+     fork="yes"
+     classname="battlecode.server.Main">
+      <jvmarg value="-Dbc.server.mode=headless"/>
+      <arg line="-c ${conf}"/>
+    </java>
+  </target>
+
+</project>

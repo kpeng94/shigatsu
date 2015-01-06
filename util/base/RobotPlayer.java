@@ -1,4 +1,4 @@
-package dummyBot;
+package *****;
 
 import battlecode.common.*;
 

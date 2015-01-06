@@ -29,7 +29,6 @@ public class SHQHandler extends StructureHandler {
 
 	protected static void execute() {
 		executeStructure();
-		System.out.println("hello");
 	}
 
 }

@@ -10,7 +10,7 @@ doc/
 art/
 music/
 sound/
-map editor/
+mapeditor/
 lib/
 
 /build.xml

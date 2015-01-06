@@ -1,0 +1,16 @@
+.installationinformation
+.metadata/
+AllowedPackages.txt
+DisallowedClasses.txt
+MethodCosts.txt
+version.txt
+
+Uninstaller/
+doc/
+art/
+music/
+sound/
+map editor/
+lib/
+
+/build.xml

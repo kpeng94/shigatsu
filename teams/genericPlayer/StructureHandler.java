@@ -2,10 +2,14 @@ package genericPlayer;
 
 import battlecode.common.*;
 
-public abstract class StructureHandler extends Handler {
-
-	public StructureHandler(RobotController rcon) {
-		super(rcon);
+public class StructureHandler extends Handler {
+	
+	protected static void initStructure(RobotController rcon) {
+		initGeneral(rcon);
+	}
+	
+	protected static void executeStructure() {
+		executeGeneral();
 	}
 	
 }

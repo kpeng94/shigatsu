@@ -4,8 +4,12 @@ import battlecode.common.*;
 
 public abstract class UnitHandler extends Handler {
 
-	public UnitHandler(RobotController rcon) {
-		super(rcon);
+	protected static void initUnit(RobotController rcon) {
+		initGeneral(rcon);
 	}
 	
+	protected static void executeUnit() {
+		executeGeneral();
+	}
+
 }

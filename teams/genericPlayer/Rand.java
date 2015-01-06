@@ -31,5 +31,5 @@ public class Rand {
 	public int nextAnd(int n) {
 		return (int) (((a * (x & 0xffffffffL)) + (x >>> 32)) & n);
 	}
-	
+
 }

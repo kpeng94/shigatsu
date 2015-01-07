@@ -8,6 +8,8 @@ public class Handler {
 	public static RobotType typ;
 	public static Team myTeam;
 	public static Team otherTeam;
+	public static MapLocation myHQ;
+	public static MapLocation enemyHQ;
 	
 	public static MapLocation myLoc;
 
@@ -17,6 +19,8 @@ public class Handler {
 		typ = rc.getType();
 		myTeam = rc.getTeam();
 		otherTeam = myTeam.opponent();
+		myHQ = rc.senseHQLocation();
+		enemyHQ = rc.senseEnemyHQLocation();
 	}
 
 	protected static void executeGeneral() {

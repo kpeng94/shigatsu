@@ -9,7 +9,9 @@ public class RobotPlayer {
 	// Channel constants
 	private static final int NUM_BEAVER_CHANNEL = 0;
 	private static final int NUM_DRONE_CHANNEL = 1;
+	private static final int NUM_COURIER_CHANNEL = 3;
 	private static final int NUM_HELIPAD_CHANNEL = 100;
+	private static final int WAVE_NUMBER_CHANNEL = 2;
 	private static final int DRONE_PROMOTION_CHANNEL = 10;
 	private static final int NEXT_RALLY_X_CHANNEL = 11;
 	private static final int NEXT_RALLY_Y_CHANNEL = 12;
@@ -18,12 +20,13 @@ public class RobotPlayer {
 
 	// Subjobs
 	private enum Job {
-		NONE, REPORT, ATTACK, SCOUT;
+		NONE, REPORT, ATTACK, COURIER;
 	}
 
 	// Map for specific jobs
 	static Job job;
 	static int nextTriggerRound;
+	static int waveNumber;
 
 	static RobotController rc;
 	static Team myTeam;
@@ -48,6 +51,7 @@ public class RobotPlayer {
 		// employment = new IdMap<Job>();
 		job = Job.NONE;
 		nextTriggerRound = 0;
+		waveNumber = 1;
 
 		while (true) {
 			try {
@@ -80,6 +84,14 @@ public class RobotPlayer {
 							numHelipads++;
 						}
 					}
+					
+					// Give supply to every drone in the vicinity if they need some
+					RobotInfo[] allies = rc.senseNearbyRobots(rc.getLocation(), 15, myTeam);
+					for (int i = 0; i < allies.length; i++) {
+						if (allies[i].type == RobotType.DRONE && allies[i].supplyLevel == 0) {
+							rc.transferSupplies(Math.max((int) rc.getSupplyLevel(), 300), allies[i].location);
+						}
+					}
 
 					// Designate the next area to build helipads
 					// Initially, choose the friendly tower closest to enemy
@@ -105,6 +117,7 @@ public class RobotPlayer {
 					rc.broadcast(NUM_BEAVER_CHANNEL, numBeavers);
 					rc.broadcast(NUM_DRONE_CHANNEL, numDrones);
 					rc.broadcast(NUM_HELIPAD_CHANNEL, numHelipads);
+					rc.broadcast(WAVE_NUMBER_CHANNEL, waveNumber);
 
 					rc.broadcast(NEXT_RALLY_X_CHANNEL, nextRallySite.x);
 					rc.broadcast(NEXT_RALLY_Y_CHANNEL, nextRallySite.y);
@@ -114,6 +127,7 @@ public class RobotPlayer {
 					if (Clock.getRoundNum() == nextTriggerRound) {
 						rc.broadcast(DRONE_PROMOTION_CHANNEL, 1);
 						nextTriggerRound += 250;
+						waveNumber++;
 					} else {
 						rc.broadcast(DRONE_PROMOTION_CHANNEL, 0);
 					}
@@ -172,13 +186,18 @@ public class RobotPlayer {
 				try {
 
 					if (job == Job.NONE) {
-						job = Job.REPORT;
-					} else if (rc.readBroadcast(DRONE_PROMOTION_CHANNEL) == 1) {
-						if (job == Job.REPORT)
-							job = Job.ATTACK;
-						else if (job == Job.ATTACK)
-							job = Job.SCOUT;
+						int numCouriers = rc.readBroadcast(NUM_COURIER_CHANNEL);
+						if (numCouriers < rc.readBroadcast(WAVE_NUMBER_CHANNEL)) {
+							job = Job.COURIER;
+							System.out.println("Created Courier");
+							rc.broadcast(NUM_COURIER_CHANNEL, numCouriers + 1);
+						} else
+							job = Job.REPORT;
+					} else if (rc.readBroadcast(DRONE_PROMOTION_CHANNEL) == 1
+							&& job == Job.REPORT) {
+						job = Job.ATTACK;
 					}
+
 					rc.setIndicatorString(2, "I do" + job);
 
 					if (rc.isWeaponReady()) {
@@ -186,10 +205,28 @@ public class RobotPlayer {
 					}
 					if (rc.isCoreReady()) {
 
-						if (job == Job.SCOUT) {
-							tryMove(directions[rand.nextInt(8)]);
-						} else if (job == Job.REPORT || job == Job.ATTACK) {
+						MapLocation myLoc = rc.getLocation();
+						MapLocation goalLoc;
 
+						if (job == Job.COURIER) {
+							
+							int mySupply = (int) rc.getSupplyLevel();
+							MapLocation rallyPt = new MapLocation(
+									rc.readBroadcast(NEXT_RALLY_X_CHANNEL),
+									rc.readBroadcast(NEXT_RALLY_Y_CHANNEL));
+							MapLocation myHq = rc.senseHQLocation();
+							
+							if (mySupply > 0) {	// Dropoff supply
+								if (myLoc.distanceSquaredTo(rallyPt) < 15) {
+									rc.transferSupplies(mySupply, rallyPt);
+									goalLoc = myHq;
+								} else {
+									goalLoc = rallyPt;
+								}
+							} else { // Retrieve supply
+								goalLoc = myHq;
+							}
+						} else {
 							MapLocation rallyPt;
 
 							if (job == Job.REPORT) {
@@ -202,8 +239,6 @@ public class RobotPlayer {
 										rc.readBroadcast(NEXT_TARGET_Y_CHANNEL));
 							}
 
-							MapLocation goalLoc;
-							MapLocation myLoc = rc.getLocation();
 							RobotInfo[] allies = rc.senseNearbyRobots(
 									myRange / 2, myTeam);
 							RobotInfo[] enemies = rc.senseNearbyRobots(
@@ -216,11 +251,11 @@ public class RobotPlayer {
 										goalLoc.add(enemies[i].location
 												.directionTo(myLoc));
 									}
-								}
-								else {
-									goalLoc = myLoc.add(myLoc.directionTo(rallyPt),
-											targetWeight(myLoc
-													.distanceSquaredTo(rallyPt)));
+								} else {
+									goalLoc = myLoc
+											.add(myLoc.directionTo(rallyPt),
+													targetWeight(myLoc
+															.distanceSquaredTo(rallyPt)));
 									MapLocation closestAlly = myLoc;
 									int minDistanceFromAlly = Integer.MAX_VALUE;
 									for (int i = 0; i < allies.length; i++) {
@@ -258,9 +293,9 @@ public class RobotPlayer {
 											myLoc.directionTo(closestAlly), -3);
 								}
 							}
-							tryMove(myLoc.directionTo(goalLoc));
-
 						}
+						tryMove(myLoc.directionTo(goalLoc));
+
 					}
 				} catch (Exception e) {
 					System.out.println("Drone Exception");

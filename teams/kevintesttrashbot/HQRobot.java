@@ -29,7 +29,7 @@ public class HQRobot extends Robot {
 		init(rc);
 		while (true) {
 			try {
-				broadcastNumberOfLiveBeavers();
+				broadcastLiveObjectsCount();
 				// First priority: attack
 				if (rc.isWeaponReady() && decideAttack()) {
 					attack();
@@ -37,7 +37,7 @@ public class HQRobot extends Robot {
 
 				// Second priority: spawning
 				if (rc.isCoreReady()) {
-					if (rc.getTeamOre() >= RobotType.BEAVER.oreCost) {
+					if (rc.getTeamOre() >= RobotType.BEAVER.oreCost && Clock.getRoundNum() <= 500) {
 						trySpawn(directionToEnemyHQ, RobotType.BEAVER);
 						switch (numberOfScouts) {
 							case 0:
@@ -105,17 +105,24 @@ public class HQRobot extends Robot {
 		rc.broadcast(66, xRallyPointDelta * 1000 + yRallyPointDelta);
 	}
 	
-	public static void broadcastNumberOfLiveBeavers() throws GameActionException {
+	public static void broadcastLiveObjectsCount() throws GameActionException {
 		myRobots = rc.senseNearbyRobots(999999, myTeam);
 		int numBeavers = 0;
+		int numTanks = 0;
 		for (RobotInfo r : myRobots) {
 			RobotType type = r.type;
-			if (type == RobotType.BEAVER) {
-				numBeavers++;
+			switch (type) {
+				case BEAVER:
+					numBeavers++;
+					break;
+				case TANK:
+					numTanks++;
+					break;
 			}
 		}
 
-		rc.broadcast(67, numBeavers);
+		rc.broadcast(BEAVER_COUNT_CHANNEL, numBeavers);
+		rc.broadcast(TANK_COUNT_CHANNEL, numTanks);
 	}
 	
 	static int directionToInt(Direction d) {

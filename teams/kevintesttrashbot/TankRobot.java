@@ -33,12 +33,12 @@ public class TankRobot extends Robot {
 			if (rc.isWeaponReady() && decideAttack()) {
 				attack();
 			}
-			if (rc.isCoreReady()) {
-				if (numberOfLiveTanks < 10) {
+			if (rc.isCoreReady() && rc.senseNearbyRobots(RobotType.TANK.attackRadiusSquared, enemyTeam).length == 0) {
+				if (numberOfLiveTanks < 4) {
 					rallied = false;
 					tryMove(rc.getLocation().directionTo(rallyPoint));
 				}
-				else if (numberOfLiveTanks < 50 && !rallied) {
+				else if (numberOfLiveTanks < 10 && !rallied) {
 					tryMove(rc.getLocation().directionTo(rallyPoint));
 				}
 //				tryBuild(directions[rand.nextInt(8)],RobotType.BARRACKS);
@@ -53,11 +53,8 @@ public class TankRobot extends Robot {
 	}
 
 	
-	public static void updateInformation() {
-	}
-	
 	public static void readNumberOfLiveTanks() throws GameActionException {
-		numberOfLiveTanks = rc.readBroadcast(68);
+		numberOfLiveTanks = rc.readBroadcast(TANK_COUNT_CHANNEL);
 	}
 	
 	public static boolean decideAttack() {

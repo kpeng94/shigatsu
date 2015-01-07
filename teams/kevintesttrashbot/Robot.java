@@ -17,4 +17,7 @@ public class Robot {
 	static final int SCOUT_BEAVER_1 = 101;
 	static final int SCOUT_BEAVER_7 = 102;
 	
+	// Communication channels
+	static final int BEAVER_COUNT_CHANNEL = 67;
+	static final int TANK_COUNT_CHANNEL = 21390;
 }

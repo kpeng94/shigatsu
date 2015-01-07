@@ -77,7 +77,11 @@ public class BeaverRobot extends Robot {
 							if (rc.getTeamOre() >= RobotType.TANKFACTORY.oreCost) {
 								tryBuild(directions[rand.nextInt(8)],RobotType.TANKFACTORY);
 							} else {
-								if (rc.canMine())
+								if (rc.senseOre(myLocation) >= 20 && rc.canMine()) {
+									rc.mine();
+								} else {
+									tryMove(directions[rand.nextInt(8)]);
+								}
 							}
 					} else {
 //						Need to figure out where the best places to mine are.

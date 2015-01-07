@@ -26,13 +26,13 @@ public class Rand {
 	}
 	
 	public int nextInt(int max) {
-		x = (((a * (x & 0xffffffffL)) + (x >>> 32)) & 0x7fffffff) % max;
-		return (int) x;
+		x = ((a * (x & 0xffffffffL)) + (x >>> 32)) & 0x7fffffff;
+		return (int) (x % max);
 	}
 	
 	public int nextAnd(int n) {
-		x = (((a * (x & 0xffffffffL)) + (x >>> 32)) & n);
-		return (int) x;
+		x = (a * (x & 0xffffffffL)) + (x >>> 32);
+		return (int) (x & n);
 	}
 	
 }

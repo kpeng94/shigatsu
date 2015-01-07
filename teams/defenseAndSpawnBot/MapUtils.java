@@ -12,18 +12,16 @@ public class MapUtils {
 	}
 	
 	public static Direction[] directionsTowards(Direction dir) {
-		int dirInt = dir.ordinal();
-		Direction[] d = {dir, dirs[(dirInt + 1) % 8], dirs[(dirInt + 7) % 8], dirs[(dirInt + 2) % 8],
-						dirs[(dirInt + 6) % 8], dirs[(dirInt + 3) % 8], dirs[(dirInt + 5) % 8],
-						dirs[(dirInt + 4) % 8]};
+		Direction[] d = {dir, dir.rotateRight(), dir.rotateLeft(), dir.rotateRight().rotateRight(),
+						dir.rotateLeft().rotateLeft(), dir.opposite().rotateLeft(), dir.opposite().rotateRight(),
+						dir.opposite()};
 		return d;
 	}
 	
 	public static Direction[] directionsTowardsRev(Direction dir) {
-		int dirInt = dir.ordinal();
-		Direction[] d = {dirs[(dirInt + 4) % 8], dirs[(dirInt + 5) % 8],
-						dirs[(dirInt + 3) % 8], dirs[(dirInt + 6) % 8], dirs[(dirInt + 2) % 8],
-						dirs[(dirInt + 7) % 8], dirs[(dirInt + 1) % 8], dir};
+		Direction[] d = {dir.opposite(), dir.opposite().rotateRight(), dir.opposite().rotateLeft(),
+						dir.rotateLeft().rotateLeft(), dir.rotateRight().rotateRight(), dir.rotateLeft(),
+						dir.rotateRight(), dir};
 		return d;
 	}
 

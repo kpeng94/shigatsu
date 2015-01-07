@@ -9,6 +9,7 @@ matchmaker/logs/
 matchmaker/replays/
 matchmaker/output
 matchmaker/temp.conf
+matchmaker/matches
 Uninstaller/
 doc/
 art/

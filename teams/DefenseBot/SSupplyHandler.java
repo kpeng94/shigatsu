@@ -1,4 +1,4 @@
-package DefenseBot;
+package defenseBot;
 
 import battlecode.common.*;
 

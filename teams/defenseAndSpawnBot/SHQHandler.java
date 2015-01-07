@@ -45,6 +45,13 @@ public class SHQHandler extends StructureHandler {
 		if (rc.isCoreReady()) { // Try to spawn
 			Spawner.trySpawn(myLoc.directionTo(enemyHQ), RobotType.BEAVER);
 		}
+		RobotInfo[] nearbyUnits = rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED, myTeam);
+		for (int i = nearbyUnits.length; --i >= 0;) {
+			if (nearbyUnits[i].supplyLevel == 0) {
+				rc.transferSupplies(2000, nearbyUnits[i].location);
+				break;
+			}
+		}
 	}
 	
 	protected static void updateTowers() {

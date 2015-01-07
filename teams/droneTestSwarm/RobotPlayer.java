@@ -18,6 +18,8 @@ public class RobotPlayer {
 	private static final int NEXT_TARGET_X_CHANNEL = 13;
 	private static final int NEXT_TARGET_Y_CHANNEL = 15;
 
+	private static final int INTERWAVE_TIME = 400;
+
 	// Subjobs
 	private enum Job {
 		NONE, REPORT, ATTACK, COURIER;
@@ -84,12 +86,17 @@ public class RobotPlayer {
 							numHelipads++;
 						}
 					}
-					
-					// Give supply to every drone in the vicinity if they need some
-					RobotInfo[] allies = rc.senseNearbyRobots(rc.getLocation(), 15, myTeam);
+
+					// Give supply to every drone in the vicinity if they need
+					// some
+					RobotInfo[] allies = rc.senseNearbyRobots(rc.getLocation(),
+							15, myTeam);
 					for (int i = 0; i < allies.length; i++) {
-						if (allies[i].type == RobotType.DRONE && allies[i].supplyLevel == 0) {
-							rc.transferSupplies(Math.max((int) rc.getSupplyLevel(), 300), allies[i].location);
+						if (allies[i].type == RobotType.DRONE
+								&& allies[i].supplyLevel == 0) {
+							rc.transferSupplies(
+									Math.max((int) rc.getSupplyLevel(), 300),
+									allies[i].location);
 						}
 					}
 
@@ -126,7 +133,7 @@ public class RobotPlayer {
 
 					if (Clock.getRoundNum() == nextTriggerRound) {
 						rc.broadcast(DRONE_PROMOTION_CHANNEL, 1);
-						nextTriggerRound += 250;
+						nextTriggerRound += INTERWAVE_TIME;
 						waveNumber++;
 					} else {
 						rc.broadcast(DRONE_PROMOTION_CHANNEL, 0);
@@ -137,7 +144,8 @@ public class RobotPlayer {
 					}
 
 					if (rc.isCoreReady() && rc.getTeamOre() >= 100
-							&& fate < Math.pow(1.2, 12 - numBeavers) * 10000) {
+							&& fate < Math.pow(1.2, 12 - numBeavers) * 10000
+							&& Clock.getRoundNum() < 1000) {
 						trySpawn(directions[rand.nextInt(8)], RobotType.BEAVER);
 					}
 				} catch (Exception e) {
@@ -150,6 +158,20 @@ public class RobotPlayer {
 				try {
 					if (rc.isWeaponReady()) {
 						attackSomething();
+					}
+					// Supply drones if about to attack
+					if (Clock.getRoundNum() % INTERWAVE_TIME == INTERWAVE_TIME - 1) {
+						RobotInfo[] allies = rc.senseNearbyRobots(
+								rc.getLocation(), 15, myTeam);
+						System.out.println(allies.length);
+						for (int i = 0; i < allies.length; i++) {
+							if (allies[i].type == RobotType.DRONE
+									&& allies[i].supplyLevel == 0) {
+								rc.transferSupplies(
+										Math.min((int) rc.getSupplyLevel(), 500),
+										allies[i].location);
+							}
+						}
 					}
 				} catch (Exception e) {
 					System.out.println("Tower Exception");
@@ -187,9 +209,8 @@ public class RobotPlayer {
 
 					if (job == Job.NONE) {
 						int numCouriers = rc.readBroadcast(NUM_COURIER_CHANNEL);
-						if (numCouriers < rc.readBroadcast(WAVE_NUMBER_CHANNEL)) {
+						if (numCouriers < rc.readBroadcast(WAVE_NUMBER_CHANNEL) / 2) {
 							job = Job.COURIER;
-							System.out.println("Created Courier");
 							rc.broadcast(NUM_COURIER_CHANNEL, numCouriers + 1);
 						} else
 							job = Job.REPORT;
@@ -209,14 +230,14 @@ public class RobotPlayer {
 						MapLocation goalLoc;
 
 						if (job == Job.COURIER) {
-							
+
 							int mySupply = (int) rc.getSupplyLevel();
 							MapLocation rallyPt = new MapLocation(
 									rc.readBroadcast(NEXT_RALLY_X_CHANNEL),
 									rc.readBroadcast(NEXT_RALLY_Y_CHANNEL));
 							MapLocation myHq = rc.senseHQLocation();
-							
-							if (mySupply > 0) {	// Dropoff supply
+
+							if (mySupply > 0) { // Dropoff supply
 								if (myLoc.distanceSquaredTo(rallyPt) < 15) {
 									rc.transferSupplies(mySupply, rallyPt);
 									goalLoc = myHq;

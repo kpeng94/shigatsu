@@ -35,7 +35,7 @@ public class SHQHandler extends StructureHandler {
 		initStructure(rcon);
 	}
 
-	protected static void execute() {
+	protected static void execute() throws GameActionException {
 		executeStructure();
 		updateTowers();
 		if (rc.isWeaponReady()) {
@@ -61,10 +61,29 @@ public class SHQHandler extends StructureHandler {
 		}
 	}
 	
-	protected static void tryAttack() {
+	protected static void tryAttack() throws GameActionException {
 		if (inRangeEnemies.length > 0) {
-			for (int i = inRangeEnemies.length - 1; i >= 0; i--) {
+			MapLocation minLoc = inRangeEnemies[0].location;
+			int minRange = myLoc.distanceSquaredTo(minLoc);
+			for (int i = inRangeEnemies.length - 1; i > 0; i--) { // Get minimum in array
 				RobotInfo enemy = inRangeEnemies[i];
+				MapLocation enemyLoc = enemy.location;
+				int enemyRange = myLoc.distanceSquaredTo(enemyLoc);
+				if (enemyRange < minRange) {
+					minRange = enemyRange;
+					minLoc = enemyLoc;
+				}
+			}
+			
+			if (minRange < range) { // Splash damage calculations
+				rc.attackLocation(minLoc);
+			} else {
+				int dx = minLoc.x - myLoc.x;
+				int dy = minLoc.y - myLoc.y;
+				MapLocation newLoc = new MapLocation(minLoc.x - ((dx == 0) ? 0 : ((dx > 0) ? 1 : -1)), minLoc.y - ((dy == 0) ? 0 : ((dy > 0) ? 1 : -1)));
+				if (myLoc.distanceSquaredTo(newLoc) < range) {
+					rc.attackLocation(newLoc);
+				}
 			}
 		}
 	}

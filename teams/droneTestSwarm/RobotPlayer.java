@@ -45,7 +45,7 @@ public class RobotPlayer {
 		enemyTeam = myTeam.opponent();
 		RobotInfo[] myRobots;
 
-		//employment = new IdMap<Job>();
+		// employment = new IdMap<Job>();
 		job = Job.NONE;
 		nextTriggerRound = 0;
 
@@ -170,7 +170,7 @@ public class RobotPlayer {
 
 			case DRONE:
 				try {
-					
+
 					if (job == Job.NONE) {
 						job = Job.REPORT;
 					} else if (rc.readBroadcast(DRONE_PROMOTION_CHANNEL) == 1) {
@@ -180,7 +180,7 @@ public class RobotPlayer {
 							job = Job.SCOUT;
 					}
 					rc.setIndicatorString(2, "I do" + job);
-					
+
 					if (rc.isWeaponReady()) {
 						attackSomething();
 					}
@@ -210,10 +210,29 @@ public class RobotPlayer {
 									myRange / 2, enemyTeam);
 							// Retreat - Run away from nearby enemies
 							if (enemies.length > 0) {
-								goalLoc = myLoc;
-								for (int i = 0; i < enemies.length; i++) {
-									goalLoc.add(enemies[i].location
-											.directionTo(myLoc));
+								if (allies.length > enemies.length) {
+									goalLoc = myLoc;
+									for (int i = 0; i < enemies.length; i++) {
+										goalLoc.add(enemies[i].location
+												.directionTo(myLoc));
+									}
+								}
+								else {
+									goalLoc = myLoc.add(myLoc.directionTo(rallyPt),
+											targetWeight(myLoc
+													.distanceSquaredTo(rallyPt)));
+									MapLocation closestAlly = myLoc;
+									int minDistanceFromAlly = Integer.MAX_VALUE;
+									for (int i = 0; i < allies.length; i++) {
+										int distanceFromAlly = myLoc
+												.distanceSquaredTo(allies[i].location);
+										if (distanceFromAlly < minDistanceFromAlly) {
+											closestAlly = allies[i].location;
+											minDistanceFromAlly = distanceFromAlly;
+										}
+									}
+									goalLoc = goalLoc.add(
+											myLoc.directionTo(closestAlly), 5);
 								}
 							}
 							// Swarm - Gather near rally point and repel away

@@ -100,6 +100,19 @@ public class RobotPlayer {
 						}
 					}
 
+					// Supply drones if about to attack
+					if (Clock.getRoundNum() % INTERWAVE_TIME == INTERWAVE_TIME - 1) {
+						System.out.println(allies.length);
+						for (int i = 0; i < allies.length; i++) {
+							if (allies[i].type == RobotType.DRONE
+									&& allies[i].supplyLevel == 0) {
+								rc.transferSupplies(Math.min(
+										(int) rc.getSupplyLevel(), 500),
+										allies[i].location);
+							}
+						}
+					}
+
 					// Designate the next area to build helipads
 					// Initially, choose the friendly tower closest to enemy
 					// towers
@@ -116,6 +129,16 @@ public class RobotPlayer {
 							if (distanceFromEnemy < minDistanceFromEnemy) {
 								nextRallySite = myTowers[i];
 								nextTargetSite = enemyTowers[j];
+								minDistanceFromEnemy = distanceFromEnemy;
+							}
+						}
+						if (enemyTowers.length == 0) {
+							MapLocation enemyHq = rc.senseEnemyHQLocation();
+							int distanceFromEnemy = myTowers[i]
+									.distanceSquaredTo(enemyHq);
+							if (distanceFromEnemy < minDistanceFromEnemy) {
+								nextRallySite = myTowers[i];
+								nextTargetSite = enemyHq;
 								minDistanceFromEnemy = distanceFromEnemy;
 							}
 						}
@@ -167,8 +190,8 @@ public class RobotPlayer {
 						for (int i = 0; i < allies.length; i++) {
 							if (allies[i].type == RobotType.DRONE
 									&& allies[i].supplyLevel == 0) {
-								rc.transferSupplies(
-										Math.min((int) rc.getSupplyLevel(), 500),
+								rc.transferSupplies(Math.min(
+										(int) rc.getSupplyLevel(), 500),
 										allies[i].location);
 							}
 						}

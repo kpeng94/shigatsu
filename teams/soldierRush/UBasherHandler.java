@@ -5,10 +5,10 @@ import battlecode.common.*;
 public class UBasherHandler extends UnitHandler {
 
 	static Direction[] directions = { Direction.NORTH, Direction.NORTH_EAST,
-		Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH,
-		Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST };
+			Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH,
+			Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST };
 	static MapLocation[] enemyTowers;
-	
+
 	public static void loop(RobotController rcon) {
 		try {
 			init(rcon);
@@ -32,34 +32,39 @@ public class UBasherHandler extends UnitHandler {
 		initUnit(rcon);
 	}
 
-	protected static void execute() throws GameActionException{
+	protected static void execute() throws GameActionException {
 		executeUnit();
-		
+
 		enemyTowers = rc.senseEnemyTowerLocations();
-		
-		RobotInfo[] adjacentEnemies = rc.senseNearbyRobots(2,
-				rc.getTeam().opponent());
+
+		RobotInfo[] adjacentEnemies = rc.senseNearbyRobots(2, rc.getTeam()
+				.opponent());
 
 		// BASHERs attack automatically, so let's just move around
 		// mostly randomly
 		if (rc.isCoreReady()) {
 			int fate = rand.nextAnd(1023);
-			if (fate < 200) {
-				tryMove(directions[rand.nextAnd(7)]);
+			if (adjacentEnemies.length > 0) {
+				tryMove(rc.getLocation().directionTo(
+						adjacentEnemies[0].location));
+			} else if (rc.readBroadcast(1) > 40) {
+				if (enemyTowers.length > 0)
+					tryMove(rc.getLocation().directionTo(enemyTowers[0]));
+				else
+					tryMove(rc.getLocation().directionTo(
+							rc.senseEnemyHQLocation()));
 			} else {
-				if(rc.readBroadcast(1) > 40){
-					if(enemyTowers.length > 0)
-						tryMove(rc.getLocation().directionTo(enemyTowers[0]));
-					else
-						tryMove(rc.getLocation().directionTo(
-								rc.senseEnemyHQLocation()));
-				} else {
-					tryMove(rc.getLocation().directionTo(MapUtils.pointSection(rc.senseHQLocation(), enemyTowers[0], 0.5)));
-				}
+				if (enemyTowers.length > 0)
+					tryMove(rc.getLocation().directionTo(
+							MapUtils.pointSection(rc.senseHQLocation(),
+									enemyTowers[0], 0.5)));
+				else
+					tryMove(rc.getLocation().directionTo(
+							MapUtils.pointSection(rc.senseHQLocation(), rc.senseEnemyHQLocation(), 0.5)));
 			}
 		}
 	}
-	
+
 	// This method will attempt to move in Direction d (or as close to it as
 	// possible)
 	static void tryMove(Direction d) throws GameActionException {
@@ -75,7 +80,7 @@ public class UBasherHandler extends UnitHandler {
 			rc.move(directions[(dirint + offsets[offsetIndex] + 8) % 8]);
 		}
 	}
-	
+
 	static int directionToInt(Direction d) {
 		switch (d) {
 		case NORTH:
@@ -98,5 +103,5 @@ public class UBasherHandler extends UnitHandler {
 			return -1;
 		}
 	}
-	
+
 }

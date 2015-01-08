@@ -5,10 +5,11 @@ import battlecode.common.*;
 public class USoldierHandler extends UnitHandler {
 
 	static Direction[] directions = { Direction.NORTH, Direction.NORTH_EAST,
-		Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH,
-		Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST };
+			Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH,
+			Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST };
 	static MapLocation[] enemyTowers;
-	
+	static boolean attacking = false;
+
 	public static void loop(RobotController rcon) {
 		try {
 			init(rcon);
@@ -34,35 +35,62 @@ public class USoldierHandler extends UnitHandler {
 
 	protected static void execute() throws GameActionException {
 		executeUnit();
-		
+
 		enemyTowers = rc.senseEnemyTowerLocations();
-		
+
 		if (rc.isWeaponReady()) {
 			attackSomething();
 		}
 		if (rc.isCoreReady()) {
-			int fate = rand.nextAnd(1023);
-			if (fate < 200) {
-				tryMove(directions[rand.nextAnd(7)]);
-			} else {
-				if(rc.readBroadcast(1) > 50){
-					if(enemyTowers.length > 0)
+			if (!attacking) {
+				if (rc.readBroadcast(1) > 50) {
+					attacking = true;
+					if (enemyTowers.length > 0)
 						tryMove(rc.getLocation().directionTo(enemyTowers[0]));
 					else
 						tryMove(rc.getLocation().directionTo(
 								rc.senseEnemyHQLocation()));
 				} else {
-					tryMove(rc.getLocation().directionTo(MapUtils.pointSection(rc.senseHQLocation(), enemyTowers[0], 0.5)));
+					if (enemyTowers.length > 0)
+						tryMove(rc.getLocation().directionTo(
+								MapUtils.pointSection(rc.senseHQLocation(),
+										enemyTowers[0], 0.5)));
+					else
+						tryMove(rc.getLocation().directionTo(
+								MapUtils.pointSection(rc.senseHQLocation(),
+										rc.senseEnemyHQLocation(), 0.5)));
+				}
+			} else {
+				if (rc.readBroadcast(1) > 20) {
+					if (enemyTowers.length > 0)
+						tryMove(rc.getLocation().directionTo(enemyTowers[0]));
+					else
+						tryMove(rc.getLocation().directionTo(
+								rc.senseEnemyHQLocation()));
+				} else {
+					attacking = false;
+					tryMove(rc.getLocation().directionTo(
+							MapUtils.pointSection(rc.senseHQLocation(),
+									rc.senseEnemyHQLocation(), 0.5)));
 				}
 			}
 		}
 	}
-	
+
 	// This method will attack an enemy in sight, if there is one
 	static void attackSomething() throws GameActionException {
-		RobotInfo[] enemies = rc.senseNearbyRobots(typ.attackRadiusSquared, rc.getTeam().opponent());
+		RobotInfo[] enemies = rc.senseNearbyRobots(typ.attackRadiusSquared, rc
+				.getTeam().opponent());
 		if (enemies.length > 0) {
-			rc.attackLocation(enemies[0].location);
+			RobotInfo worstEnemy = enemies[0];
+			double worstHealth = worstEnemy.health;
+			for (int i = 1; i < enemies.length; i++) {
+				if (enemies[i].health < worstHealth) {
+					worstEnemy = enemies[i];
+					worstHealth = worstEnemy.health;
+				}
+			}
+			rc.attackLocation(worstEnemy.location);
 		}
 	}
 
@@ -104,5 +132,5 @@ public class USoldierHandler extends UnitHandler {
 			return -1;
 		}
 	}
-	
+
 }

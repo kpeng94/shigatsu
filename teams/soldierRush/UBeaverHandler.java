@@ -41,12 +41,18 @@ public class UBeaverHandler extends UnitHandler {
 		if (rc.isCoreReady()) {
 			int fate = rand.nextInt(1023);
 			if (fate < 8 && rc.getTeamOre() >= 300) {
-				tryBuild(directions[rand.nextInt(7)],
+				tryBuild(directions[rand.nextAnd(7)],
 						RobotType.BARRACKS);
 			} else if (fate < 600) {
-				rc.mine();
+				if(rc.senseOre(rc.getLocation()) > 0){
+					rc.mine();
+					System.out.println("Beaver mining: " + rc.senseOre(rc.getLocation()));
+				} else {
+					tryMove(senseNearbyOre());
+				}
+
 			} else if (fate < 900) {
-				tryMove(directions[rand.nextInt(7)]);
+				tryMove(directions[rand.nextAnd(7)]);
 			} else {
 				tryMove(rc.senseHQLocation().directionTo(
 						rc.getLocation()));
@@ -91,6 +97,20 @@ public class UBeaverHandler extends UnitHandler {
 		if (offsetIndex < 8) {
 			rc.build(directions[(dirint + offsets[offsetIndex] + 8) % 8], type);
 		}
+	}
+	
+	static Direction senseNearbyOre(){
+		MapLocation currentLocation = rc.getLocation();
+		double ore = 0;
+		Direction bd = currentLocation.directionTo(rc.senseEnemyHQLocation());
+		for(Direction d: directions){
+			double newOre = rc.senseOre(currentLocation.add(d));
+			 if(newOre > ore){
+				 ore = newOre;
+				 bd = d;
+			 }
+		}
+		return bd;
 	}
 	
 	static int directionToInt(Direction d) {

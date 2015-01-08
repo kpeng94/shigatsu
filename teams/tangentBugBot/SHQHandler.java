@@ -33,7 +33,7 @@ public class SHQHandler extends StructureHandler {
 
 	protected static void init(RobotController rcon) throws GameActionException {
 		initStructure(rcon);
-		Spawner.trySpawn(rc.senseHQLocation().directionTo(enemyHQ), RobotType.BEAVER);
+		//Spawner.trySpawn(rc.senseHQLocation().directionTo(enemyHQ), RobotType.BEAVER);
 	}
 
 	protected static void execute() throws GameActionException {

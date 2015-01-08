@@ -16,7 +16,7 @@ public class UBeaverHandler extends UnitHandler {
 			try {
 				execute();
 			} catch (Exception e) {
-				// e.printStackTrace();
+				e.printStackTrace();
 				System.out.println(typ + " Execution Exception");
 			}
 			rc.yield(); // Yields to save remaining bytecodes
@@ -25,16 +25,21 @@ public class UBeaverHandler extends UnitHandler {
 
 	protected static void init(RobotController rcon) {
 		initUnit(rcon);
-		NavDumbTangent.dumbTangentReset(enemyHQ);
+		NavTangentBug.setDest(enemyHQ);
 	}
 
 	protected static void execute() throws GameActionException {
 		executeUnit();
+		NavTangentBug.calculate(3000);
 		if (rc.isCoreReady()) {
-			Direction tangentDir = NavDumbTangent.dumbTangentDir(false);
-			if (tangentDir != Direction.NONE) {
-				NavDumbTangent.executeDumbTangent(tangentDir);
+			Direction nextMove = NavTangentBug.getNextMove();
+			if (nextMove != Direction.NONE) {
+				NavSimple.walkTowardsDirected(nextMove);
 			}
+//			Direction tangentDir = NavDumbTangent.dumbTangentDir(false);
+//			if (tangentDir != Direction.NONE) {
+//				NavDumbTangent.executeDumbTangent(tangentDir);
+//			}
 		}
 	}
 	

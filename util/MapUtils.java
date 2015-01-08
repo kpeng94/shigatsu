@@ -1,4 +1,4 @@
-package defenseAndSpawnBot;
+package tangentBugBot;
 
 import battlecode.common.*;
 
@@ -11,18 +11,32 @@ public class MapUtils {
 		return new MapLocation(newX, newY);
 	}
 	
-	public static Direction[] directionsTowards(Direction dir) {
-		Direction[] d = {dir, dir.rotateRight(), dir.rotateLeft(), dir.rotateRight().rotateRight(),
-						dir.rotateLeft().rotateLeft(), dir.opposite().rotateLeft(), dir.opposite().rotateRight(),
-						dir.opposite()};
-		return d;
+	public static MapLocation convertMapLocation(MapLocation base) {
+		int newx = base.x % GameConstants.MAP_MAX_WIDTH;
+		if (newx < 0) newx += GameConstants.MAP_MAX_WIDTH;
+		int newy = base.y % GameConstants.MAP_MAX_HEIGHT;
+		if (newy < 0) newy += GameConstants.MAP_MAX_HEIGHT;
+		return new MapLocation(newx, newy);
 	}
 	
-	public static Direction[] directionsTowardsRev(Direction dir) {
-		Direction[] d = {dir.opposite(), dir.opposite().rotateRight(), dir.opposite().rotateLeft(),
-						dir.rotateLeft().rotateLeft(), dir.rotateRight().rotateRight(), dir.rotateLeft(),
-						dir.rotateRight(), dir};
-		return d;
+	public static Direction[] dirsAround(Direction dir) {
+		return new Direction[]{dir, dir.rotateRight(), dir.rotateLeft(), dir.rotateRight().rotateRight(),
+							dir.rotateLeft().rotateLeft(), dir.opposite().rotateLeft(), dir.opposite().rotateRight(),
+							dir.opposite()};
+	}
+	
+	public static Direction[] dirsAroundRev(Direction dir) {
+		return new Direction[]{dir.opposite(), dir.opposite().rotateRight(), dir.opposite().rotateLeft(),
+							dir.rotateLeft().rotateLeft(), dir.rotateRight().rotateRight(), dir.rotateLeft(),
+							dir.rotateRight(), dir};
+	}
+	
+	public static Direction[] dirsTowards(Direction dir) {
+		return new Direction[]{dir, dir.rotateRight(), dir.rotateLeft()};
+	}
+	
+	public static Direction[] dirsTowardsRev(Direction dir) {
+		return new Direction[]{dir.rotateLeft(), dir.rotateRight(), dir};
 	}
 
 }

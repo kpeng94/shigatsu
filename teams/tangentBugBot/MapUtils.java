@@ -11,6 +11,14 @@ public class MapUtils {
 		return new MapLocation(newX, newY);
 	}
 	
+	public static MapLocation convertMapLocation(MapLocation base) {
+		int newx = base.x % GameConstants.MAP_MAX_WIDTH;
+		if (newx < 0) newx += GameConstants.MAP_MAX_WIDTH;
+		int newy = base.y % GameConstants.MAP_MAX_HEIGHT;
+		if (newy < 0) newy += GameConstants.MAP_MAX_HEIGHT;
+		return new MapLocation(newx, newy);
+	}
+	
 	public static Direction[] dirsAround(Direction dir) {
 		return new Direction[]{dir, dir.rotateRight(), dir.rotateLeft(), dir.rotateRight().rotateRight(),
 							dir.rotateLeft().rotateLeft(), dir.opposite().rotateLeft(), dir.opposite().rotateRight(),

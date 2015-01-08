@@ -1,4 +1,4 @@
-package defenseAndSpawnBot;
+package tangentBugBot;
 
 import battlecode.common.*;
 
@@ -12,6 +12,7 @@ public class Handler {
 	public static MapLocation enemyHQ;
 	
 	public static MapLocation myLoc;
+	public static MapLocation[] enemyTowers;
 
 	protected static void initGeneral(RobotController rcon) {
 		rc = rcon;
@@ -25,6 +26,7 @@ public class Handler {
 
 	protected static void executeGeneral() {
 		myLoc = rc.getLocation();
+		enemyTowers = rc.senseEnemyTowerLocations();
 	}
 
 }

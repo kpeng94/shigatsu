@@ -37,22 +37,26 @@ public class HQRobot extends Robot {
 
 				// Second priority: spawning
 				if (rc.isCoreReady()) {
-					if (rc.getTeamOre() >= RobotType.BEAVER.oreCost && Clock.getRoundNum() <= 500) {
-						trySpawn(directionToEnemyHQ, RobotType.BEAVER);
+					if (rc.getTeamOre() >= RobotType.BEAVER.oreCost && Clock.getRoundNum() <= 100) {
+						
 						switch (numberOfScouts) {
 							case 0:
+								trySpawn(directions[(directionToInt(directionToEnemyHQ) + 4) % 8], RobotType.BEAVER);
 								rc.broadcast(Clock.getRoundNum(), SCOUT_BEAVER_0);
 								numberOfScouts++;
 								break;
 							case 1:
+								trySpawn(directionToEnemyHQ, RobotType.BEAVER);
 								rc.broadcast(Clock.getRoundNum(), SCOUT_BEAVER_1);
 								numberOfScouts++;
 								break;
 							case 2:
+								trySpawn(directionToEnemyHQ, RobotType.BEAVER);
 								rc.broadcast(Clock.getRoundNum(), SCOUT_BEAVER_7);
 								numberOfScouts++;
 								break;
 							default:
+								trySpawn(directionToEnemyHQ, RobotType.BEAVER);
 								break;
 						}
 					}

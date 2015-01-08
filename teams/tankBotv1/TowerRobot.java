@@ -24,7 +24,6 @@ public class TowerRobot extends Robot {
 					attackSomething();
 				}
 			} catch (Exception e) {
-				System.out.println("Tower Exception");
                 e.printStackTrace();
 			}
     		rc.yield();

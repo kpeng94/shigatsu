@@ -71,8 +71,6 @@ public class TankRobot extends Robot {
 
 	
 	static void tryMove(Direction d) throws GameActionException {
-		System.out.println("asdf");
-		System.out.println("" + d);
 		int offsetIndex = 0;
 		int[] offsets = {0,1,-1,2,-2};
 		int dirint = directionToInt(d);

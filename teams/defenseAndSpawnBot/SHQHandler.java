@@ -49,7 +49,6 @@ public class SHQHandler extends StructureHandler {
 		for (int i = nearbyUnits.length; --i >= 0;) {
 			if (nearbyUnits[i].supplyLevel == 0) {
 				rc.transferSupplies(2000, nearbyUnits[i].location);
-				break;
 			}
 		}
 	}

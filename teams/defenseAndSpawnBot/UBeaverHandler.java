@@ -30,7 +30,7 @@ public class UBeaverHandler extends UnitHandler {
 	protected static void execute() throws GameActionException {
 		executeUnit();
 		if (rc.isCoreReady()) {
-			SimpleNav.walkTowards(myLoc.directionTo(enemyHQ));
+			NavSimple.walkTowards(myLoc.directionTo(enemyHQ));
 		}
 	}
 	

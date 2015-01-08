@@ -2,7 +2,7 @@ package defenseAndSpawnBot;
 
 import battlecode.common.*;
 
-public class SimpleNav {
+public class NavSimple {
 	
 	public static void walkTowards(Direction dir) throws GameActionException {
 		walkPriority(MapUtils.directionsTowards(dir));

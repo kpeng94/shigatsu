@@ -40,6 +40,7 @@ public class SHQHandler extends StructureHandler {
 
 	protected static void init(RobotController rcon) {
 		initStructure(rcon);
+		rc.setIndicatorString(0, "DOD");
 		nextTriggerRound = 0;
 		waveNumber = 1;
 	}

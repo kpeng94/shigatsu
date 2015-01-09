@@ -108,19 +108,31 @@ public class UDroneHandler extends UnitHandler {
 		// Couriers retrieve supply from hq and drop it off at the rally point
 		if (myJob == DroneJob.COURIER) {
 			
-//			int mySupply = (int) rc.getSupplyLevel();
-			
-			// Supply drones if about to attack
-			if (Clock.getRoundNum() % INTERWAVE_TIME >= INTERWAVE_TIME - 50) {
-				goalLoc = rallyPt;
-//				for (int i = 0; i < allies.length; i++) {
-//					if (allies[i].type == RobotType.DRONE
-//							&& allies[i].supplyLevel == 0) {
-//						rc.transferSupplies(Math.min(
-//								(int) rc.getSupplyLevel(), 500),
-//								allies[i].location);
+			if (Clock.getRoundNum() % INTERWAVE_TIME == INTERWAVE_TIME - 1) { // Supply drones if about to attack
+				
+//				RobotInfo[] nearby = rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED, myTeam);
+//				int numNearbyDrones = 0;
+//				for (RobotInfo info: nearby) { 
+//					if (info.type == RobotType.DRONE && info.supplyLevel == 0 && numNearbyDrones < 15) {
+//						numNearbyDrones++;
 //					}
 //				}
+				
+				int numNearbyDrones = Math.min(15, rc.readBroadcast(NUM_DRONE_CHANNEL));
+				
+				if (numNearbyDrones > 0) {
+					int toDistribute = (int) rc.getSupplyLevel() / numNearbyDrones;
+
+					for (int i = 0; i < numNearbyDrones; i++) {
+						if (allies[i].type == RobotType.DRONE) {
+							rc.transferSupplies(toDistribute,
+									allies[i].location);
+						}
+					}
+				}
+			}
+			if (Clock.getRoundNum() % INTERWAVE_TIME >= INTERWAVE_TIME - 50) { // Dispatch to prepare for supplying
+				goalLoc = rallyPt;
 			} else { // Retrieve supply
 				goalLoc = myHQ;
 			}

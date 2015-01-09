@@ -1,4 +1,4 @@
-package droneOffenseDefense;
+package team096;
 
 import battlecode.common.*;
 
@@ -71,6 +71,7 @@ public class STowerHandler extends StructureHandler {
 
 		// Supply drones if about to attack
 		if (Clock.getRoundNum() % INTERWAVE_TIME == INTERWAVE_TIME - 1) {
+			System.out.println(allies.length);
 			for (int i = 0; i < allies.length; i++) {
 				if (allies[i].type == RobotType.DRONE
 						&& allies[i].supplyLevel == 0) {

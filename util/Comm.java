@@ -22,6 +22,7 @@ public class Comm {
 	public static final int FREEBLOCK_CHAN = 1;
 	public static final int GARBAGE_CHAN = 2;
 	public static final int LAST_GARBAGE_TURN_CHAN = 3;
+	public static final int TASK_CHAN = 4;
 	
 	// Structures
 	public static final int HQ_BLOCK = 100;
@@ -63,11 +64,14 @@ public class Comm {
 	public static int requestBlock(boolean isPermanent) throws GameActionException {
 		int free = Handler.rc.readBroadcast(FREEBLOCK_CHAN);
 		if (free > LAST_BLOCK) return -1;
-		if (free == 0) {
+
+		int next = Handler.rc.readBroadcast(free * BLOCK_SIZE);
+		if (next == 0) {
 			Handler.rc.broadcast(FREEBLOCK_CHAN, free + 1);
 		} else {
-			Handler.rc.broadcast(FREEBLOCK_CHAN, Handler.rc.readBroadcast(free * BLOCK_SIZE));
+			Handler.rc.broadcast(FREEBLOCK_CHAN, next);
 		}
+
 		Handler.rc.broadcast(free * BLOCK_SIZE, (isPermanent ? PERM_BLOCK_MASK : ACTIVE_BLOCK_MASK) + Clock.getRoundNum());
 		return free;
 	}

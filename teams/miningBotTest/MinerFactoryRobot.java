@@ -7,7 +7,8 @@ import battlecode.common.*;
 public class MinerFactoryRobot extends Robot {
 	public static Direction directionToEnemyHQ;
 	public static int distanceToEnemyHQ;
-	
+	private static int numberOfLiveMiners = 0;
+
 	public static void init(RobotController rc) throws GameActionException {
         rand = new Random(rc.getID());
 		myRange = rc.getType().attackRadiusSquared;
@@ -23,13 +24,18 @@ public class MinerFactoryRobot extends Robot {
 		rc = controller;
 		init(rc);
 		while (true) {
-			if (rc.isCoreReady() && rc.getTeamOre() >= RobotType.MINER.oreCost && rc.readBroadcast(MINERS_COUNT_CHANNEL) < 1) {
+			readBroadcasts();
+			if (rc.isCoreReady() && rc.getTeamOre() >= RobotType.MINER.oreCost && numberOfLiveMiners <= MINER_THRESHOLD) {
 				trySpawn(directionToEnemyHQ, RobotType.MINER);				
 			}
 
-			rc.yield();		
+			rc.yield();
 		}
 		
+	}
+	
+	public static void readBroadcasts() throws GameActionException {
+		numberOfLiveMiners  = rc.readBroadcast(MINERS_COUNT_CHANNEL);
 	}
 
 

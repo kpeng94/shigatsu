@@ -39,7 +39,7 @@ public class Robot {
 	static final int MINERFACTORY_THRESHOLD = 8;
 	static final int MINER_THRESHOLD = 20;
 	static final int ORE_THRESHOLD = 10;
-	static final int ORE_THRESHOLD_MINER = 8;
+	static final int ORE_THRESHOLD_MINER = 2;
 	static final int SUPPLYDEPOT_THRESHOLD = 8;
 	
 	// Consider making the spawn method return a direction that actually spawned in.
@@ -101,5 +101,13 @@ public class Robot {
 			default:
 				return -1;
 		}
-	}	
+	}
+	
+	static void claimMineMapLocation(int deltaX, int deltaY) throws GameActionException {
+		rc.broadcast(MINER_BASE_DELTA + GameConstants.MAP_MAX_WIDTH * ((120 + deltaX) % 120) + ((120 + deltaY) % 120), 1);
+	}
+	
+	static boolean isMineMapLocationClaimed(int deltaX, int deltaY) throws GameActionException {
+		return rc.readBroadcast(MINER_BASE_DELTA + GameConstants.MAP_MAX_WIDTH * ((120 + deltaX) % 120) + ((120 + deltaY) % 120)) == 1;
+	}
 }

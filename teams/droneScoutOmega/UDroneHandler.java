@@ -157,8 +157,23 @@ public class UDroneHandler extends UnitHandler {
 		for (Direction dir: dirs) {
 			MapLocation test = myLoc.add(dir, 4);
 			if (rc.senseTerrainTile(test) == TerrainTile.OFF_MAP) {
+				// Find first LRTB direction, discard if results in enemy territory, to off map, or back towards midpoint
+				if (lrtbDir == Direction.NONE) {
+					for (Direction dir2: dirs) {
+						MapLocation test2 = myLoc.add(dir2, 4);
+						if (rc.senseTerrainTile(test2) == TerrainTile.OFF_MAP) {
+							continue;
+						} else if (test2.distanceSquaredTo(enemyHQ) < test2.distanceSquaredTo(myHQ)) {
+							continue;
+						} else if (dir2 == test2.directionTo(new MapLocation((myHQ.x + enemyHQ.x) / 2, (myHQ.y + enemyHQ.y) / 2))) {
+							continue;
+						} else {
+							lrtbDir = dir2;
+							break;
+						}
+					}
+				}
 				curPhase = ScoutPhase.SWEEP_LRTB;
-				lrtbDir = myLoc.directionTo(myHQ); // this isn't accurate
 				sweepLRTB();
 				break;
 			}
@@ -173,8 +188,23 @@ public class UDroneHandler extends UnitHandler {
 		for (Direction dir: dirs) {
 			MapLocation test = myLoc.add(dir, 4);
 			if (rc.senseTerrainTile(test) == TerrainTile.OFF_MAP) {
+				// Find first LRTB direction, discard if results in enemy territory, to off map, or back towards midpoint
+				if (lrtbDir == Direction.NONE) {
+					for (Direction dir2: dirs) {
+						MapLocation test2 = myLoc.add(dir2, 4);
+						if (rc.senseTerrainTile(test2) == TerrainTile.OFF_MAP) {
+							continue;
+						} else if (test2.distanceSquaredTo(enemyHQ) < test2.distanceSquaredTo(myHQ)) {
+							continue;
+						} else if (dir2 == test2.directionTo(new MapLocation((myHQ.x + enemyHQ.x) / 2, (myHQ.y + enemyHQ.y) / 2))) {
+							continue;
+						} else {
+							lrtbDir = dir2;
+							break;
+						}
+					}
+				}
 				curPhase = ScoutPhase.SWEEP_LRTB;
-				lrtbDir = myLoc.directionTo(myHQ); // this isn't accurate
 				sweepLRTB();
 				break;
 			}

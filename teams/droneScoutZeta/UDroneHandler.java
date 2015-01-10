@@ -1,4 +1,4 @@
-package droneScoutAlpha;
+package droneScoutZeta;
 
 import battlecode.common.*;
 
@@ -6,11 +6,14 @@ public class UDroneHandler extends UnitHandler {
 	private static RobotInfo[] inRangeEnemies;
 	private static Direction heading;
 	private enum ScoutPhase {
-		FINDING_LR_MARGIN, FINDING_TB_MARGIN, SWEEPING_LR, SWEEPING_TB, SWEEPING_LR_TO_TB, SWEEPING_TB_TO_LR;
+		FINDING_LR_MARGIN, FINDING_TB_MARGIN, SWEEPING_LONG_TO, SWEEPING_LONG_BACK, SWEEPING_SHORT, SWEEPING_DIAG;
 	}
 	
 	private static ScoutPhase curPhase;
 	private static int counter;
+	private static int width;
+	private static int minX;
+	private static int minY;
 	
 	public static void loop(RobotController rcon) {
 		try {
@@ -52,17 +55,17 @@ public class UDroneHandler extends UnitHandler {
 			case FINDING_TB_MARGIN:
 				findTBMargin();
 				break;
-			case SWEEPING_LR:
-				sweepLR();
+			case SWEEPING_LONG_TO:
+				sweepLongTo();
 				break;
-			case SWEEPING_TB:
-				sweepTB();
+			case SWEEPING_LONG_BACK:
+				sweepLongBack();
 				break;
-			case SWEEPING_LR_TO_TB:
-				sweepLRToTB();
+			case SWEEPING_SHORT:
+				sweepShort();
 				break;
-			case SWEEPING_TB_TO_LR:
-				sweepTBToLR();
+			case SWEEPING_DIAG:
+				sweepDiag();
 				break;
 			}
 			NavSimple.walkTowards(heading);
@@ -71,6 +74,8 @@ public class UDroneHandler extends UnitHandler {
 			MapUtils.updateBounds(myLoc);
 			
 			rc.setIndicatorString(0, "Bounds at [" + bounds[0] + "-" + bounds[1] + ", " + bounds[2] + "-" + bounds[3] + "]");
+			rc.setIndicatorString(1, "width is " + width);
+			rc.setIndicatorString(2, "mins are " + minX + "," + minY);
 		}
 	}
 
@@ -107,6 +112,8 @@ public class UDroneHandler extends UnitHandler {
 				int[] bounds = MapUtils.getDiscoveredBounds();
 				bounds[0] -= margin;
 				bounds[1] += margin;
+				minX = bounds[0];
+				width = bounds[1] - bounds[0];
 				MapUtils.writeBounds(bounds);
 				curPhase = ScoutPhase.FINDING_TB_MARGIN;
 				findTBMargin();
@@ -128,116 +135,86 @@ public class UDroneHandler extends UnitHandler {
 				int[] bounds = MapUtils.getDiscoveredBounds();
 				bounds[2] -= margin;
 				bounds[3] += margin;
+				minY = bounds[2];
 				MapUtils.writeBounds(bounds);
-				curPhase = ScoutPhase.SWEEPING_LR;
-				sweepLR();
+				curPhase = ScoutPhase.SWEEPING_LONG_TO;
+				sweepLongTo();
 			}
 		}
 	}
 	
-	protected static void sweepLR() throws GameActionException {
-		if (myHQ.x < enemyHQ.x) {
+	protected static void sweepLongTo() throws GameActionException {
+		if (myHQ.x < enemyHQ.x && myHQ.y < enemyHQ.y) {
 			heading = Direction.EAST;
+		} else if (myHQ.x < enemyHQ.x && myHQ.y > enemyHQ.y) {
+			heading = Direction.NORTH;
+		} else if (myHQ.x > enemyHQ.x && myHQ.y < enemyHQ.y) {
+			heading = Direction.SOUTH;
 		} else {
 			heading = Direction.WEST;
 		}
 		// If we moved 9, switch to sweeping diagonally
-		if (counter == 9) {
+		if (myLoc.x - minX + myLoc.y - minY == width) {
+			curPhase = ScoutPhase.SWEEPING_DIAG;
+			sweepDiag();
+		}
+	}
+	
+	protected static void sweepDiag() throws GameActionException {
+		if (myHQ.x < enemyHQ.x && myHQ.y < enemyHQ.y) {
+			heading = Direction.SOUTH_WEST;
+		} else if (myHQ.x < enemyHQ.x && myHQ.y > enemyHQ.y) {
+			heading = Direction.SOUTH_EAST;
+		} else if (myHQ.x > enemyHQ.x && myHQ.y < enemyHQ.y) {
+			heading = Direction.NORTH_WEST;
+		} else {
+			heading = Direction.NORTH_EAST;
+		}
+		// If we moved 7, switch to sweeping diagonally
+		if (counter == 7) {
 			counter = 0;
-			curPhase = ScoutPhase.SWEEPING_LR_TO_TB;
-			sweepLRToTB();
+			curPhase = ScoutPhase.SWEEPING_LONG_BACK;
+			sweepLongBack();
 		}
 		else {
 			counter++;
 		}	
 	}
 	
-	protected static void sweepLRToTB() throws GameActionException {
+	protected static void sweepLongBack() throws GameActionException {
 		if (myHQ.x < enemyHQ.x && myHQ.y < enemyHQ.y) {
-			heading = Direction.SOUTH_WEST;
-			MapLocation loc1 = myLoc.add(Direction.SOUTH, 4);
-			MapLocation loc2 = myLoc.add(Direction.WEST, 4);
-			if (rc.senseTerrainTile(loc1) == TerrainTile.OFF_MAP || rc.senseTerrainTile(loc2) == TerrainTile.OFF_MAP) {
-				curPhase = ScoutPhase.SWEEPING_TB;
-				sweepTB();
-			}
+			heading = Direction.WEST;
 		} else if (myHQ.x < enemyHQ.x && myHQ.y > enemyHQ.y) {
-			heading = Direction.NORTH_WEST;
-			MapLocation loc1 = myLoc.add(Direction.NORTH, 4);
-			MapLocation loc2 = myLoc.add(Direction.WEST, 4);
-			if (rc.senseTerrainTile(loc1) == TerrainTile.OFF_MAP || rc.senseTerrainTile(loc2) == TerrainTile.OFF_MAP) {
-				curPhase = ScoutPhase.SWEEPING_TB;
-				sweepTB();
-			}
+			heading = Direction.SOUTH;
 		} else if (myHQ.x > enemyHQ.x && myHQ.y < enemyHQ.y) {
-			heading = Direction.SOUTH_EAST;
-			MapLocation loc1 = myLoc.add(Direction.SOUTH, 4);
-			MapLocation loc2 = myLoc.add(Direction.EAST, 4);
-			if (rc.senseTerrainTile(loc1) == TerrainTile.OFF_MAP || rc.senseTerrainTile(loc2) == TerrainTile.OFF_MAP) {
-				curPhase = ScoutPhase.SWEEPING_TB;
-				sweepTB();
-			}
+			heading = Direction.NORTH;
 		} else {
-			heading = Direction.NORTH_EAST;
-			MapLocation loc1 = myLoc.add(Direction.NORTH, 4);
-			MapLocation loc2 = myLoc.add(Direction.EAST, 4);
-			if (rc.senseTerrainTile(loc1) == TerrainTile.OFF_MAP || rc.senseTerrainTile(loc2) == TerrainTile.OFF_MAP) {
-				curPhase = ScoutPhase.SWEEPING_TB;
-				sweepTB();
-			}
+			heading = Direction.EAST;
+		}
+		if (rc.senseTerrainTile(myLoc.add(heading, 4)) == TerrainTile.OFF_MAP) {
+			curPhase = ScoutPhase.SWEEPING_SHORT;
+			sweepShort();
 		}
 	}
 	
-	protected static void sweepTB() throws GameActionException {
-		if (myHQ.y < enemyHQ.y) {
+	protected static void sweepShort() throws GameActionException {
+		if (myHQ.x < enemyHQ.x && myHQ.y < enemyHQ.y) {
 			heading = Direction.SOUTH;
+		} else if (myHQ.x < enemyHQ.x && myHQ.y > enemyHQ.y) {
+			heading = Direction.EAST;
+		} else if (myHQ.x > enemyHQ.x && myHQ.y < enemyHQ.y) {
+			heading = Direction.WEST;
 		} else {
 			heading = Direction.NORTH;
 		}
 		// If we moved 9, switch to sweeping diagonally
 		if (counter == 9) {
 			counter = 0;
-			curPhase = ScoutPhase.SWEEPING_TB_TO_LR;
-			sweepTBToLR();
+			curPhase = ScoutPhase.SWEEPING_LONG_TO;
+			sweepLongTo();
 		}
 		else {
 			counter++;
 		}
-	}
-	
-	protected static void sweepTBToLR() throws GameActionException {
-		if (myHQ.x < enemyHQ.x && myHQ.y < enemyHQ.y) {
-			heading = Direction.NORTH_EAST;
-			MapLocation loc1 = myLoc.add(Direction.NORTH, 4);
-			MapLocation loc2 = myLoc.add(Direction.EAST, 4);
-			if (rc.senseTerrainTile(loc1) == TerrainTile.OFF_MAP || rc.senseTerrainTile(loc2) == TerrainTile.OFF_MAP) {
-				curPhase = ScoutPhase.SWEEPING_LR;
-				sweepLR();
-			}
-		} else if (myHQ.x < enemyHQ.x && myHQ.y > enemyHQ.y) {
-			heading = Direction.SOUTH_EAST;
-			MapLocation loc1 = myLoc.add(Direction.SOUTH, 4);
-			MapLocation loc2 = myLoc.add(Direction.EAST, 4);
-			if (rc.senseTerrainTile(loc1) == TerrainTile.OFF_MAP || rc.senseTerrainTile(loc2) == TerrainTile.OFF_MAP) {
-				curPhase = ScoutPhase.SWEEPING_LR;
-				sweepLR();
-			}
-		} else if (myHQ.x > enemyHQ.x && myHQ.y < enemyHQ.y) {
-			heading = Direction.NORTH_WEST;
-			MapLocation loc1 = myLoc.add(Direction.NORTH, 4);
-			MapLocation loc2 = myLoc.add(Direction.WEST, 4);
-			if (rc.senseTerrainTile(loc1) == TerrainTile.OFF_MAP || rc.senseTerrainTile(loc2) == TerrainTile.OFF_MAP) {
-				curPhase = ScoutPhase.SWEEPING_LR;
-				sweepLR();
-			}
-		} else {
-			heading = Direction.SOUTH_WEST;
-			MapLocation loc1 = myLoc.add(Direction.SOUTH, 4);
-			MapLocation loc2 = myLoc.add(Direction.WEST, 4);
-			if (rc.senseTerrainTile(loc1) == TerrainTile.OFF_MAP || rc.senseTerrainTile(loc2) == TerrainTile.OFF_MAP) {
-				curPhase = ScoutPhase.SWEEPING_LR;
-				sweepLR();
-			}
-		}	
 	}
 }

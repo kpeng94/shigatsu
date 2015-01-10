@@ -10,6 +10,7 @@ matchmaker/replays/
 matchmaker/output
 matchmaker/temp.conf
 matchmaker/matches
+rankings/rankings.txt
 Uninstaller/
 doc/
 art/

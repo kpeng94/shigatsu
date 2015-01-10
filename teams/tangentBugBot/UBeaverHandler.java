@@ -30,7 +30,7 @@ public class UBeaverHandler extends UnitHandler {
 
 	protected static void execute() throws GameActionException {
 		executeUnit();
-		NavTangentBug.calculate(3000);
+		NavTangentBug.calculate(2500);
 		if (rc.isCoreReady()) {
 			Direction nextMove = NavTangentBug.getNextMove();
 			if (nextMove != Direction.NONE) {

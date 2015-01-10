@@ -17,6 +17,7 @@ public class HQRobot extends Robot {
     static int numMiners = 0;
     static int numMinerFactories = 0;
     static int numTanks = 0;
+    static int numSupplyDepots = 0;
 
 	public static void init(RobotController rc) throws GameActionException {
         rand = new Random(rc.getID());
@@ -109,7 +110,7 @@ public class HQRobot extends Robot {
 	
 	public static void broadcastLiveObjectsCount() throws GameActionException {
 		myRobots = rc.senseNearbyRobots(999999, myTeam);
-		numBeavers = numLaunchers = numMiners = numMinerFactories = numTanks = 0;
+		numBeavers = numLaunchers = numMiners = numMinerFactories = numTanks = numSupplyDepots = 0;
 		for (RobotInfo r : myRobots) {
 			RobotType type = r.type;
 			switch (type) {
@@ -128,6 +129,9 @@ public class HQRobot extends Robot {
 				case TANK:
 					numTanks++;
 					break;
+				case SUPPLYDEPOT:
+					numSupplyDepots++;
+					break;
 			}
 		}
 
@@ -136,6 +140,11 @@ public class HQRobot extends Robot {
 		rc.broadcast(MINERS_COUNT_CHANNEL, numMiners);
 		rc.broadcast(TANK_COUNT_CHANNEL, numTanks);
 		rc.broadcast(MINER_FACTORIES_COUNT_CHANNEL, numMinerFactories);
+		rc.broadcast(SUPPLYDEPOT_COUNT_CHANNEL, numSupplyDepots);
+	}
+	
+	public static void giveSupply() {
+		
 	}
 	
 }

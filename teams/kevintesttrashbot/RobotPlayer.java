@@ -4,6 +4,12 @@ import battlecode.common.*;
 
 public class RobotPlayer {
 
+	/**
+	 * Sends out a few scout beavers, then sends them to build a set of racks
+	 *   and then two tank factories, swarms some tanks, then rushes them.
+	 * @param rc
+	 * @throws Exception
+	 */
 	public static void run(RobotController rc) throws Exception {
 		switch(rc.getType()) {
 			case HQ:

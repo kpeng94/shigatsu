@@ -45,25 +45,22 @@ public class MinerRobot extends Robot {
 //						+ (rc.senseOre(myLocation) >= ORE_THRESHOLD_MINER));
 //				rc.setIndicatorString(2, "thresh: " + ORE_THRESHOLD_MINER + " "
 //						+ rc.canMine());
-				if (rc.senseOre(myLocation) >= ORE_THRESHOLD_MINER
+				MapLocation ml = findClosestMinableOre(rc, ORE_THRESHOLD_MINER, 6);
+				RobotInfo[] nearbyRobots = rc.senseNearbyRobots(myLocation, 2, myTeam);
+				if (nearbyRobots.length >= 2) {
+					tryMove(myLocation.directionTo(ml));
+				} else if (rc.senseOre(myLocation) >= ORE_THRESHOLD_MINER
 						&& rc.canMine()) {
 					rc.mine();
 				} else {
-					MapLocation ml = findClosestMinableOre(rc, ORE_THRESHOLD_MINER, 6);
 					if (ml != null) {
-						RobotInfo[] nearbyRobots = rc.senseNearbyRobots(myLocation, 2, myTeam);
 						rc.setIndicatorString(0, "" + nearbyRobots.length);
-						if (nearbyRobots.length >= 2) {
-//							Direction dsum = 
-//							for (RobotInfo nearbyRobot : nearbyRobots) {
-//								nearbyRobot.location
-//							}
-							tryMove(myLocation.directionTo(ml).rotateRight().rotateRight());
-						} else {
-							tryMove(myLocation.directionTo(ml));							
-						}
+						tryMove(myLocation.directionTo(ml).rotateRight().rotateRight());
+					} else {
+						tryMove(myLocation.directionTo(ml));							
 					}
 				}
+			}
 //					double max = 0;
 //					Direction maxDirection = directionFromHQ;
 //					for (Direction d : directions) {
@@ -79,7 +76,6 @@ public class MinerRobot extends Robot {
 					
 //			if(Clock.getRoundNum() == 1000){
 //			}
-			}
 			rc.yield();
 		}
 	}

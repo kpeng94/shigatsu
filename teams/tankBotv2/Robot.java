@@ -39,7 +39,7 @@ public class Robot {
 	static final int MINERFACTORY_THRESHOLD = 8;
 	static final int MINER_THRESHOLD = 20;
 	static final int ORE_THRESHOLD = 10;
-	static final int ORE_THRESHOLD_MINER = 8;
+	static final int ORE_THRESHOLD_MINER = 2;
 	static final int SUPPLYDEPOT_THRESHOLD = 8;
 	
 	// Consider making the spawn method return a direction that actually spawned in.

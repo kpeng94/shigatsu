@@ -16,6 +16,7 @@ public class Robot {
 	static MapLocation myLocation;
 	static Direction directionFromHQ;
 	static int distanceToEnemyHQ;
+	static int distanceFromHQ;
 	
 	// Beaver scout IDs
 	static final int SCOUT_BEAVER_0 = 100;
@@ -23,19 +24,23 @@ public class Robot {
 	static final int SCOUT_BEAVER_7 = 102;
 	
 	// Communication channels
-	static final int BEAVER_COUNT_CHANNEL = 67;
+	static final int BEAVER_COUNT_CHANNEL = 2138;
 	static final int TANK_COUNT_CHANNEL = 2139;
+	static final int SUPPLYDEPOT_COUNT_CHANNEL = 2140;
 	static final int MINERS_BEING_BUILT_CHANNEL = 4232;
 	static final int MINERS_COUNT_CHANNEL = 4233;
 	static final int LAUNCHER_COUNT_CHANNEL = 4234;
-	static final int MINER_FACTORIES_COUNT_CHANNEL = 3293;
-	static final int MINER_FACTORIES_BEING_BUILT_CHANNEL = 2382;
+	static final int MINER_FACTORIES_COUNT_CHANNEL = 4235;
+	static final int MINER_FACTORIES_BEING_BUILT_CHANNEL = 4236;
+	
 	static final int MINER_BASE_DELTA = 10000;
 	
 	// Thresholds
-	static final int MINER_FACTORY_THRESHOLD = 5;
+	static final int MINERFACTORY_THRESHOLD = 8;
+	static final int MINER_THRESHOLD = 20;
 	static final int ORE_THRESHOLD = 10;
 	static final int ORE_THRESHOLD_MINER = 8;
+	static final int SUPPLYDEPOT_THRESHOLD = 8;
 	
 	// Consider making the spawn method return a direction that actually spawned in.
 	public static void trySpawn(Direction d, RobotType type) throws GameActionException {

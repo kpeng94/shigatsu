@@ -38,8 +38,6 @@ public class TowerRobot extends Robot {
 		}
 	}
 	
-
-	
     // This method will attempt to build in the given direction (or as close to it as possible)
 	static void tryBuild(Direction d, RobotType type) throws GameActionException {
 		int offsetIndex = 0;

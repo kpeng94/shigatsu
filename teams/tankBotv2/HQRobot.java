@@ -18,6 +18,12 @@ public class HQRobot extends Robot {
     static int numMinerFactories = 0;
     static int numTanks = 0;
     static int numSupplyDepots = 0;
+    static int hqDistX;
+    static int hqDistY;
+    static int minTowerDistX;
+    static int minTowerDistY;
+    static int maxTowerDistX;
+    static int maxTowerDistY;
 
 	public static void init(RobotController rc) throws GameActionException {
         rand = new Random(rc.getID());
@@ -30,9 +36,65 @@ public class HQRobot extends Robot {
 		distanceToEnemyHQ = myTeamHQ.distanceSquaredTo(enemyTeamHQ);
 	}
 
+	/*
+	 * Must be called after 
+	 */
+	public static void calculateLooseBoundsOnMap() {
+		hqDistX = myTeamHQ.x > enemyTeamHQ.x ? (myTeamHQ.x - enemyTeamHQ.x) : (enemyTeamHQ.x - myTeamHQ.x);
+		hqDistY = myTeamHQ.y > enemyTeamHQ.y ? (myTeamHQ.y - enemyTeamHQ.y) : (enemyTeamHQ.y - myTeamHQ.y);
+		MapLocation[] towerLocations = rc.senseTowerLocations();
+		MapLocation[] enemyTowerLocations = rc.senseEnemyTowerLocations();
+		int minTowerX = Integer.MAX_VALUE;
+		int minTowerY = Integer.MAX_VALUE;
+		int maxTowerX = Integer.MIN_VALUE;
+		int maxTowerY = Integer.MIN_VALUE;
+		int minETowerX = Integer.MAX_VALUE;
+		int minETowerY = Integer.MAX_VALUE;
+		int maxETowerX = Integer.MIN_VALUE;
+		int maxETowerY = Integer.MIN_VALUE;
+		for (MapLocation towerLocation : towerLocations) {
+			if (towerLocation.x < minTowerX) {
+				minTowerX = towerLocation.x;				
+			}
+			if (towerLocation.x > maxTowerX) {
+				maxTowerX = towerLocation.x;
+			}
+			if (towerLocation.y < minTowerY) {
+				minTowerY = towerLocation.y;
+			}
+			if (towerLocation.y > maxTowerY) {
+				maxTowerY = towerLocation.y;
+			}
+		}
+		for (MapLocation towerLocation : enemyTowerLocations) {
+			if (towerLocation.x < minETowerX) {
+				minETowerX = towerLocation.x;				
+			}
+			if (towerLocation.x > maxETowerX) {
+				maxETowerX = towerLocation.x;
+			}
+			if (towerLocation.y < minETowerY) {
+				minETowerY = towerLocation.y;
+			}
+			if (towerLocation.y > maxETowerY) {
+				maxETowerY = towerLocation.y;
+			}
+		}
+//		The width of the map must be at least as big as the distance between the largest X and smallest X of opposing sides
+        int dx1 = maxTowerX - minETowerX;
+        int dx2 = maxETowerX - minETowerX;
+        maxTowerDistX = (dx1 - dx2 > 0) ? dx1 : dx2;
+        int dy1 = maxTowerY - minETowerY;
+        int dy2 = maxETowerY - minETowerY;
+        maxTowerDistY = (dy1 - dy2 > 0) ? dy1 : dy2;
+	}
+	
 	public static void run(RobotController controller) throws Exception {
 		rc = controller;
 		init(rc);
+//		rc.setIndicatorString(0, "" + rc.senseTerrainTile(new MapLocation(14095, 13465)));
+//		rc.setIndicatorString(1, "" + rc.senseTerrainTile(new MapLocation(14093, 13465)));
+				// 14093, 13465)));
 		while (true) {
 			try {
 				broadcastLiveObjectsCount();
@@ -48,6 +110,8 @@ public class HQRobot extends Robot {
 						Direction dirToSpawn = directions[(directionToInt(directionToEnemyHQ) + 4) % 8];
 						MapLocation spawnLoc = myTeamHQ.add(dirToSpawn);
 						trySpawn(dirToSpawn, RobotType.BEAVER);
+						// 14095, 13465
+						// 14093, 13465
 //						switch (numberOfScouts) {
 //							case 0:
 //								trySpawn(dirToSpawn, RobotType.BEAVER);

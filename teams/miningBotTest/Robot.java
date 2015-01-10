@@ -34,6 +34,7 @@ public class Robot {
 	
 	// Thresholds
 	static final int MINER_FACTORY_THRESHOLD = 5;
+	static final int MINER_THRESHOLD = 20;
 	static final int ORE_THRESHOLD = 10;
 	static final int ORE_THRESHOLD_MINER = 8;
 	

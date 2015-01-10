@@ -101,5 +101,13 @@ public class Robot {
 			default:
 				return -1;
 		}
-	}	
+	}
+	
+	static void claimMineMapLocation(int deltaX, int deltaY) throws GameActionException {
+		rc.broadcast(MINER_BASE_DELTA + GameConstants.MAP_MAX_WIDTH * ((120 + deltaX) % 120) + ((120 + deltaY) % 120), 1);
+	}
+	
+	static boolean isMineMapLocationClaimed(int deltaX, int deltaY) throws GameActionException {
+		return rc.readBroadcast(MINER_BASE_DELTA + GameConstants.MAP_MAX_WIDTH * ((120 + deltaX) % 120) + ((120 + deltaY) % 120)) == 1;
+	}
 }

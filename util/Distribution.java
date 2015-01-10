@@ -4,6 +4,10 @@ import battlecode.common.*;
 
 public class Distribution {
 	public static final int LAST_CHAN = 255;
+	public static final int META_CHAN = 1;
+	public static final int FIRST_QUEUE = 2;
+	
+	public static final int BFS_TASK_ID = 1;
 	
 	public static int taskBlockId = 0;
 	
@@ -12,35 +16,26 @@ public class Distribution {
 		if (taskBlockId == 0) {
 			taskBlockId = Comm.requestBlock(true);
 			Handler.rc.broadcast(Comm.TASK_CHAN, taskBlockId);
-			Comm.writeBlock(taskBlockId, 1, 2); // Free block points to 2
+			Comm.writeBlock(taskBlockId, META_CHAN, (FIRST_QUEUE << 8) + FIRST_QUEUE); // Free block points to 2
 		}
 	}
 	
 	// Runs through tasks round robin
+	// Never register more than 254 tasks
 	public static void spendBytecodesCalculating(int bytecodelimit) throws GameActionException {
-		int headTailSizeFree = Comm.readBlock(taskBlockId, 1);
-		int head = headTailSizeFree >> 24;
-		if (head != 0) { // Task available
+		int headTail = Comm.readBlock(taskBlockId, META_CHAN); // 8 bits head, 8 heads tail
+		int head = (headTail >> 8) & 0x000000ff;
+		int tail = headTail & 0x000000ff;
+		if (head != tail) { // Task available
 			int task = Comm.readBlock(taskBlockId, head);
-			int size = (headTailSizeFree >> 8) & 0x000000ff;
-			int tail = (headTailSizeFree >> 16) & 0x000000ff;
-			int free = headTailSizeFree & 0x000000ff;
-			int next = task >> 24;
-			
-			if (executeTask(task)) { // Task completed
-				if (size == 1) {
-					headTailSizeFree = head;
-				} else {
-					headTailSizeFree = (next << 24) + (tail << 16) + ((size - 1) << 8) + head;
-				}
-				Comm.writeBlock(taskBlockId, head, free);
-				Comm.writeBlock(taskBlockId, 1, headTailSizeFree);
+			if (executeTask(bytecodelimit, task)) { // Task completed
+				head = (head + 1 > LAST_CHAN) ? FIRST_QUEUE : head + 1;
+				Comm.writeBlock(taskBlockId, META_CHAN, (head << 8) + tail);
 			} else { // Task not completed
-				if (size > 1) {
-					headTailSizeFree = (next << 24) + (head << 16) + (size << 8) + free;
-					Comm.writeBlock(taskBlockId, tail, Comm.readBlock(taskBlockId, tail) & 0x00ffffff + (free << 24));
-					Comm.writeBlock(taskBlockId, 1, headTailSizeFree);
-				}
+				Comm.writeBlock(taskBlockId, tail, task);
+				head = (head + 1 > LAST_CHAN) ? FIRST_QUEUE : head + 1;
+				tail = (tail + 1 > LAST_CHAN) ? FIRST_QUEUE : tail + 1;
+				Comm.writeBlock(taskBlockId, META_CHAN, (head << 8) + tail);
 			}
 			
 		} else {
@@ -48,34 +43,23 @@ public class Distribution {
 		}
 	}
 	
-	public static boolean executeTask(int task) throws GameActionException {
+	public static boolean executeTask(int bytecodelimit, int task) throws GameActionException {
+		if (task >> 24 == BFS_TASK_ID) { // BFS task
+			return NavBFS.calculate(bytecodelimit, task & 0x000000ff);
+		}
 		return false;
 	}
 	
 	// Adds a tag encoded in at most 24 bits
-	public static boolean addTask(int task) throws GameActionException {
-		int headTailSizeFree = Comm.readBlock(taskBlockId, 1);
-		int free = headTailSizeFree & 0x000000ff;
-		if (free > LAST_CHAN) return false; // No more free channels
+	public static boolean addTask(int task, int taskId) throws GameActionException {
+		int headTail = Comm.readBlock(taskBlockId, META_CHAN);
+		int head = (headTail >> 8) & 0x000000ff;
+		int tail = headTail & 0x000000ff;
+		int next = (tail + 1 > LAST_CHAN) ? FIRST_QUEUE : tail + 1;
+		if (next == head) return false; // No more free channels
 		
-		int next = Comm.readBlock(taskBlockId, free);
-		if (next == 0) {
-			next = free + 1;
-		}
-		
-		int size = (headTailSizeFree >> 8) & 0x000000ff;
-		int tail = (headTailSizeFree >> 16) & 0x000000ff;
-		int head = headTailSizeFree >> 24;
-		if (size == 0) {
-			head = free;
-		} else {
-			Comm.writeBlock(taskBlockId, tail, Comm.readBlock(taskBlockId, tail) & 0x00ffffff + (free << 24));
-		}
-		tail = free;
-		size++;
-		
-		Comm.writeBlock(taskBlockId, free, task);
-		Comm.writeBlock(taskBlockId, 1, (head << 24) + (tail << 16) + (size << 8) + next);
+		Comm.writeBlock(taskBlockId, next, task + (taskId << 24));
+		Comm.writeBlock(taskBlockId, META_CHAN, (head << 8) + next);
 		return true;
 	}
 	

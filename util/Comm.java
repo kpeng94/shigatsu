@@ -88,6 +88,11 @@ public class Comm {
 		Handler.rc.broadcast(blockId * BLOCK_SIZE, (meta & 0xffff0000) + Clock.getRoundNum());
 	}
 	
+	// Returns the round the block was last updated/created
+	public static int getBlockLife(int blockId) throws GameActionException {
+		return Handler.rc.readBroadcast(blockId * BLOCK_SIZE) & 0x0000ffff;
+	}
+	
 	// Garbage collector
 		public static void garbageCollect(int bytecodelimit) throws GameActionException {
 			int lastGarbageCollected = Handler.rc.readBroadcast(LAST_GARBAGE_TURN_CHAN);

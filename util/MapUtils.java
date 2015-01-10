@@ -1,4 +1,4 @@
-package tangentBugBot;
+package navBot;
 
 import battlecode.common.*;
 

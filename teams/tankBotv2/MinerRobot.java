@@ -47,17 +47,18 @@ public class MinerRobot extends Robot {
 //						+ rc.canMine());
 				MapLocation ml = findClosestMinableOre(rc, ORE_THRESHOLD_MINER, 6);
 				RobotInfo[] nearbyRobots = rc.senseNearbyRobots(myLocation, 2, myTeam);
-				if (nearbyRobots.length >= 2) {
-					tryMove(myLocation.directionTo(ml));
+				if (nearbyRobots.length > 2) {
+					if (ml != null) {
+						tryMove(myLocation.directionTo(ml));
+					}
 				} else if (rc.senseOre(myLocation) >= ORE_THRESHOLD_MINER
 						&& rc.canMine()) {
 					rc.mine();
 				} else {
 					if (ml != null) {
 						rc.setIndicatorString(0, "" + nearbyRobots.length);
-						tryMove(myLocation.directionTo(ml).rotateRight().rotateRight());
-					} else {
-						tryMove(myLocation.directionTo(ml));							
+						rc.setIndicatorString(1, "" + myLocation.directionTo(ml));
+						tryMove(myLocation.directionTo(ml));
 					}
 				}
 			}
@@ -84,6 +85,7 @@ public class MinerRobot extends Robot {
 	 * Calculates the closest square with at least the threshold amount of 
 	 * ore. The distance is calculated in terms of Manhattan distance and NOT
 	 * Euclidean distance. This does NOT factor in the square the robot is currently on.
+	 * Ignores squares with other robots on them already
 	 * 
 	 * @param rc - RobotController for the robot
 	 * @param threshold - the minimum amount of ore for the function to return
@@ -102,13 +104,13 @@ public class MinerRobot extends Robot {
 			for (int i = 0; i < step; i++) {
 				currentLocation = currentLocation
 						.add(directions[currentDirection]);
-				if (rc.senseOre(currentLocation) > threshold)
+				if (rc.senseOre(currentLocation) > threshold && rc.canMove(directions[currentDirection]))
 					return currentLocation;
 			}
 			currentDirection = (currentDirection + 2) % 8;
 			for (int i = 0; i < step; i++) {
 				currentLocation = currentLocation.add(directions[currentDirection]);
-				if (rc.senseOre(currentLocation) > threshold)
+				if (rc.senseOre(currentLocation) > threshold && rc.canMove(directions[currentDirection]))
 					return currentLocation;
 			}
 			currentDirection = (currentDirection + 2) % 8;

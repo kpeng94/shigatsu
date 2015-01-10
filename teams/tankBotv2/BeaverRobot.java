@@ -12,10 +12,12 @@ public class BeaverRobot extends Robot {
 	static boolean rallied = false;
 	static int job = 0;
 	static int directionToEnemyHQInt;
+	static int numSpacesCanMove = 0;
 
 	private static int numBarracksBuilt = 0;
 	private static int numberOfLiveMiners = 0;
 	private static int numberOfLiveMinerFactories = 0;
+	private static int numberOfLiveSupplyDepots = 0;
 	
 	public static void init(RobotController rc) throws GameActionException {
         rand = new Random(rc.getID());
@@ -45,19 +47,35 @@ public class BeaverRobot extends Robot {
 			readBroadcasts();
 			myLocation = rc.getLocation();
 			directionFromHQ = myTeamHQ.directionTo(myLocation);
+			distanceFromHQ = myTeamHQ.distanceSquaredTo(myLocation);
+			numSpacesCanMove = 0;
+			for (Direction d: directions) {
+				if (rc.canMove(d)) {
+					numSpacesCanMove++;
+				}
+			}
 			if (rc.isWeaponReady() && decideAttack()) {
 				attack();
 			} else if (rc.isCoreReady()) {
 				double oreAmount = rc.getTeamOre();
-				if (numberOfLiveMinerFactories < MINER_FACTORY_THRESHOLD) {
-					if (oreAmount >= RobotType.MINERFACTORY.oreCost) {
+				// Prioritize miner factories
+				if (numberOfLiveMinerFactories < MINERFACTORY_THRESHOLD) {
+					if (distanceFromHQ <= 3 || numSpacesCanMove <= 4) {
+						tryMove(directionFromHQ);
+					} else if (oreAmount >= RobotType.MINERFACTORY.oreCost) {
 						tryBuild(directionFromHQ, RobotType.MINERFACTORY);
 					} else if (oreAmount <= RobotType.MINERFACTORY.oreCost - GameConstants.HQ_ORE_INCOME * RobotType.BEAVER.movementDelay) {
 						if (rc.senseOre(myLocation) >= ORE_THRESHOLD && rc.canMine()) {
 							rc.mine();
 						} else {
-							tryMove(directionFromHQ);
+							tryMove(directions[rand.nextInt(8)]);
 						}
+					}
+				} else if (numberOfLiveSupplyDepots < SUPPLYDEPOT_THRESHOLD) {
+					if (distanceFromHQ <= 3 || numSpacesCanMove <= 4) {
+						tryMove(directionFromHQ);
+					} else if (oreAmount >= RobotType.SUPPLYDEPOT.oreCost) {
+						tryBuild(directionFromHQ, RobotType.SUPPLYDEPOT);
 					}
 				}
 			}
@@ -178,6 +196,7 @@ public class BeaverRobot extends Robot {
 		numberOfLiveBeavers = rc.readBroadcast(BEAVER_COUNT_CHANNEL);
 //		numberOfLiveMiners = rc.readBroadcast(MINERS_COUNT_CHANNEL);
 		numberOfLiveMinerFactories = rc.readBroadcast(MINER_FACTORIES_COUNT_CHANNEL);
+		numberOfLiveSupplyDepots = rc.readBroadcast(SUPPLYDEPOT_COUNT_CHANNEL);
 	}
 	
 	static void tryMove(Direction d) throws GameActionException {

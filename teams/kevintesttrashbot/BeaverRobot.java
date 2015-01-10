@@ -58,21 +58,30 @@ public class BeaverRobot extends Robot {
 				}
 			} else if (job == SCOUT_BEAVER_0) {
 				if (rc.isCoreReady()) {
-					if (myLocation.distanceSquaredTo(myTeamHQ) + 
-						myLocation.distanceSquaredTo(enemyTeamHQ) > distanceToEnemyHQ + 200 || 
-						myLocation.distanceSquaredTo(myTeamHQ) * 3 > myLocation.distanceSquaredTo(enemyTeamHQ)) {
-						if (rc.getTeamOre() >= RobotType.BARRACKS.oreCost && numBarracksBuilt < 1) {
+					if (numBarracksBuilt < 1) {
+						if (rc.getTeamOre() >= RobotType.BARRACKS.oreCost) {
 							tryBuild(directions[rand.nextInt(8)],RobotType.BARRACKS);			
 							numBarracksBuilt++;
 						}
 					} else {
-						tryMove(directions[(directionToEnemyHQInt + 8) % 8]);					
+						if (myLocation.distanceSquaredTo(myTeamHQ) + 
+								myLocation.distanceSquaredTo(enemyTeamHQ) > distanceToEnemyHQ + 200 || 
+								myLocation.distanceSquaredTo(myTeamHQ) * 3 > myLocation.distanceSquaredTo(enemyTeamHQ)) {
+								if (rc.senseOre(myLocation) >= 20 && rc.canMine()) {
+									rc.mine();
+								} else {
+									tryMove(directions[rand.nextInt(8)]);
+								}
+							} else {
+								tryMove(directions[(directionToEnemyHQInt + 8) % 8]);
+							}
 					}
 				}
 			} else if (job == SCOUT_BEAVER_1) {
 				if (rc.isCoreReady()) {
 					if (myLocation.distanceSquaredTo(myTeamHQ) + 
-							myLocation.distanceSquaredTo(enemyTeamHQ) > distanceToEnemyHQ + 200) {
+							myLocation.distanceSquaredTo(enemyTeamHQ) > distanceToEnemyHQ + 200 ||
+							myLocation.distanceSquaredTo(myTeamHQ) * 2 > myLocation.distanceSquaredTo(enemyTeamHQ)) {
 							rc.setIndicatorString(1, "About to try to build");
 							if (rc.getTeamOre() >= RobotType.TANKFACTORY.oreCost) {
 								tryBuild(directions[rand.nextInt(8)],RobotType.TANKFACTORY);
@@ -91,7 +100,8 @@ public class BeaverRobot extends Robot {
 			} else if (job == SCOUT_BEAVER_7) {
 				if (rc.isCoreReady()) {
 					if (myLocation.distanceSquaredTo(myTeamHQ) + 
-							myLocation.distanceSquaredTo(enemyTeamHQ) > distanceToEnemyHQ + 200) {
+							myLocation.distanceSquaredTo(enemyTeamHQ) > distanceToEnemyHQ + 200 ||
+							myLocation.distanceSquaredTo(myTeamHQ) * 2 > myLocation.distanceSquaredTo(enemyTeamHQ)) {
 							rc.setIndicatorString(2, "About to try to build");
 							if (rc.getTeamOre() >= RobotType.TANKFACTORY.oreCost) {
 								tryBuild(directions[rand.nextInt(8)],RobotType.TANKFACTORY);

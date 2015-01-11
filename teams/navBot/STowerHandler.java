@@ -26,9 +26,6 @@ public class STowerHandler extends StructureHandler {
 
 	protected static void init(RobotController rcon) throws GameActionException {
 		initStructure(rcon);
-		if (!Comm.initialized) {
-			Comm.initComm();
-		}
 	}
 
 	protected static void execute() throws GameActionException {
@@ -37,8 +34,6 @@ public class STowerHandler extends StructureHandler {
 			inRangeEnemies = rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam);
 			tryAttack();
 		}
-		
-//		Distribution.spendBytecodesCalculating(1000);
 	}
 	
 	protected static void tryAttack() throws GameActionException {

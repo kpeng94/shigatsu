@@ -33,10 +33,8 @@ public class SHQHandler extends StructureHandler {
 
 	protected static void init(RobotController rcon) throws GameActionException {
 		initStructure(rcon);
-		if (!Comm.initialized) {
-			Comm.initComm();
-		}
-		Distribution.initTasks();
+//		Comm.initComm();
+		NavBFS.newBFSTask(myHQ);
 	}
 
 	protected static void execute() throws GameActionException {
@@ -52,7 +50,7 @@ public class SHQHandler extends StructureHandler {
 		RobotInfo[] nearbyUnits = rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED, myTeam);
 		for (int i = nearbyUnits.length; --i >= 0;) {
 			if (nearbyUnits[i].supplyLevel == 0) {
-				rc.transferSupplies(2000, nearbyUnits[i].location);
+				rc.transferSupplies(4000, nearbyUnits[i].location);
 			}
 		}
 		

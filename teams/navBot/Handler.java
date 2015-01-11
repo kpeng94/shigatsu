@@ -27,6 +27,10 @@ public class Handler {
 		myHQ = rc.senseHQLocation();
 		enemyHQ = rc.senseEnemyHQLocation();
 		
+		if (typ == RobotType.HQ) {
+			Comm.initComm();
+		}
+		Distribution.initTasks();
 	}
 
 	protected static void executeGeneral() {

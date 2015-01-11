@@ -36,11 +36,8 @@ public class UBeaverHandler extends UnitHandler {
 			if (nextMove != Direction.NONE) {
 				NavSimple.walkTowardsDirected(nextMove);
 			}
-//			Direction tangentDir = NavDumbTangent.dumbTangentDir(false);
-//			if (tangentDir != Direction.NONE) {
-//				NavDumbTangent.executeDumbTangent(tangentDir);
-//			}
 		}
+		Distribution.spendBytecodesCalculating(Handler.rc.getSupplyLevel() > 50 ? 7500 : 2500);
 	}
 	
 }

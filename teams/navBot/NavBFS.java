@@ -89,6 +89,20 @@ public class NavBFS {
 		return head == tail;
 	}
 	
+	public static MapLocation[] backtrace(int baseBlock, MapLocation dest) throws GameActionException {
+		int[] localCache = new int[MAP_SIZE];
+		MapLocation pos = dest;
+		int distDir = readMapData(baseBlock, MapUtils.encode(pos), localCache);
+		MapLocation[] path = new MapLocation[distDir >>> 3];
+		path[path.length - 1] = pos;
+		for (int i = path.length - 1; --i >= 0;) {
+			pos = pos.add(MapUtils.dirs[distDir & 0x00000007]);
+			distDir = readMapData(baseBlock, MapUtils.encode(pos), localCache);
+			path[i] = pos;
+		}
+		return path;
+	}
+	
 	// Reads a distance/dir a maplocation is to the source
 	public static int readMapData(int baseBlock, int pos, int[] localCache) throws GameActionException {
 		pos = MapUtils.unsignEncoding(pos);

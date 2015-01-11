@@ -24,6 +24,10 @@ public class Comm {
 	public static final int LAST_GARBAGE_TURN_CHAN = 3;
 	public static final int TASK_CHAN = 4;
 	
+	// Maps
+	public static final int HQ_MAP_CHAN = 20;
+	public static final int TEMP = 21;
+	
 	// Structures
 	public static final int HQ_BLOCK = 100;
 	public static final int TOWER_BLOCK = 101;

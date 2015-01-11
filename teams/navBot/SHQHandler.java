@@ -33,8 +33,8 @@ public class SHQHandler extends StructureHandler {
 
 	protected static void init(RobotController rcon) throws GameActionException {
 		initStructure(rcon);
-//		Comm.initComm();
-		NavBFS.newBFSTask(myHQ);
+		rc.broadcast(Comm.HQ_MAP_CHAN, NavBFS.newBFSTask(myHQ));
+		rc.broadcast(Comm.TEMP, NavBFS.newBFSTask(rc.senseEnemyTowerLocations()[2]));
 	}
 
 	protected static void execute() throws GameActionException {

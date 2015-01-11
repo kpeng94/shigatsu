@@ -14,7 +14,7 @@ public class NavBFS {
 	private static int[] cache = new int[GameConstants.BROADCAST_MAX_CHANNELS];
 	
 	// Maplocation task encoded in 16 bits followed by BFS id
-	public static void newBFSTask(MapLocation center) throws GameActionException {
+	public static int newBFSTask(MapLocation center) throws GameActionException {
 		int baseBlock = Comm.requestBlock(true);
 		Distribution.addTask(baseBlock, Distribution.BFS_TASK_ID);
 		for (int i = 8; --i >= 0;) { // Get the 32 base channels
@@ -22,6 +22,8 @@ public class NavBFS {
 		}
 		Comm.writeBlock(baseBlock, FIRST_CHAN, MapUtils.encode(center));
 		Comm.writeBlock(baseBlock, META_CHAN, (FIRST_CHAN << 16) + FIRST_CHAN + 1);
+		
+		return baseBlock;
 	}
 	
 	// Calculates BFS for a single map location
@@ -99,6 +101,16 @@ public class NavBFS {
 		}
 		
 		return pos % 2 == 0 ? (localCache[posIndex] >>> 16) & 0x0000ffff : localCache[posIndex] & 0x0000ffff;
+	}
+	
+	public static int readMapDataUncached(int baseBlock, int pos) throws GameActionException {
+		pos = MapUtils.unsignEncoding(pos);
+		int posIndex = pos / 2;
+		int metaBlockNum = posIndex < Comm.LAST_BLOCK ? 1 : 2 + (posIndex / Comm.LAST_BLOCK - 1) / 4;
+		int metaBlockOffset = posIndex < Comm.LAST_BLOCK ? 0 : (posIndex / Comm.LAST_BLOCK - 1) % 4;
+		int mapBlockNum = (readCached(baseBlock * Comm.BLOCK_SIZE + metaBlockNum) >>> (8 * metaBlockOffset)) & 0x000000ff;
+		int data = Comm.readBlock(mapBlockNum, 1 + (posIndex % Comm.LAST_BLOCK));
+		return pos % 2 == 0 ? (data >>> 16) & 0x0000ffff : data & 0x0000ffff;
 	}
 	
 	private static void writeToMapCache(int pos, int data, int[] localCache, boolean[] dirty, int[] dirtyQueue) {

@@ -1,0 +1,123 @@
+2500,Admiral Lima,onetower|0,noeffort|0
+2576,WarMachine,lanes|0,noeffort|0
+2460,the other team,lanes|0,noeffort|0
+467,PaddleGoats,rift|1,shield|1
+1979,Masteroffubot,lanes|1,rift|1
+1631,YoungJ,lanes|1,noeffort|1
+2198,ayyyyyyyylmao,lanes|0,onetower|0
+1948,schnitzel,trenches|0,noeffort|0
+1775,Ragil Club,lanes|0,onetower|0
+1708,RUSH B NO STOP,onetower|0,noeffort|0
+1604,ayyyyyyyylmao,noeffort|0,onetower|0
+2305,The Simple Soldier,noeffort|0,rift|0
+2142,{LoveBracketsHateSemicolons();,lanes|0,trenches|1,onetower|0
+2046,the other team,lanes|0,onetower|0
+1549,ayyyyyyyylmao,noeffort|0,onetower|0
+477,MiracleRogue,rift|0,shield|0
+1482,Admiral Lima,onetower|1,lanes|1
+1282,FireAnts,rift|1,shield|1
+1015,Fragments of Hologram Rose,onetower|1,shield|0,trenches|1
+911,Fox,lanes|1,noeffort|1
+721,Puzzles,rift|1,trenches|1
+666,darkpurple,trenches|1,noeffort|1
+662,~=NaBIGaToPbl=~,trenches|1,noeffort|1
+1021,Fragments of Hologram Rose,trenches|1,shield|1
+979,Fragments of Hologram Rose,lanes|1,noeffort|1
+912,Fox,lanes|1,onetower|1
+768,kvetch me if you can,lanes|1,noeffort|0,rift|1
+1367,ayyyyyyyylmao,noeffort|0,onetower|0
+1145,schnitzel,onetower|0,noeffort|0
+954,ayyyyyyyylmao,onetower|0,noeffort|0
+939,MiracleRogue,lanes|0,noeffort|0
+917,ayyyyyyyylmao,lanes|0,onetower|0
+660,annbelov_team,trenches|1,noeffort|0,onetower|0
+1424,ayyyyyyyylmao,noeffort|0,onetower|0
+1253,ayyyyyyyylmao,onetower|0,shield|0
+942,Team O,lanes|0,onetower|0
+665,Cleanser,trenches|0,noeffort|0
+663,fruit,trenches|0,noeffort|0
+648,Kuriosly Invention,trenches|1,noeffort|1
+644,Surya,trenches|1,noeffort|1
+642,Pub Knights,trenches|1,noeffort|1
+638,Programmers From Malboge,trenches|1,noeffort|1
+636,NP-Compete 2: ELECTRIC BOOGALOO,trenches|1,noeffort|1
+634,Southern,trenches|1,noeffort|1
+589,Cleanser,lanes|1,noeffort|1
+583,rafbill,lanes|1,noeffort|1
+575,tau,lanes|1,noeffort|1
+573,ayyyyyyyylmao,lanes|1,noeffort|1
+659,rafbill,trenches|1,noeffort|1
+651,tau,trenches|1,noeffort|1
+649,ayyyyyyyylmao,trenches|1,noeffort|1
+590,darkpurple,lanes|1,noeffort|1
+586,~=NaBIGaToPbl=~,lanes|1,noeffort|1
+650,Team2,trenches|1,noeffort|0,onetower|0
+640,Baker's United,trenches|1,noeffort|0,onetower|0
+630,the other team,trenches|0,noeffort|0
+603,The Simple Soldier,noeffort|0,onetower|0
+587,fruit,lanes|0,noeffort|0
+585,Be one with yuri,lanes|0,noeffort|0
+581,iamnoone,lanes|0,noeffort|0
+577,alecr95,lanes|0,noeffort|0
+653,alecr95,trenches|1,noeffort|0,onetower|0
+643,Puzzles,trenches|1,noeffort|0,onetower|0
+639,MiracleRogue,trenches|1,noeffort|0,onetower|0
+637,Designed by Committee,trenches|0,noeffort|0
+584,annbelov_team,lanes|0,noeffort|0
+574,Team2,lanes|0,noeffort|0
+563,Programmers From Malboge,lanes|1,noeffort|1
+561,NP-Compete 2: ELECTRIC BOOGALOO,lanes|1,noeffort|1
+559,Southern,lanes|1,noeffort|1
+495,rafbill,rift|1,shield|1
+493,iamnoone,rift|0,shield|1,trenches|1
+489,alecr95,rift|0,shield|1,trenches|1
+487,tau,rift|1,shield|1
+485,ayyyyyyyylmao,rift|1,shield|1
+481,thACk,rift|0,shield|1,trenches|1
+572,Kuriosly Invention,lanes|1,noeffort|1
+568,Surya,lanes|1,noeffort|1
+519,darkpurple,lanes|1,rift|1
+500,ForgoneConclusions,rift|1,shield|1
+498,~=NaBIGaToPbl=~,rift|1,shield|1
+496,annbelov_team,rift|1,shield|0,trenches|1
+488,corvus,rift|1,shield|0,trenches|1
+484,Kuriosly Invention,rift|1,shield|1
+476,Programmers From Malboge,rift|1,shield|1
+474,NP-Compete 2: ELECTRIC BOOGALOO,rift|1,shield|1
+567,Puzzles,lanes|0,noeffort|0
+565,Baker's United,lanes|0,noeffort|0
+555,the other team,lanes|0,noeffort|0
+544,Surya,rift|0,shield|0
+501,Cleanser,rift|0,shield|0
+475,Designed by Committee,rift|0,shield|0
+562,Designed by Committee,lanes|0,noeffort|0
+560,See Sharper,lanes|0,noeffort|0
+486,Team2,rift|0,shield|0
+482,Cherry Rocket,rift|0,shield|0
+478,Baker's United,rift|0,shield|0
+465,ForgoneConclusions,rift|1,shield|1
+463,~=NaBIGaToPbl=~,rift|1,shield|1
+453,corvus,rift|1,shield|0,trenches|1
+449,Kuriosly Invention,rift|1,shield|1
+445,Puzzles,rift|1,shield|1
+441,Programmers From Malboge,rift|1,shield|1
+437,Southern,rift|1,shield|0,trenches|1
+472,Southern,rift|1,shield|1
+464,fruit,rift|1,shield|1
+462,Be one with yuri,rift|1,shield|1
+460,rafbill,rift|1,shield|1
+452,tau,rift|1,shield|0,trenches|1
+450,ayyyyyyyylmao,rift|1,shield|1
+446,thACk,rift|0,shield|1,trenches|1
+432,PaddleGoats,rift|1,shield|1
+461,annbelov_team,rift|0,shield|0
+451,Team2,rift|0,shield|0
+447,Cherry Rocket,rift|0,shield|0
+443,Baker's United,rift|0,shield|0
+433,the other team,rift|0,shield|0
+468,the other team,rift|0,shield|0
+466,Cleanser,rift|0,shield|0
+454,alecr95,rift|0,shield|0
+444,Skillorcz,rift|0,shield|0
+442,MiracleRogue,rift|0,shield|0
+440,Designed by Committee,rift|0,shield|0

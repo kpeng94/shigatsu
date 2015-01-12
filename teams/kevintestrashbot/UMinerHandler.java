@@ -64,6 +64,7 @@ public class UMinerHandler extends UnitHandler {
 				}
 			}
 		}
+		
 		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 	}
 	
@@ -91,15 +92,16 @@ public class UMinerHandler extends UnitHandler {
 			for (int i = 0; i < step; i++) {
 				currentLocation = currentLocation
 						.add(directions[currentDirection]);
-				RobotInfo[] robots = rc.senseNearbyRobots(currentLocation, 0, myTeam);
-				if (rc.senseOre(currentLocation) > threshold && rc.canMove(directions[currentDirection]) && robots.length <= 0)
+				if (rc.senseOre(currentLocation) > threshold && rc.canMove(directions[currentDirection]) &&
+						rc.senseNearbyRobots(currentLocation, 0, myTeam).length == 0)
 					return currentLocation;
 			}
 			currentDirection = (currentDirection + 2) % 8;
 			for (int i = 0; i < step; i++) {
 				currentLocation = currentLocation.add(directions[currentDirection]);
 				RobotInfo[] robots = rc.senseNearbyRobots(currentLocation, 0, myTeam);
-				if (rc.senseOre(currentLocation) > threshold && rc.canMove(directions[currentDirection]) && robots.length <= 0)
+				if (rc.senseOre(currentLocation) > threshold && rc.canMove(directions[currentDirection]) &&
+						rc.senseNearbyRobots(currentLocation, 0, myTeam).length == 0)
 					return currentLocation;
 			}
 			currentDirection = (currentDirection + 2) % 8;

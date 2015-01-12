@@ -1,4 +1,4 @@
-package kevintestrashbot;
+package pusheenBot;
 
 import battlecode.common.*;
 
@@ -14,6 +14,7 @@ public class Supply {
 		RobotInfo[] nearbyRobots = Handler.rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED, Handler.myTeam);
 		for (int i = nearbyRobots.length; --i >= 0;) {
 			RobotInfo robot = nearbyRobots[i];
+			if (robot.type == RobotType.MISSILE) continue;
 			totalSupply += robot.supplyLevel;
 			numBots++;
 			if (robot.supplyLevel < minSupply) {

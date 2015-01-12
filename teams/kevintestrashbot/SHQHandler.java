@@ -1,5 +1,7 @@
 package kevintestrashbot;
 
+import navBot.Comm;
+import navBot.NavBFS;
 import battlecode.common.*;
 
 public class SHQHandler extends StructureHandler {
@@ -46,10 +48,7 @@ public class SHQHandler extends StructureHandler {
 
 	protected static void init(RobotController rcon) throws GameActionException {
 		initStructure(rcon);
-		if (!Comm.initialized) {
-			Comm.initComm();
-		}
-		Distribution.initTasks();
+        rc.broadcast(Comm.HQ_MAP_CHAN, NavBFS.newBFSTask(myHQ));
 	}
 
 	protected static void execute() throws GameActionException {

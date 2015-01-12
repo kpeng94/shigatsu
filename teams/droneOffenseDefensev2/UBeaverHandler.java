@@ -7,6 +7,9 @@ public class UBeaverHandler extends UnitHandler {
 	
 	private static int numFactories;
 	private static int numHelipads;
+	private static MapLocation[] sites;
+	private static int buildCount;
+	private static int siteIndex;
 
 	public static void loop(RobotController rcon) {
 		try {
@@ -29,6 +32,15 @@ public class UBeaverHandler extends UnitHandler {
 
 	protected static void init(RobotController rcon) {
 		initUnit(rcon);
+		MapLocation[] towers = rc.senseTowerLocations();
+		sites = new MapLocation[towers.length + 1];
+		buildCount = 0;
+		siteIndex = 0;
+		
+		sites[0] = myHQ;
+		for (int i = 0; i < towers.length; i++) {
+			sites[i+1] = towers[i];
+		}
 	}
 
 	protected static void execute() throws GameActionException {
@@ -101,29 +113,27 @@ public class UBeaverHandler extends UnitHandler {
 	}
 	
 	private static boolean inOrbitCenter() throws GameActionException {
-		if (myLoc.distanceSquaredTo(myHQ) <= 2) {
-			return true;
-		}
-		for (MapLocation tower: rc.senseTowerLocations()) {
-			if (myLoc.distanceSquaredTo(tower) <= 2) {
-				return true;
-			}
-		}
-		return false;
+		return myLoc.distanceSquaredTo(sites[siteIndex % sites.length]) <= 2;
 	}
 	
 	private static void walkToOrbitCenter() throws GameActionException {
-		MapLocation closest = myHQ;
-		int smallest = myLoc.distanceSquaredTo(myHQ);
-		
-		for (MapLocation tower: rc.senseTowerLocations()) {
-			int dist = myLoc.distanceSquaredTo(tower);
-			if (dist <= smallest) {
-				smallest = dist;
-				closest = tower;
+		rc.setIndicatorString(0, ""+sites[1].x);
+		Direction approx = Direction.NONE;
+		int closestDist = Integer.MAX_VALUE;
+		for (Direction dir : MapUtils.dirs) {
+			if (!rc.canMove(dir))
+				continue;
+			MapLocation proj = myLoc.add(dir);
+			if (rc.senseTerrainTile(proj) == TerrainTile.OFF_MAP) {
+				continue;
+			}
+			int dist = proj.distanceSquaredTo(sites[siteIndex % sites.length]);
+			if (dist < closestDist) {
+				approx = dir;
+				closestDist = dist;
 			}
 		}
-		NavSimple.walkTowards(myLoc.directionTo(closest));
+		NavSimple.walkTowards(approx);
 	}
 	
 	private static boolean canBuildWithGap() throws GameActionException {
@@ -133,7 +143,6 @@ public class UBeaverHandler extends UnitHandler {
 			for (Direction d2: MapUtils.dirs) {
 				RobotInfo info = rc.senseRobotAtLocation(site.add(d2));
 				if (info != null && Handler.isBuilding(info)) {
-					rc.setIndicatorString(0, d.toString());
 					canBuild = false;
 				}
 			}
@@ -158,6 +167,11 @@ public class UBeaverHandler extends UnitHandler {
 			
 			if (canBuild) {
 				Spawner.tryBuild(d, type);
+				buildCount++;
+				if (buildCount == 6) {
+					siteIndex++;
+					buildCount = 0;
+				}
 				return;
 			}
 		}

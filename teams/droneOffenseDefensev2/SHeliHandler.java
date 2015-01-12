@@ -29,18 +29,13 @@ public class SHeliHandler extends StructureHandler {
 
 	protected static void execute() throws GameActionException {
 		executeStructure();
-		if (rc.isCoreReady()) {
-			spawnDrone();
-		}
-	}
-
-	protected static void spawnDrone() throws GameActionException {
-		if (rc.getTeamOre() >= 125) {
+		if (rc.isCoreReady() && rc.getTeamOre() >= RobotType.DRONE.oreCost) {
 			for (Direction dir: MapUtils.dirs) {
-				if (rc.canSpawn(dir, RobotType.DRONE))
+				if (rc.canSpawn(dir, RobotType.DRONE)) {
 					Spawner.trySpawn(dir, RobotType.DRONE);
+					return;
+				}
 			}
 		}
 	}
-
 }

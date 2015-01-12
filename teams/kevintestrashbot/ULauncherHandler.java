@@ -76,7 +76,7 @@ public class ULauncherHandler extends UnitHandler {
 			state = nextLauncherState;
 			nextLauncherState = null;
 		}		
-		rc.yield();
+		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 	}
 
 	private static void rushCode() throws GameActionException {

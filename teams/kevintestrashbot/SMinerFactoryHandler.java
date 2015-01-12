@@ -37,7 +37,7 @@ public class SMinerFactoryHandler extends StructureHandler {
 				numberOfLiveMiners <= Constants.NUM_OF_MINERS) {
 			Spawner.trySpawn(myHQToEnemyHQ, RobotType.MINER, oreAmount);				
 		}
-		rc.yield();
+		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 	}
 
 	public static void readBroadcasts() throws GameActionException {

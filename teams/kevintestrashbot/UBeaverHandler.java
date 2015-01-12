@@ -95,8 +95,7 @@ public class UBeaverHandler extends UnitHandler {
 			nextBeaverState = null;
 		}
 		
-		rc.yield();
-//		
+		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 //		NavTangentBug.calculate(2500);
 //		if (rc.isCoreReady()) {
 //			Direction nextMove = NavTangentBug.getNextMove();

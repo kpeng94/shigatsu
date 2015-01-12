@@ -25,6 +25,7 @@ public class SHeliHandler extends StructureHandler {
 
 	protected static void init(RobotController rcon) throws GameActionException {
 		initStructure(rcon);
+		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 	}
 
 	protected static void execute() throws GameActionException {

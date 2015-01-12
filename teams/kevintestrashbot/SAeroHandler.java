@@ -40,7 +40,7 @@ public class SAeroHandler extends StructureHandler {
 		if (rc.isCoreReady() && rc.getTeamOre() >= RobotType.LAUNCHER.oreCost) {
 			Spawner.trySpawn(myHQToEnemyHQ, RobotType.LAUNCHER, oreAmount);
 		}
-		rc.yield();
+		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 	}
 	
 	public static void readBroadcasts() throws GameActionException {

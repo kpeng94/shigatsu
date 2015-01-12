@@ -72,7 +72,7 @@ public class SHQHandler extends StructureHandler {
 				rc.transferSupplies(2000, nearbyUnits[i].location);
 			}
 		}
-		
+		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 		Distribution.spendBytecodesCalculating(7500);
 	}
 	

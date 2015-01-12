@@ -37,7 +37,7 @@ public class STowerHandler extends StructureHandler {
 			inRangeEnemies = rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam);
 			tryAttack();
 		}
-		
+		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 //		Distribution.spendBytecodesCalculating(1000);
 	}
 	

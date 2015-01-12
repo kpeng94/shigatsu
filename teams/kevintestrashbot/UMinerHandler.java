@@ -64,7 +64,7 @@ public class UMinerHandler extends UnitHandler {
 				}
 			}
 		}
-		rc.yield();
+		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 	}
 	
 	

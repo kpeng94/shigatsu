@@ -130,7 +130,7 @@ public class UBeaverHandler extends UnitHandler {
 		}
 		if (!targetDestSet) {
 			directionStep = (directionIndex % 3 == 0) ? 2 : (directionIndex / 3 + 1) * 2;
-			nextTargetLoc = nextTargetLoc.add(buildDirs[directionIndex + directionToInt(myHQToEnemyHQ) / 2 * 2], directionStep);
+			nextTargetLoc = nextTargetLoc.add(buildDirs[(directionIndex + directionToInt(myHQToEnemyHQ) / 2 * 2) % buildDirs.length], directionStep);
 			directionIndex++;
 			NavTangentBug.setDest(nextTargetLoc);
 			targetDestSet = true;

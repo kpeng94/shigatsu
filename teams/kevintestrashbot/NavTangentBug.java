@@ -66,7 +66,8 @@ public class NavTangentBug {
 					closed = true;
 					return;
 				} else { // Must start tracing
-					forwardDir = prevDir[convertedCur.x][convertedCur.y].opposite();
+					Direction testDir = prevDir[convertedCur.x][convertedCur.y];
+					if (testDir != null) forwardDir = testDir.opposite();
 					
 					Direction leftDir = forwardDir.rotateLeft(); // Check left side first
 					for (int i = 4; --i >= 0;) {

@@ -4,7 +4,13 @@ import battlecode.common.*;
 
 public class RobotPlayer {
 	public static void run(RobotController rc) {
+		if (rc.getType() == RobotType.MISSILE) {
+			UMissileHandler.loop(rc);
+		}
 		switch (rc.getType()) {
+//		case MISSILE:
+//			UMissileHandler.loop(rc);
+//			break;
 		case HQ:
 			SHQHandler.loop(rc);
 			break;
@@ -61,9 +67,6 @@ public class RobotPlayer {
 			break;
 		case LAUNCHER:
 			ULauncherHandler.loop(rc);
-			break;
-		case MISSILE:
-			UMissileHandler.loop(rc);
 			break;
 		case COMMANDER:
 			UCommanderHandler.loop(rc);

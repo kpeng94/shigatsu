@@ -33,7 +33,7 @@ public class UMissileHandler extends UnitHandler {
 
 	// Currently completely ineffective against kiting.
 	protected static void execute() throws GameActionException {
-		executeUnit();
+		myLoc = rc.getLocation();
 		enemies = rc.senseNearbyRobots(15, otherTeam);
 		if (enemies.length > 0 && destination == null) {
 			destination = enemies[0].location;

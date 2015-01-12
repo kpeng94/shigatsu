@@ -130,7 +130,6 @@ public class UBeaverHandler extends UnitHandler {
 		}
 		if (!targetDestSet) {
 			directionStep = (directionIndex % 3 == 0) ? 2 : (directionIndex / 3 + 1) * 2;
-			System.out.println(nextTargetLoc);
 			if (nextTargetLoc == null) {
 				getLastBuildingLoc();
 			}
@@ -188,13 +187,9 @@ public class UBeaverHandler extends UnitHandler {
 				atTargetDest = false;
 			}
 			if (!atTargetDest && targetDestSet) {
-//				System.out.println("Im in this block");
-//				System.out.println(myLoc);
-//				System.out.println("Next location:" + nextTargetLoc);
 				NavTangentBug.calculate(Clock.getBytecodesLeft() - 100);
 				if (rc.isCoreReady()) {
 					Direction nextMove = NavTangentBug.getNextMove();
-					System.out.println("Next move: " + nextMove);
 					if (nextMove != Direction.NONE) {
 						NavSimple.walkTowardsDirected(nextMove);
 					}

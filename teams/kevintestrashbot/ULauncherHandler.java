@@ -11,6 +11,8 @@ public class ULauncherHandler extends UnitHandler {
 	private static LauncherState state = LauncherState.RALLY;
 	private static LauncherState nextLauncherState;
 	private static int numberOfLaunchers = 0;
+	private static boolean rallied = false;
+	private static int numberOfLaunchersRallied = 0;
 
 //	private static int mySensorRadiusSquared = myType.sensorRadiusSquared;
 	
@@ -90,31 +92,42 @@ public class ULauncherHandler extends UnitHandler {
 	}
 
 	private static void rallyCode() throws GameActionException {
-		// TODO Auto-generated method stub
-		NavTangentBug.setDest(MapUtils.pointSection(myHQ, enemyHQ, 0.75));
+		MapLocation rallyPoint = MapUtils.pointSection(myHQ, enemyHQ, 0.75);
+		NavTangentBug.setDest(rallyPoint);
 		NavTangentBug.calculate(2500);			
 		if (rc.isCoreReady() && rc.senseNearbyRobots(15, otherTeam).length == 0) {
 			Direction nextMove = NavTangentBug.getNextMove();
 			if (nextMove != Direction.NONE) {
 				NavSimple.walkTowardsDirected(nextMove);
+			} else {
+				rallied = true;
 			}
 		}
-		rc.setIndicatorString(0, "" + numberOfLaunchers);
-		if (numberOfLaunchers >= Constants.LAUNCHER_RUSH_COUNT) {
+		if (myLoc.distanceSquaredTo(rallyPoint) <= 8) {
+			broadcastNearRallyPoint();
+		}
+//		System.out.println(numberOfLaunchersRallied);
+		if (numberOfLaunchersRallied >= Constants.LAUNCHER_RUSH_COUNT) {
+			broadcastTeamRush();
+		}
+		if (Comm.readBlock(Comm.getLauncherId(), 4) != 0 && rallied) {
 			nextLauncherState = LauncherState.RUSH;
 		}
 	}
 
 	private static void newCode() {
-		// TODO Auto-generated method stub
 	}
 
 	public static boolean decideAttack() {
-		enemies = rc.senseNearbyRobots(15, otherTeam);
+		enemies = rc.senseNearbyRobots(myType.sensorRadiusSquared, otherTeam);
 		if (enemies.length > 0) {
 			return true;
 		}
 		return false;
+	}
+	
+	public static void detectEnemyKiting() throws GameActionException {
+		
 	}
 	
 	public static void attack() throws GameActionException {
@@ -139,6 +152,17 @@ public class ULauncherHandler extends UnitHandler {
 	}
 	
 	public static void readBroadcasts() throws GameActionException {
-		numberOfLaunchers  = Comm.readBlock(Comm.getLauncherId(), 1);
+		numberOfLaunchers = Comm.readBlock(Comm.getLauncherId(), 1);
+		numberOfLaunchersRallied = Comm.readBlock(Comm.getLauncherId(), 2);
 	}
+
+	public static void broadcastNearRallyPoint() throws GameActionException {
+		numberOfLaunchersRallied++;
+		Comm.writeBlock(Comm.getLauncherId(), 2, numberOfLaunchersRallied);
+	}
+	
+	public static void broadcastTeamRush() throws GameActionException {
+		Comm.writeBlock(Comm.getLauncherId(), 4, 1);
+	}
+
 }

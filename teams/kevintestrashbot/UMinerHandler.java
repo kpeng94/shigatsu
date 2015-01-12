@@ -147,4 +147,5 @@ public class UMinerHandler extends UnitHandler {
 		}
 		averagePositionOfMiners = new MapLocation(myHQ.x + x, myHQ.y + y);
 	}
+	
 }

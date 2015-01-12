@@ -1,4 +1,4 @@
-package pusheenBot;
+package navAndBuildBot;
 
 import battlecode.common.*;
 

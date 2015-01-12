@@ -1,4 +1,4 @@
-package pusheenBot;
+package navAndBuildBot;
 
 import battlecode.common.*;
 
@@ -50,6 +50,9 @@ public class Comm {
 	public static final int LAUNCHER_BLOCK = 118;
 	public static final int MISSILE_BLOCK = 119;
 	public static final int COMMANDER_BLOCK = 120;
+	
+	// Build system
+	public static final int BUILD_BLOCK = 121;
 
 	public static void initComm() throws GameActionException {
 		Handler.rc.broadcast(FREEBLOCK_CHAN, 1);

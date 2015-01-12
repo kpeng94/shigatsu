@@ -25,7 +25,7 @@ public class NavTangentBug {
 	public static void setDest(MapLocation newdest) {
 		if (dest == null || newdest.x != dest.x || newdest.y != dest.y) {
 			dest = newdest;
-			convertedDest = MapUtils.convertMapLocation(dest);
+			convertedDest = MapUtils.encodeMapLocation(dest);
 			nextDir = new Direction[GameConstants.MAP_MAX_WIDTH][GameConstants.MAP_MAX_HEIGHT];
 			prevDir = new Direction[GameConstants.MAP_MAX_WIDTH][GameConstants.MAP_MAX_HEIGHT];
 			minDistToDest = new int[GameConstants.MAP_MAX_WIDTH][GameConstants.MAP_MAX_HEIGHT];
@@ -48,7 +48,7 @@ public class NavTangentBug {
 				recheckClosed = true;
 			}
 			MapLocation cur = open;
-			MapLocation convertedCur = MapUtils.convertMapLocation(open);
+			MapLocation convertedCur = MapUtils.encodeMapLocation(open);
 			if (cur.equals(dest)) {
 				done = true;
 				return;
@@ -77,7 +77,7 @@ public class NavTangentBug {
 							return;
 						} else if (leftTile == TerrainTile.NORMAL) {
 							setNextPosInfo(leftPos, leftDir.opposite());
-							MapLocation convertedLeftPos = MapUtils.convertMapLocation(leftPos);
+							MapLocation convertedLeftPos = MapUtils.encodeMapLocation(leftPos);
 							nextDir[convertedCur.x][convertedCur.y] = leftDir;
 							minDistToDest[convertedLeftPos.x][convertedLeftPos.y] = cur.distanceSquaredTo(dest);
 							distTraveled = 0;
@@ -109,7 +109,7 @@ public class NavTangentBug {
 							return;
 						} else if (testTile == TerrainTile.NORMAL) {
 							setNextPosInfo(testPos, testDir.opposite());
-							MapLocation convertedTest = MapUtils.convertMapLocation(testPos);
+							MapLocation convertedTest = MapUtils.encodeMapLocation(testPos);
 							minDistToDest[convertedTest.x][convertedTest.y] = minDistToDest[convertedCur.x][convertedCur.y];
 							nextDir[convertedCur.x][convertedCur.y] = testDir;
 							distTraveled++;
@@ -125,8 +125,8 @@ public class NavTangentBug {
 	public static Direction getNextMove() {
 		if (Handler.myLoc.distanceSquaredTo(dest) < PROXIMITY) return Direction.NONE;
 		while (Handler.myLoc.distanceSquaredTo(curFollowing) <= SMART_FUTURE_SENSING) {
-			if (curFollowing.distanceSquaredTo(dest) < PROXIMITY) return Direction.NONE; // reached destination
-			MapLocation convertedPos = MapUtils.convertMapLocation(curFollowing);
+			if (curFollowing.equals(dest)) return Direction.NONE; // reached destination
+			MapLocation convertedPos = MapUtils.encodeMapLocation(curFollowing);
 			Direction next = nextDir[convertedPos.x][convertedPos.y];
 			curFollowing = curFollowing.add(next);
 		}
@@ -135,7 +135,7 @@ public class NavTangentBug {
 	
 	// Checks a position and replaces with cheaper direction and dist vector
 	private static void setNextPosInfo(MapLocation pos, Direction pathVector) {
-		MapLocation convertedPos = MapUtils.convertMapLocation(pos);
+		MapLocation convertedPos = MapUtils.encodeMapLocation(pos);
 		prevDir[convertedPos.x][convertedPos.y] = pathVector;
 		open = pos;
 	}

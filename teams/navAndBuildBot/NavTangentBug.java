@@ -1,4 +1,4 @@
-package navBot;
+package navAndBuildBot;
 
 import battlecode.common.*;
 
@@ -66,8 +66,7 @@ public class NavTangentBug {
 					closed = true;
 					return;
 				} else { // Must start tracing
-					Direction testDir = prevDir[convertedCur.x][convertedCur.y];
-					if (testDir != null) forwardDir = testDir.opposite();
+					forwardDir = prevDir[convertedCur.x][convertedCur.y].opposite();
 					
 					Direction leftDir = forwardDir.rotateLeft(); // Check left side first
 					for (int i = 4; --i >= 0;) {
@@ -126,7 +125,7 @@ public class NavTangentBug {
 	public static Direction getNextMove() {
 		if (Handler.myLoc.distanceSquaredTo(dest) < PROXIMITY) return Direction.NONE;
 		while (Handler.myLoc.distanceSquaredTo(curFollowing) <= SMART_FUTURE_SENSING) {
-			if (curFollowing.equals(dest)) return Direction.NONE; // reached destination
+			if (curFollowing.distanceSquaredTo(dest) < PROXIMITY) return Direction.NONE; // reached destination
 			MapLocation convertedPos = MapUtils.encodeMapLocation(curFollowing);
 			Direction next = nextDir[convertedPos.x][convertedPos.y];
 			curFollowing = curFollowing.add(next);

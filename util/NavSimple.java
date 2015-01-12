@@ -1,4 +1,4 @@
-package tangentBugBot;
+package pusheenBot;
 
 import battlecode.common.*;
 
@@ -36,7 +36,7 @@ public class NavSimple {
 			if (Handler.enemyTowers.length < 5) {
 				if (distToHQ <= RobotType.HQ.attackRadiusSquared) return false;
 			} else {
-				if (distToHQ <= SHQHandler.splashRange && distToHQ != 49) return false;
+				if (distToHQ <= SHQHandler.SPLASH_RANGE && distToHQ != 49) return false;
 			}
 		}
 		if (avoidTower) {

@@ -1,4 +1,4 @@
-package navBot;
+package pusheenBot;
 
 import battlecode.common.*;
 
@@ -14,7 +14,7 @@ public class Comm {
 	public static final int PERM_BLOCK_MASK = 1000000000;
 	public static final int ACTIVE_BLOCK_MASK = 1000000;
 	public static final int BLOCK_SIZE = 256;
-	public static final int LAST_BLOCK = 255;
+	public static final int LAST_BLOCK = BLOCK_SIZE - 1;
 	public static final int GARBAGE_THRESHOLD = 50;
 	
 	// Metadata channels
@@ -23,6 +23,9 @@ public class Comm {
 	public static final int GARBAGE_CHAN = 2;
 	public static final int LAST_GARBAGE_TURN_CHAN = 3;
 	public static final int TASK_CHAN = 4;
+	
+	// Maps
+	public static final int HQ_MAP_CHAN = 20;
 	
 	// Structures
 	public static final int HQ_BLOCK = 100;
@@ -47,8 +50,6 @@ public class Comm {
 	public static final int LAUNCHER_BLOCK = 118;
 	public static final int MISSILE_BLOCK = 119;
 	public static final int COMMANDER_BLOCK = 120;
-	
-	public static boolean initialized = false;
 
 	public static void initComm() throws GameActionException {
 		Handler.rc.broadcast(FREEBLOCK_CHAN, 1);
@@ -137,7 +138,7 @@ public class Comm {
 	
 	// Reads the round the block was last written
 	public static int readBlockRound(int blockId, int offset) throws GameActionException {
-		return Handler.rc.readBroadcast(blockId * BLOCK_SIZE + offset) >> 16;
+		return Handler.rc.readBroadcast(blockId * BLOCK_SIZE + offset) >>> 16;
 	}
 	
 	// Reads only the data of the block

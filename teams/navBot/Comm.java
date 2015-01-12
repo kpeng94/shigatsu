@@ -26,7 +26,6 @@ public class Comm {
 	
 	// Maps
 	public static final int HQ_MAP_CHAN = 20;
-	public static final int TEMP = 21;
 	
 	// Structures
 	public static final int HQ_BLOCK = 100;

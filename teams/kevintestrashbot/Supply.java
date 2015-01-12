@@ -1,4 +1,4 @@
-package pusheenBot;
+package kevintestrashbot;
 
 import battlecode.common.*;
 

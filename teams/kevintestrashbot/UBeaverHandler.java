@@ -130,8 +130,13 @@ public class UBeaverHandler extends UnitHandler {
 		}
 		if (!targetDestSet) {
 			directionStep = (directionIndex % 3 == 0) ? 2 : (directionIndex / 3 + 1) * 2;
+			System.out.println(nextTargetLoc);
+			if (nextTargetLoc == null) {
+				getLastBuildingLoc();
+			}
 			nextTargetLoc = nextTargetLoc.add(buildDirs[(directionIndex + directionToInt(myHQToEnemyHQ) / 2 * 2) % buildDirs.length], directionStep);
 			directionIndex++;
+			
 			NavTangentBug.setDest(nextTargetLoc);
 			targetDestSet = true;
 			atTargetDest = false;			
@@ -151,6 +156,9 @@ public class UBeaverHandler extends UnitHandler {
 		if (atTargetDest) {
 			if (rc.isCoreReady()) {
 				tryBuild(myLoc.directionTo(nextTargetLoc), RobotType.AEROSPACELAB, oreAmount);
+				broadcastLastBuildingLoc(nextTargetLoc);
+				targetDestSet = false;
+				atTargetDest = false;				
 			}
 		}
 
@@ -198,7 +206,7 @@ public class UBeaverHandler extends UnitHandler {
 			if (atTargetDest) {
 				if (rc.isCoreReady()) {
 					tryBuild(myLoc.directionTo(nextTargetLoc), RobotType.HELIPAD, oreAmount);
-					System.out.println("Done building.");
+					broadcastLastBuildingLoc(nextTargetLoc);
 					nextBeaverState = BeaverState.BUILDING_AEROSPACELABORATORIES;
 					targetDestSet = false;
 					atTargetDest = false;
@@ -239,6 +247,24 @@ public class UBeaverHandler extends UnitHandler {
 		numberOfMiningFactories = Comm.readBlock(Comm.getMinerfactId(), 1);
 		numberOfHelipads = Comm.readBlock(Comm.getHeliId(), 1);
 		numberOfAerospaceLabs = Comm.readBlock(Comm.getAeroId(), 1);
+	}
+	
+	private static void getLastBuildingLoc() throws GameActionException {
+		int encodedMapCode = Comm.readBlock(Comm.getBeaverId(), 4);
+		int x = (encodedMapCode / 256) % 256;
+		if (x > 128) {
+			x = x - 256;
+		}
+		int y = encodedMapCode % 256;
+		if (y > 128) {
+			y = y - 256;
+		}
+		nextTargetLoc = new MapLocation(myHQ.x + x, myHQ.y + y);
+	}
+	private static void broadcastLastBuildingLoc(MapLocation ml) throws GameActionException {
+		int mlx = (ml.x - myHQ.x + 256) % 256;
+		int mly = (ml.y - myHQ.y + 256) % 256;
+		Comm.writeBlock(Comm.getBeaverId(), 4, mlx * 256 + mly);
 	}
 	
 	static void tryBuild(Direction d, RobotType type, double oreAmount) throws GameActionException {

@@ -10,7 +10,7 @@ public class UMinerHandler extends UnitHandler {
 		try {
 			init(rcon);
 		} catch (Exception e) {
-			// e.printStackTrace();
+			 e.printStackTrace();
 			System.out.println(typ + " Initialization Exception");
 		}
 
@@ -18,7 +18,7 @@ public class UMinerHandler extends UnitHandler {
 			try {
 				execute();
 			} catch (Exception e) {
-				// e.printStackTrace();
+				 e.printStackTrace();
 				System.out.println(typ + " Execution Exception");
 			}
 			rc.yield(); // Yields to save remaining bytecodes

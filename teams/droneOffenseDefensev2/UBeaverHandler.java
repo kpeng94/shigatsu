@@ -7,7 +7,6 @@ public class UBeaverHandler extends UnitHandler {
 	
 	private static int numFactories;
 	private static int numHelipads;
-	private static int numSpacesCanMove;
 
 	public static void loop(RobotController rcon) {
 		try {
@@ -35,12 +34,6 @@ public class UBeaverHandler extends UnitHandler {
 	protected static void execute() throws GameActionException {
 		executeUnit();
 		updateCounts();
-		numSpacesCanMove = 0;
-		for (Direction d: MapUtils.dirs) {
-			if (rc.canMove(d)) {
-				numSpacesCanMove++;
-			}
-		}
 		
 		if (rc.isWeaponReady()) {
 			inRangeEnemies = rc.senseNearbyRobots(typ.attackRadiusSquared,
@@ -80,8 +73,8 @@ public class UBeaverHandler extends UnitHandler {
 		double oreAmount = rc.getTeamOre();
 		// Prioritize miner factories
 		if (numFactories < MINERFACTORY_THRESHOLD) {
-			if (myLoc.distanceSquaredTo(myHQ) <= 3 || numSpacesCanMove <= 4 || !canBuildWithGap()) {
-				NavSimple.walkTowards(myLoc.directionTo(enemyHQ));
+			if (!inOrbitCenter() || !canBuildWithGap()) {
+				walkToOrbitCenter();
 			} else if (oreAmount >= RobotType.MINERFACTORY.oreCost) {
 				buildWithGap(RobotType.MINERFACTORY);
 			} else if (oreAmount <= RobotType.MINERFACTORY.oreCost - GameConstants.HQ_ORE_INCOME * RobotType.BEAVER.movementDelay) {
@@ -92,7 +85,7 @@ public class UBeaverHandler extends UnitHandler {
 				}
 			}
 		} else if (numHelipads < HELIPAD_THRESHOLD) {
-			if (myLoc.distanceSquaredTo(myHQ) <= 3 || numSpacesCanMove <= 4 || !canBuildWithGap()) {
+			if (!inOrbitCenter() || !canBuildWithGap()) {
 				rc.setIndicatorString(0, "Moving sq");
 				NavSimple.walkTowards(myLoc.directionTo(enemyHQ));
 			} else if (oreAmount >= RobotType.HELIPAD.oreCost) {
@@ -108,6 +101,32 @@ public class UBeaverHandler extends UnitHandler {
 		}
 	}
 	
+	private static boolean inOrbitCenter() throws GameActionException {
+		if (myLoc.distanceSquaredTo(myHQ) <= 2) {
+			return true;
+		}
+		for (MapLocation tower: rc.senseTowerLocations()) {
+			if (myLoc.distanceSquaredTo(tower) <= 2) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	private static void walkToOrbitCenter() throws GameActionException {
+		MapLocation closest = myHQ;
+		int smallest = myLoc.distanceSquaredTo(myHQ);
+		
+		for (MapLocation tower: rc.senseTowerLocations()) {
+			int dist = myLoc.distanceSquaredTo(tower);
+			if (dist <= smallest) {
+				smallest = dist;
+				closest = tower;
+			}
+		}
+		NavSimple.walkTowards(myLoc.directionTo(closest));
+	}
+	
 	private static boolean canBuildWithGap() throws GameActionException {
 		for (Direction d: MapUtils.dirs) {
 			MapLocation site = myLoc.add(d);
@@ -115,6 +134,7 @@ public class UBeaverHandler extends UnitHandler {
 			for (Direction d2: MapUtils.dirs) {
 				RobotInfo info = rc.senseRobotAtLocation(site.add(d2));
 				if (info != null && Handler.isBuilding(info)) {
+					rc.setIndicatorString(0, d.toString());
 					canBuild = false;
 				}
 			}

@@ -9,7 +9,7 @@ public class Handler {
 	public static final int MINER_THRESHOLD = 10;
 	public static final int ORE_THRESHOLD = 10;
 	public static final int ORE_THRESHOLD_MINER = 2;
-	public static final int HELIPAD_THRESHOLD = 2;
+	public static final int HELIPAD_THRESHOLD = 3;
 	
 	public static RobotController rc;
 	public static Rand rand;

@@ -121,7 +121,7 @@ public class UDroneHandler extends UnitHandler {
 			Direction approx = Direction.NONE;
 			int closestDist = Integer.MAX_VALUE;
 			for (Direction dir : MapUtils.dirs) {
-				if (dir == heading.opposite())
+				if (dir == heading.opposite() || !rc.canMove(dir))
 					continue;
 				MapLocation proj = myLoc.add(dir);
 				if (rc.senseTerrainTile(proj) == TerrainTile.OFF_MAP) {

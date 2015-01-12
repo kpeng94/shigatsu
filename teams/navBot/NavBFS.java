@@ -9,7 +9,7 @@ public class NavBFS {
 	public static final int MAP_SIZE = 7200;
 	public static final int MAX_WRITES = 40;
 	public static final int MAX_BUFFER = 10;
-	public static final int UNKNOWN_THRESHOLD = 10;
+	public static final int UNKNOWN_THRESHOLD = 5;
 	
 	private static int[] cache = new int[GameConstants.BROADCAST_MAX_CHANNELS];
 	

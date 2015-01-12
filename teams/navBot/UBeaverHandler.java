@@ -12,7 +12,7 @@ public class UBeaverHandler extends UnitHandler {
 		try {
 			init(rcon);
 		} catch (Exception e) {
-			// e.printStackTrace();
+			e.printStackTrace();
 			System.out.println(typ + " Initialization Exception");
 		}
 
@@ -35,12 +35,12 @@ public class UBeaverHandler extends UnitHandler {
 		smart = !(NavBFS.readMapDataUncached(hqMapBaseBlock, MapUtils.encode(dest)) == 0);
 		if (smart) {
 			rc.setIndicatorString(0, "I AM SMART");
+			path = NavBFS.backtrace(hqMapBaseBlock, dest);
+			pathIndex = 0;
 		} else {
 			rc.setIndicatorString(0, "I AM DUMB");
 		}
-		
-		path = NavBFS.backtrace(hqMapBaseBlock, dest);
-		pathIndex = 0;
+
 	}
 
 	protected static void execute() throws GameActionException {

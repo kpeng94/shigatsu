@@ -80,8 +80,26 @@ public class ULauncherHandler extends UnitHandler {
 	}
 
 	private static void rushCode() throws GameActionException {
-		// TODO Auto-generated method stub
-		NavTangentBug.setDest(closestLocation.add(myHQToEnemyHQ));
+		MapLocation destination;
+		switch (myHQ.directionTo(closestLocation)) {
+			case NORTH_EAST:
+			case NORTH_WEST:
+			case SOUTH_EAST:
+			case SOUTH_WEST:
+				destination = closestLocation.add(myHQToEnemyHQ.rotateRight(), -4).add(myHQToEnemyHQ.rotateLeft(), -3);
+				break;
+			case NORTH:
+			case EAST:
+			case SOUTH:
+			case WEST:
+				destination = closestLocation.add(myHQToEnemyHQ, -4).add(myHQToEnemyHQ.rotateRight().rotateRight(), -3);
+				break;
+			default:
+				destination = closestLocation.add(myHQToEnemyHQ, -4);
+				break;
+		}
+		rc.setIndicatorString(0, "" + destination);
+		NavTangentBug.setDest(destination);
 		NavTangentBug.calculate(2500);
 		if (rc.isCoreReady() && rc.senseNearbyRobots(15, otherTeam).length == 0) {
 			Direction nextMove = NavTangentBug.getNextMove();
@@ -120,7 +138,7 @@ public class ULauncherHandler extends UnitHandler {
 
 	public static boolean decideAttack() {
 		enemies = rc.senseNearbyRobots(myType.sensorRadiusSquared, otherTeam);
-		if (enemies.length > 0) {
+		if (enemies.length > 0 || closestLocation.distanceSquaredTo(myLoc) <= 35) {
 			return true;
 		}
 		return false;
@@ -131,7 +149,12 @@ public class ULauncherHandler extends UnitHandler {
 	}
 	
 	public static void attack() throws GameActionException {
-		Direction dir = myLoc.directionTo(enemies[0].location);
+		Direction dir;
+		if (enemies.length > 0) {
+			dir = myLoc.directionTo(enemies[0].location);			
+		} else {
+			dir = myLoc.directionTo(closestLocation);
+		}
 		if (rc.canLaunch(dir)) {
 			rc.launchMissile(dir);
 		}

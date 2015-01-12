@@ -5,6 +5,7 @@ import battlecode.common.*;
 public class UMinerHandler extends UnitHandler {
 	static RobotInfo[] enemies;
 	static MapLocation averagePositionOfMiners = null;
+	static Direction lastDirection = Direction.NORTH;
 	
 	public static void loop(RobotController rcon) {
 		try {
@@ -55,11 +56,8 @@ public class UMinerHandler extends UnitHandler {
 					tryMove(myLoc.directionTo(ml));
 				} else {
 					if (averagePositionOfMiners != null) {
-//						System.out.println("" + averagePositionOfMiners + " myLoc: " + myLoc);
-//						System.out.println("" + myLoc.directionTo(averagePositionOfMiners));
 						tryMove(myLoc.directionTo(averagePositionOfMiners));
 					} else {
-//						System.out.println("It's null though?" + averagePositionOfMiners);							
 					}
 				}
 			}
@@ -85,7 +83,7 @@ public class UMinerHandler extends UnitHandler {
 	public static MapLocation findClosestMinableOre(RobotController rc,
 			double threshold, int stepLimit) {
 		int step = 1;
-		int currentDirection = 0;
+		int currentDirection = directionToInt(lastDirection);
 		MapLocation currentLocation = rc.getLocation();
 
 		while (step < stepLimit) {
@@ -112,6 +110,54 @@ public class UMinerHandler extends UnitHandler {
 		return null;
 	}
 	
+	/**
+	 * Calculates the closest square with at least the threshold amount of 
+	 * ore. The distance is calculated in terms of Manhattan distance and NOT
+	 * Euclidean distance. This does NOT factor in the square the robot is currently on.
+	 * Ignores squares with other robots on them already
+	 * 
+	 * @param rc - RobotController for the robot
+	 * @param threshold - the minimum amount of ore for the function to return
+	 * @param stepLimit - the size of the search outwards (a step limit of n will search in
+	 * 					  a [n by n] square, centered about the robot's current location
+	 * @return - MapLocation of closest square with ore greater than the threshold, 
+	 *           or null if there is none
+	 */
+	public static MapLocation findClosestMinableOreV2(RobotController rc,
+			double threshold, int stepLimit) {
+		int step = 1;
+		int currentDirection = directionToInt(lastDirection);
+		MapLocation currentLocation = rc.getLocation();
+
+		while (step < stepLimit) {
+			for (int i = 0; i < step; i++) {
+				currentLocation = currentLocation
+						.add(directions[currentDirection]);
+				if (rc.senseOre(currentLocation) > threshold && rc.canMove(directions[currentDirection]) &&
+						(myLoc.directionTo(currentLocation) != lastDirection.opposite() &&
+						 myLoc.directionTo(currentLocation) != lastDirection.opposite().rotateRight() &&
+						 myLoc.directionTo(currentLocation) != lastDirection.opposite().rotateLeft()) &&
+						rc.senseNearbyRobots(currentLocation, 0, myTeam).length == 0)
+					return currentLocation;
+			}
+			currentDirection = (currentDirection + 2) % 8;
+			for (int i = 0; i < step; i++) {
+				currentLocation = currentLocation.add(directions[currentDirection]);
+				if (rc.senseOre(currentLocation) > threshold && rc.canMove(directions[currentDirection]) &&
+						(myLoc.directionTo(currentLocation) != lastDirection.opposite() &&
+						 myLoc.directionTo(currentLocation) != lastDirection.opposite().rotateRight() &&
+						 myLoc.directionTo(currentLocation) != lastDirection.opposite().rotateLeft()) &&
+						rc.senseNearbyRobots(currentLocation, 0, myTeam).length == 0)
+					return currentLocation;
+			}
+			currentDirection = (currentDirection + 2) % 8;
+			
+			step++;
+		}
+		
+		return null;
+	}	
+	
     // This method will attempt to move in Direction d (or as close to it as possible)
 	static void tryMove(Direction d) throws GameActionException {
 		int offsetIndex = 0;
@@ -121,7 +167,9 @@ public class UMinerHandler extends UnitHandler {
 			offsetIndex++;
 		}
 		if (offsetIndex < 5) {
-			rc.move(directions[(dirint+offsets[offsetIndex]+8)%8]);
+			Direction dir = directions[(dirint+offsets[offsetIndex]+8)%8];
+			rc.move(dir);
+			lastDirection = dir;
 		}
 	}
 	

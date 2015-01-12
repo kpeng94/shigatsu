@@ -29,12 +29,13 @@ public class UMissileHandler extends UnitHandler {
 
 	protected static void init(RobotController rcon) throws GameActionException {
 		rc = rcon;
+		otherTeam = rc.getTeam().opponent();
 	}
 
 	// Currently completely ineffective against kiting.
 	protected static void execute() throws GameActionException {
 		myLoc = rc.getLocation();
-		enemies = rc.senseNearbyRobots(15, otherTeam);
+		enemies = rc.senseNearbyRobots(24, otherTeam);
 		if (enemies.length > 0 && destination == null) {
 			destination = enemies[0].location;
 		}

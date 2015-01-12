@@ -5,6 +5,7 @@ import navBot.Handler;
 import battlecode.common.*;
 
 public class UMinerHandler extends UnitHandler {
+
     static RobotInfo[] enemies;
     static MapLocation averagePositionOfMiners = null;
     static Direction lastDirectionMoved = null;
@@ -212,5 +213,4 @@ public class UMinerHandler extends UnitHandler {
         }
         averagePositionOfMiners = new MapLocation(myHQ.x + x, myHQ.y + y);
     }
-
 }

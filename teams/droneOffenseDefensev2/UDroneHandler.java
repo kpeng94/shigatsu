@@ -121,7 +121,7 @@ public class UDroneHandler extends UnitHandler {
 			Direction approx = Direction.NONE;
 			int closestDist = Integer.MAX_VALUE;
 			for (Direction dir : MapUtils.dirs) {
-				if (dir == heading.opposite())
+				if (dir == heading.opposite() || !rc.canMove(dir))
 					continue;
 				MapLocation proj = myLoc.add(dir);
 				if (rc.senseTerrainTile(proj) == TerrainTile.OFF_MAP) {
@@ -152,7 +152,27 @@ public class UDroneHandler extends UnitHandler {
 		MapLocation targetPt = new MapLocation(Comm.readBlock(
 				Comm.getDroneId(), SHQHandler.NEXT_GUARD_X), Comm.readBlock(
 				Comm.getDroneId(), SHQHandler.NEXT_GUARD_Y));
-		heading = myLoc.directionTo(targetPt);
+		
+		Direction approx = Direction.NONE;
+		int closestDist = Integer.MAX_VALUE;
+		for (Direction dir : MapUtils.dirs) {
+			if (dir == heading.opposite() || !rc.canMove(dir))
+				continue;
+			MapLocation proj = myLoc.add(dir);
+			if (rc.senseTerrainTile(proj) == TerrainTile.OFF_MAP) {
+				continue;
+			}
+			int dist = proj.distanceSquaredTo(targetPt);
+			if (dist < closestDist) {
+				approx = dir;
+				closestDist = dist;
+			}
+		}
+		if (approx == Direction.NONE)
+			heading = heading.opposite();
+		else {
+			heading = approx;
+		}
 	}
 
 	protected static void executeOffense() throws GameActionException {
@@ -160,6 +180,26 @@ public class UDroneHandler extends UnitHandler {
 		MapLocation targetPt = new MapLocation(Comm.readBlock(
 				Comm.getDroneId(), SHQHandler.NEXT_TARGET_X), Comm.readBlock(
 				Comm.getDroneId(), SHQHandler.NEXT_TARGET_Y));
-		heading = myLoc.directionTo(targetPt);
+		
+		Direction approx = Direction.NONE;
+		int closestDist = Integer.MAX_VALUE;
+		for (Direction dir : MapUtils.dirs) {
+			if (dir == heading.opposite() || !rc.canMove(dir))
+				continue;
+			MapLocation proj = myLoc.add(dir);
+			if (rc.senseTerrainTile(proj) == TerrainTile.OFF_MAP) {
+				continue;
+			}
+			int dist = proj.distanceSquaredTo(targetPt);
+			if (dist < closestDist) {
+				approx = dir;
+				closestDist = dist;
+			}
+		}
+		if (approx == Direction.NONE)
+			heading = heading.opposite();
+		else {
+			heading = approx;
+		}
 	}
 }

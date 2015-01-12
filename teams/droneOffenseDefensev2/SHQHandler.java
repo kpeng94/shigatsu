@@ -20,6 +20,8 @@ public class SHQHandler extends StructureHandler {
 	private static int numBeavers;
 	private static int numDrones;
 	private static int numHelipads;
+	private static int numFactories;
+	private static int numMiners;
 	
 	public static void loop(RobotController rcon) {
 		try {
@@ -108,6 +110,10 @@ public class SHQHandler extends StructureHandler {
 		numBeavers = 0;
 		numDrones = 0;
 		numHelipads = 0;
+		numFactories = 0;
+		numMiners = 0;
+		int mlx = 0;
+		int mly = 0;
 		for (RobotInfo r : myRobots) {
 			RobotType type = r.type;
 			if (type == RobotType.DRONE) {
@@ -116,12 +122,29 @@ public class SHQHandler extends StructureHandler {
 				numBeavers++;
 			} else if (type == RobotType.HELIPAD) {
 				numHelipads++;
+			} else if (type == RobotType.MINERFACTORY) {
+				numFactories++;
+			} else if (type == RobotType.MINER) {
+				mlx += r.location.x;
+				mly += r.location.y;
+				numMiners++;
 			}
+		}
+		
+		if (numMiners != 0) {
+			mlx /= numMiners;
+			mly /= numMiners;
+			mlx = (mlx - myHQ.x + 256) % 256;
+			mly = (mly - myHQ.y + 256) % 256;
+			int averagePosOfMiners = mlx * 256 + mly;
+			Comm.writeBlock(Comm.getMinerId(), 2, averagePosOfMiners);			
 		}
 		
 		Comm.writeBlock(Comm.getBeaverId(), 0, numBeavers);
 		Comm.writeBlock(Comm.getDroneId(), 0, numDrones);
 		Comm.writeBlock(Comm.getHeliId(), 0, numHelipads);
+		Comm.writeBlock(Comm.getMinerfactId(), 0, numFactories);
+		Comm.writeBlock(Comm.getMinerId(), 0, numMiners);
 	}
 	
 	protected static void supplyDrones() throws GameActionException {
@@ -170,7 +193,6 @@ public class SHQHandler extends StructureHandler {
 				
 		// Determining the rally and target positions for the offensive swarm
 		// Positions are determined as the closest pair of team/enemy towers
-		MapLocation nextRallySite = myHQ;
 		MapLocation nextTargetSite = enemyHQ;
 		
 		int minDistanceFromEnemy = Integer.MAX_VALUE;
@@ -189,7 +211,6 @@ public class SHQHandler extends StructureHandler {
 				int distanceFromEnemy = towerLocs[i]
 						.distanceSquaredTo(enemyTowers[j]);
 				if (distanceFromEnemy < minDistanceFromEnemy) {
-					nextRallySite = towerLocs[i];
 					nextTargetSite = enemyTowers[j];
 					minDistanceFromEnemy = distanceFromEnemy;
 				}
@@ -198,7 +219,6 @@ public class SHQHandler extends StructureHandler {
 				int distanceFromEnemy = towerLocs[i]
 						.distanceSquaredTo(enemyHQ);
 				if (distanceFromEnemy < minDistanceFromEnemy) {
-					nextRallySite = towerLocs[i];
 					nextTargetSite = enemyHQ;
 					minDistanceFromEnemy = distanceFromEnemy;
 				}
@@ -210,10 +230,9 @@ public class SHQHandler extends StructureHandler {
 	}
 	
 	protected static void spawnBeaver() throws GameActionException {
-		if (rc.getTeamOre() >= 100
-				&& rand.nextInt(10000) < Math.pow(1.2, 12 - numBeavers) * 10000
-				&& Clock.getRoundNum() < 1000) {
-			Spawner.trySpawn(MapUtils.dirs[rand.nextInt(8)], RobotType.BEAVER);
+		if (rc.getTeamOre() >= RobotType.BEAVER.oreCost &&
+				numFactories == 0 && numBeavers == 0 && numHelipads == 0) {
+			Spawner.trySpawn(MapUtils.dirs[(MapUtils.directionToInt(myLoc.directionTo(enemyHQ)) + 4) % 8], RobotType.BEAVER);
 		}
 	}
 }

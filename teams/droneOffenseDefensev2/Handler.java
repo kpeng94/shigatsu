@@ -27,5 +27,37 @@ public class Handler {
 	protected static void executeGeneral() {
 		myLoc = rc.getLocation();
 	}
+	
+	protected static boolean isBuilding(RobotInfo robot) {
+		return robot.type == RobotType.AEROSPACELAB || robot.type == RobotType.BARRACKS 
+				|| robot.type == RobotType.HANDWASHSTATION || robot.type == RobotType.HELIPAD
+				|| robot.type == RobotType.HQ || robot.type == RobotType.MINERFACTORY
+				|| robot.type == RobotType.SUPPLYDEPOT || robot.type == RobotType.TANKFACTORY
+				|| robot.type == RobotType.TECHNOLOGYINSTITUTE || robot.type == RobotType.TOWER
+				|| robot.type == RobotType.TRAININGFIELD;
+	}
+	
+	static int directionToInt(Direction d) {
+		switch (d) {
+			case NORTH:
+				return 0;
+			case NORTH_EAST:
+				return 1;
+			case EAST:
+				return 2;
+			case SOUTH_EAST:
+				return 3;
+			case SOUTH:
+				return 4;
+			case SOUTH_WEST:
+				return 5;
+			case WEST:
+				return 6;
+			case NORTH_WEST:
+				return 7;
+			default:
+				return -1;
+		}
+	}	
 
 }

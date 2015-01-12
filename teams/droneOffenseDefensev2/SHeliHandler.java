@@ -36,7 +36,10 @@ public class SHeliHandler extends StructureHandler {
 
 	protected static void spawnDrone() throws GameActionException {
 		if (rc.getTeamOre() >= 125) {
-			Spawner.trySpawn(MapUtils.dirs[rand.nextInt(8)], RobotType.DRONE);
+			for (Direction dir: MapUtils.dirs) {
+				if (rc.canSpawn(dir, RobotType.DRONE))
+					Spawner.trySpawn(dir, RobotType.DRONE);
+			}
 		}
 	}
 

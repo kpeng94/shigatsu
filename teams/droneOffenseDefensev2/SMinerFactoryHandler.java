@@ -27,8 +27,12 @@ public class SMinerFactoryHandler extends StructureHandler {
 		initStructure(rcon);
 	}
 
-	protected static void execute() {
+	protected static void execute() throws GameActionException {
 		executeStructure();
+		int numMiners = Comm.readBlock(Comm.getMinerId(), 0);
+		if (rc.isCoreReady() && rc.getTeamOre() >= RobotType.MINER.oreCost && numMiners <= MINER_THRESHOLD) {
+			Spawner.trySpawn(myLoc.directionTo(enemyHQ), RobotType.MINER);				
+		}
 	}
 	
 }

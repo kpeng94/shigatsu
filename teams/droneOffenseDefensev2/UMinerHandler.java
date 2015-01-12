@@ -3,13 +3,15 @@ package droneOffenseDefensev2;
 import battlecode.common.*;
 
 public class UMinerHandler extends UnitHandler {
-	private static RobotInfo[] inRangeEnemies;
-
+	static RobotInfo[] enemies;
+	static MapLocation averagePositionOfMiners = null;
+	static Direction lastDirection = Direction.NORTH;
+	
 	public static void loop(RobotController rcon) {
 		try {
 			init(rcon);
 		} catch (Exception e) {
-			// e.printStackTrace();
+			 e.printStackTrace();
 			System.out.println(typ + " Initialization Exception");
 		}
 
@@ -17,62 +19,53 @@ public class UMinerHandler extends UnitHandler {
 			try {
 				execute();
 			} catch (Exception e) {
-				// e.printStackTrace();
+				 e.printStackTrace();
 				System.out.println(typ + " Execution Exception");
 			}
 			rc.yield(); // Yields to save remaining bytecodes
 		}
 	}
 
-	protected static void init(RobotController rcon) {
+	protected static void init(RobotController rcon) throws GameActionException {
 		initUnit(rcon);
 	}
 
 	protected static void execute() throws GameActionException {
 		executeUnit();
-		if (rc.isWeaponReady()) {
-			inRangeEnemies = rc.senseNearbyRobots(typ.attackRadiusSquared,
-					otherTeam);
-			tryAttack();
-		}
-		if (rc.isCoreReady()) {
-			MapLocation ml = findClosestMinableOre(rc, ORE_THRESHOLD_MINER, 6);
+		readBroadcasts();
+		if (rc.isWeaponReady() && decideAttack()) {
+			attack();
+		} else if (rc.isCoreReady()) {
+			MapLocation ml = findClosestMinableOre(rc, Constants.MINER_ORE_THRESHOLD, 6);
+//			System.out.println("The map location is: " + ml);
 			RobotInfo[] nearbyRobots = rc.senseNearbyRobots(myLoc, 2, myTeam);
 			if (nearbyRobots.length > 2) {
 				if (ml != null) {
-					NavSimple.walkTowards(myLoc.directionTo(ml));
+					tryMove(myLoc.directionTo(ml));
+				} else {
+					if (averagePositionOfMiners != null) {
+						tryMove(myLoc.directionTo(averagePositionOfMiners));
+					}
 				}
-			} else if (rc.senseOre(myLoc) >= ORE_THRESHOLD_MINER
+			} else if (rc.senseOre(myLoc) >= Constants.MINER_ORE_THRESHOLD
 					&& rc.canMine()) {
+//					System.out.println("Still mining");
 				rc.mine();
 			} else {
 				if (ml != null) {
-					rc.setIndicatorString(0, "" + nearbyRobots.length);
-					rc.setIndicatorString(1, "" + myLoc.directionTo(ml));
-					NavSimple.walkTowards(myLoc.directionTo(ml));
+					tryMove(myLoc.directionTo(ml));
+				} else {
+					if (averagePositionOfMiners != null) {
+						tryMove(myLoc.directionTo(averagePositionOfMiners));
+					} else {
+					}
 				}
 			}
 		}
+		
+		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 	}
 	
-	protected static void tryAttack() throws GameActionException {
-		if (inRangeEnemies.length > 0) {
-			MapLocation minLoc = inRangeEnemies[0].location;
-			int minRange = myLoc.distanceSquaredTo(minLoc);
-			for (int i = inRangeEnemies.length - 1; i > 0; i--) { // Get minimum
-																	// in array
-				RobotInfo enemy = inRangeEnemies[i];
-				MapLocation enemyLoc = enemy.location;
-				int enemyRange = myLoc.distanceSquaredTo(enemyLoc);
-				if (enemyRange < minRange) {
-					minRange = enemyRange;
-					minLoc = enemyLoc;
-				}
-			}
-
-			rc.attackLocation(minLoc);
-		}
-	}
 	
 	/**
 	 * Calculates the closest square with at least the threshold amount of 
@@ -90,28 +83,119 @@ public class UMinerHandler extends UnitHandler {
 	public static MapLocation findClosestMinableOre(RobotController rc,
 			double threshold, int stepLimit) {
 		int step = 1;
-		int currentDirection = 0;
+		int currentDirection = directionToInt(lastDirection);
 		MapLocation currentLocation = rc.getLocation();
 
 		while (step < stepLimit) {
 			for (int i = 0; i < step; i++) {
 				currentLocation = currentLocation
 						.add(MapUtils.dirs[currentDirection]);
-				if (rc.senseOre(currentLocation) > threshold && rc.canMove(MapUtils.dirs[currentDirection]))
+				if (rc.senseOre(currentLocation) > threshold && rc.canMove(MapUtils.dirs[currentDirection]) &&
+						rc.senseNearbyRobots(currentLocation, 0, myTeam).length == 0)
 					return currentLocation;
 			}
 			currentDirection = (currentDirection + 2) % 8;
 			for (int i = 0; i < step; i++) {
 				currentLocation = currentLocation.add(MapUtils.dirs[currentDirection]);
-				if (rc.senseOre(currentLocation) > threshold && rc.canMove(MapUtils.dirs[currentDirection]))
+				RobotInfo[] robots = rc.senseNearbyRobots(currentLocation, 0, myTeam);
+				if (rc.senseOre(currentLocation) > threshold && rc.canMove(MapUtils.dirs[currentDirection]) &&
+						rc.senseNearbyRobots(currentLocation, 0, myTeam).length == 0)
 					return currentLocation;
 			}
 			currentDirection = (currentDirection + 2) % 8;
 			
 			step++;
 		}
-
+		
 		return null;
+	}
+	
+	/**
+	 * Calculates the closest square with at least the threshold amount of 
+	 * ore. The distance is calculated in terms of Manhattan distance and NOT
+	 * Euclidean distance. This does NOT factor in the square the robot is currently on.
+	 * Ignores squares with other robots on them already
+	 * 
+	 * @param rc - RobotController for the robot
+	 * @param threshold - the minimum amount of ore for the function to return
+	 * @param stepLimit - the size of the search outwards (a step limit of n will search in
+	 * 					  a [n by n] square, centered about the robot's current location
+	 * @return - MapLocation of closest square with ore greater than the threshold, 
+	 *           or null if there is none
+	 */
+	public static MapLocation findClosestMinableOreV2(RobotController rc,
+			double threshold, int stepLimit) {
+		int step = 1;
+		int currentDirection = directionToInt(lastDirection);
+		MapLocation currentLocation = rc.getLocation();
+
+		while (step < stepLimit) {
+			for (int i = 0; i < step; i++) {
+				currentLocation = currentLocation
+						.add(MapUtils.dirs[currentDirection]);
+				if (rc.senseOre(currentLocation) > threshold && rc.canMove(MapUtils.dirs[currentDirection]) &&
+						(myLoc.directionTo(currentLocation) != lastDirection.opposite() &&
+						 myLoc.directionTo(currentLocation) != lastDirection.opposite().rotateRight() &&
+						 myLoc.directionTo(currentLocation) != lastDirection.opposite().rotateLeft()) &&
+						rc.senseNearbyRobots(currentLocation, 0, myTeam).length == 0)
+					return currentLocation;
+			}
+			currentDirection = (currentDirection + 2) % 8;
+			for (int i = 0; i < step; i++) {
+				currentLocation = currentLocation.add(MapUtils.dirs[currentDirection]);
+				if (rc.senseOre(currentLocation) > threshold && rc.canMove(MapUtils.dirs[currentDirection]) &&
+						(myLoc.directionTo(currentLocation) != lastDirection.opposite() &&
+						 myLoc.directionTo(currentLocation) != lastDirection.opposite().rotateRight() &&
+						 myLoc.directionTo(currentLocation) != lastDirection.opposite().rotateLeft()) &&
+						rc.senseNearbyRobots(currentLocation, 0, myTeam).length == 0)
+					return currentLocation;
+			}
+			currentDirection = (currentDirection + 2) % 8;
+			
+			step++;
+		}
+		
+		return null;
+	}	
+	
+    // This method will attempt to move in Direction d (or as close to it as possible)
+	static void tryMove(Direction d) throws GameActionException {
+		int offsetIndex = 0;
+		int[] offsets = {0,1,-1,2,-2};
+		int dirint = directionToInt(d);
+		while (offsetIndex < 5 && !rc.canMove(MapUtils.dirs[(dirint+offsets[offsetIndex]+8)%8])) {
+			offsetIndex++;
+		}
+		if (offsetIndex < 5) {
+			Direction dir = MapUtils.dirs[(dirint+offsets[offsetIndex]+8)%8];
+			rc.move(dir);
+			lastDirection = dir;
+		}
+	}
+	
+	public static boolean decideAttack() {
+		enemies = rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam);
+		if (enemies.length > 0) {
+			return true;
+		}
+		return false;
+	}
+	
+	public static void attack() throws GameActionException {
+		rc.attackLocation(enemies[0].location);
+	}
+	
+	public static void readBroadcasts() throws GameActionException {
+		int encodedMapCode = Comm.readBlock(Comm.getMinerId(), 2);
+		int x = (encodedMapCode / 256) % 256;
+		if (x > 128) {
+			x = x - 256;
+		}
+		int y = encodedMapCode % 256;
+		if (y > 128) {
+			y = y - 256;
+		}
+		averagePositionOfMiners = new MapLocation(myHQ.x + x, myHQ.y + y);
 	}
 	
 }

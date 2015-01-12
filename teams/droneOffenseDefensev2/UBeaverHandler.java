@@ -72,27 +72,26 @@ public class UBeaverHandler extends UnitHandler {
 	protected static void act() throws GameActionException {
 		double oreAmount = rc.getTeamOre();
 		// Prioritize miner factories
-		if (numFactories < MINERFACTORY_THRESHOLD) {
+		if (numFactories < Constants.NUM_OF_MININGFACTORIES) {
 			if (!inOrbitCenter() || !canBuildWithGap()) {
 				walkToOrbitCenter();
 			} else if (oreAmount >= RobotType.MINERFACTORY.oreCost) {
 				buildWithGap(RobotType.MINERFACTORY);
 			} else if (oreAmount <= RobotType.MINERFACTORY.oreCost - GameConstants.HQ_ORE_INCOME * RobotType.BEAVER.movementDelay) {
-				if (rc.senseOre(myLoc) >= ORE_THRESHOLD && rc.canMine()) {
+				if (rc.senseOre(myLoc) >= Constants.BEAVER_ORE_THRESHOLD && rc.canMine()) {
 					rc.mine();
 				} else {
 					NavSimple.walkRandom();
 				}
 			}
-		} else if (numHelipads < HELIPAD_THRESHOLD) {
+		} else if (rc.getTeamOre() > numHelipads * RobotType.DRONE.oreCost) {
 			if (!inOrbitCenter() || !canBuildWithGap()) {
-				rc.setIndicatorString(0, "Moving sq");
-				NavSimple.walkTowards(myLoc.directionTo(enemyHQ));
+				walkToOrbitCenter();
 			} else if (oreAmount >= RobotType.HELIPAD.oreCost) {
 				buildWithGap(RobotType.HELIPAD);
 			} else if (oreAmount <= RobotType.HELIPAD.oreCost - GameConstants.HQ_ORE_INCOME * RobotType.BEAVER.movementDelay) {
 				rc.setIndicatorString(0, "Moving or");
-				if (rc.senseOre(myLoc) >= ORE_THRESHOLD && rc.canMine()) {
+				if (rc.senseOre(myLoc) >= Constants.BEAVER_ORE_THRESHOLD && rc.canMine()) {
 					rc.mine();
 				} else {
 					NavSimple.walkRandom();

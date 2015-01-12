@@ -112,6 +112,8 @@ public class SHQHandler extends StructureHandler {
 		numHelipads = 0;
 		numFactories = 0;
 		numMiners = 0;
+		int mlx = 0;
+		int mly = 0;
 		for (RobotInfo r : myRobots) {
 			RobotType type = r.type;
 			if (type == RobotType.DRONE) {
@@ -123,8 +125,19 @@ public class SHQHandler extends StructureHandler {
 			} else if (type == RobotType.MINERFACTORY) {
 				numFactories++;
 			} else if (type == RobotType.MINER) {
+				mlx += r.location.x;
+				mly += r.location.y;
 				numMiners++;
 			}
+		}
+		
+		if (numMiners != 0) {
+			mlx /= numMiners;
+			mly /= numMiners;
+			mlx = (mlx - myHQ.x + 256) % 256;
+			mly = (mly - myHQ.y + 256) % 256;
+			int averagePosOfMiners = mlx * 256 + mly;
+			Comm.writeBlock(Comm.getMinerId(), 2, averagePosOfMiners);			
 		}
 		
 		Comm.writeBlock(Comm.getBeaverId(), 0, numBeavers);

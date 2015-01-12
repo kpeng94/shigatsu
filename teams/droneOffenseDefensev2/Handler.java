@@ -4,13 +4,6 @@ import battlecode.common.*;
 
 public class Handler {
 	
-	// Thresholds
-	public static final int MINERFACTORY_THRESHOLD = 3;
-	public static final int MINER_THRESHOLD = 10;
-	public static final int ORE_THRESHOLD = 10;
-	public static final int ORE_THRESHOLD_MINER = 2;
-	public static final int HELIPAD_THRESHOLD = 3;
-	
 	public static RobotController rc;
 	public static Rand rand;
 	public static RobotType typ;
@@ -43,5 +36,28 @@ public class Handler {
 				|| robot.type == RobotType.TECHNOLOGYINSTITUTE || robot.type == RobotType.TOWER
 				|| robot.type == RobotType.TRAININGFIELD;
 	}
+	
+	static int directionToInt(Direction d) {
+		switch (d) {
+			case NORTH:
+				return 0;
+			case NORTH_EAST:
+				return 1;
+			case EAST:
+				return 2;
+			case SOUTH_EAST:
+				return 3;
+			case SOUTH:
+				return 4;
+			case SOUTH_WEST:
+				return 5;
+			case WEST:
+				return 6;
+			case NORTH_WEST:
+				return 7;
+			default:
+				return -1;
+		}
+	}	
 
 }

@@ -6,7 +6,9 @@ public class SHQHandler extends StructureHandler {
 	public static final int splashRange = 52;
 	public static final int NEXT_TARGET_X = 1;
 	public static final int NEXT_TARGET_Y = 2;
-	public static final int DRONE_ATTACK = 3;
+	public static final int SHOULD_GUARD = 3;
+	public static final int NEXT_GUARD_X = 4;
+	public static final int NEXT_GUARD_Y = 5;
 	
 	public static MapLocation[] towerLocs;
 	public static int towerNum;
@@ -138,6 +140,33 @@ public class SHQHandler extends StructureHandler {
 	}
 	
 	protected static void setRallyPoints() throws GameActionException {
+		
+		// Determining the rally position for the defensive swarm
+		// Position is determined as the weakest tower
+		MapLocation nextGuardSite = null;
+		int maxNumEnemies = 0;
+		
+		int numNearbyEnemies = rc.senseNearbyRobots(RobotType.TOWER.sensorRadiusSquared, otherTeam).length;
+		if (numNearbyEnemies > 0) {
+			nextGuardSite = myLoc;
+			maxNumEnemies = numNearbyEnemies;
+		}
+		
+		for (MapLocation tower: towerLocs) {
+			numNearbyEnemies = rc.senseNearbyRobots(tower, RobotType.TOWER.sensorRadiusSquared, otherTeam).length;
+			if (numNearbyEnemies > maxNumEnemies) {
+				nextGuardSite = tower;
+				maxNumEnemies = numNearbyEnemies;
+			}
+		}
+		
+		if (nextGuardSite != null) {
+			Comm.writeBlock(Comm.getDroneId(), SHOULD_GUARD, 1);
+			Comm.writeBlock(Comm.getDroneId(), NEXT_GUARD_X, nextGuardSite.x);
+			Comm.writeBlock(Comm.getDroneId(), NEXT_GUARD_Y, nextGuardSite.y);
+		} else {
+			Comm.writeBlock(Comm.getDroneId(), SHOULD_GUARD, 0);
+		}
 				
 		// Determining the rally and target positions for the offensive swarm
 		// Positions are determined as the closest pair of team/enemy towers

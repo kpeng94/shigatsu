@@ -1,7 +1,5 @@
 package kevintestrashbot;
 
-import navBot.Distribution;
-import navBot.Handler;
 import battlecode.common.*;
 
 public class UMinerHandler extends UnitHandler {

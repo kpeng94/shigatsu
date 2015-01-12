@@ -26,9 +26,6 @@ public class STowerHandler extends StructureHandler {
 
 	protected static void init(RobotController rcon) throws GameActionException {
 		initStructure(rcon);
-		if (!Comm.initialized) {
-			Comm.initComm();
-		}
 	}
 
 	protected static void execute() throws GameActionException {

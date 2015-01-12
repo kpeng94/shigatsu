@@ -80,8 +80,25 @@ public class ULauncherHandler extends UnitHandler {
 	}
 
 	private static void rushCode() throws GameActionException {
-		// TODO Auto-generated method stub
-		NavTangentBug.setDest(closestLocation.add(myHQToEnemyHQ));
+		MapLocation destination;
+		switch (myHQ.directionTo(closestLocation)) {
+			case NORTH_EAST:
+			case NORTH_WEST:
+			case SOUTH_EAST:
+			case SOUTH_WEST:
+				destination = closestLocation.add(myHQToEnemyHQ.rotateRight(), -4).add(myHQToEnemyHQ.rotateLeft(), -3);
+				break;
+			case NORTH:
+			case EAST:
+			case SOUTH:
+			case WEST:
+				destination = closestLocation.add(myHQToEnemyHQ, -4).add(myHQToEnemyHQ.rotateRight().rotateRight(), -3);
+				break;
+			default:
+				destination = closestLocation.add(myHQToEnemyHQ, -4);
+				break;
+		}
+		NavTangentBug.setDest(destination);
 		NavTangentBug.calculate(2500);
 		if (rc.isCoreReady() && rc.senseNearbyRobots(15, otherTeam).length == 0) {
 			Direction nextMove = NavTangentBug.getNextMove();

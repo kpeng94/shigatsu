@@ -125,7 +125,7 @@ public class NavTangentBug {
 	public static Direction getNextMove() {
 		if (Handler.myLoc.distanceSquaredTo(dest) < PROXIMITY) return Direction.NONE;
 		while (Handler.myLoc.distanceSquaredTo(curFollowing) <= SMART_FUTURE_SENSING) {
-			if (curFollowing.distanceSquaredTo(dest) < PROXIMITY) return Direction.NONE; // reached destination
+			if (curFollowing.equals(dest)) return Direction.NONE; // reached destination
 			MapLocation convertedPos = MapUtils.encodeMapLocation(curFollowing);
 			Direction next = nextDir[convertedPos.x][convertedPos.y];
 			curFollowing = curFollowing.add(next);

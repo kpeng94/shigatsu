@@ -23,6 +23,7 @@ public class SHQHandler extends StructureHandler {
     static int numSupplyDepots = 0;
     static int numHelipads = 0;
     static int numAerospaceLabs = 0;
+    static int numDrones = 0;
     private static double oreAmount = 0;
 	
 	public static void loop(RobotController rcon) {
@@ -264,7 +265,9 @@ public class SHQHandler extends StructureHandler {
 				case AEROSPACELAB:
 					numAerospaceLabs++;
 					break;
-					
+				case DRONE:
+					numDrones++;
+					break;
 			}
 		}
 		if (numMiners != 0) {
@@ -283,5 +286,6 @@ public class SHQHandler extends StructureHandler {
 		Comm.writeBlock(Comm.getMinerfactId(), 1, numMinerFactories);
 		Comm.writeBlock(Comm.getSupplyId(), 1, numSupplyDepots);
 		Comm.writeBlock(Comm.getAeroId(), 1, numAerospaceLabs);
+		Comm.writeBlock(Comm.getDroneId(), 1, numDrones);
 	}	
 }

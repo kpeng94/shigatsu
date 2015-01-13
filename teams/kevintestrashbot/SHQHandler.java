@@ -86,7 +86,6 @@ public class SHQHandler extends StructureHandler {
 	    if(frontier != 0){
             int priority = frontier >>> 16;
             MapLocation loc = MapUtils.decode(frontier & 0xFFFF);
-	        System.out.println("Current miner frontier: " + loc + " with priority " + priority);
 	    }
 	    Comm.writeBlock(Comm.getMinerId(), UMinerHandler.FRONTIER_OFFSET, 0);
 	}

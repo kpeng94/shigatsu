@@ -68,7 +68,7 @@ public class UMinerHandler extends UnitHandler {
             } else {
                 MapLocation ml;
                 ml = findClosestMinableOreWithRespectToHQ(Constants.MINER_ORE_THRESHOLD, 6);
-                RobotInfo[] nearbyRobots = rc.senseNearbyRobots(myLoc, 2, myTeam);
+                RobotInfo[] nearbyRobots = rc.senseNearbyRobots(myLoc, 1, myTeam);
                 int numMiners = 0;
     			for (int i = nearbyRobots.length; --i >= 0;) {
     				if (nearbyRobots[i].type == RobotType.MINER) numMiners++;

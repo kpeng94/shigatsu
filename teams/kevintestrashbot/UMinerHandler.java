@@ -44,7 +44,13 @@ public class UMinerHandler extends UnitHandler {
         if (rc.isWeaponReady() && decideAttack()) {
             attack();
         } else if (rc.isCoreReady()) {
-            if (movingToFrontier) {
+            // Moving to frontier
+            miningOverride: if (movingToFrontier) {
+                if(rc.senseOre(myLoc) >= Constants.MINER_ORE_THRESHOLD && rc.canMine()){
+                    movingToFrontier = false;
+                    rc.mine();
+                    break miningOverride;
+                }
                 if (usingBFS) {
                     if (pathIndex < path.length - 1) {
                         while (myLoc.distanceSquaredTo(path[pathIndex]) <= 2) {
@@ -66,6 +72,7 @@ public class UMinerHandler extends UnitHandler {
                     }
                 }
             } else {
+                // Check ore tiles around you
                 MapLocation ml;
                 ml = findClosestMinableOreWithRespectToHQ(Constants.MINER_ORE_THRESHOLD, 6);
                 RobotInfo[] nearbyRobots = rc.senseNearbyRobots(myLoc, 1, myTeam);

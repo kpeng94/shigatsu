@@ -23,25 +23,13 @@ public class SHeliHandler extends StructureHandler {
 		}
 	}
 
-	protected static void init(RobotController rcon) {
+	protected static void init(RobotController rcon) throws GameActionException {
 		initStructure(rcon);
+		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 	}
 
 	protected static void execute() throws GameActionException {
 		executeStructure();
-		if (rc.isCoreReady()) {
-			spawnDrone();
-		}
 	}
-
-	protected static void spawnDrone() throws GameActionException {
-		if (rc.getTeamOre() >= 125
-				&& rand.nextInt(10000) < Math.pow(
-						1.2,
-						15 - rc.readBroadcast(NUM_BEAVER_CHANNEL)
-								+ rc.readBroadcast(NUM_DRONE_CHANNEL)) * 10000) {
-			Spawner.trySpawn(MapUtils.dirs[rand.nextInt(8)], RobotType.DRONE);
-		}
-	}
-
+	
 }

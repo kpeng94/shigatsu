@@ -50,7 +50,6 @@ public class SHQHandler extends StructureHandler {
 	}
 
 	protected static void execute() throws GameActionException {
-	    
 		executeStructure();
 		oreAmount = rc.getTeamOre();
 		updateTowers();

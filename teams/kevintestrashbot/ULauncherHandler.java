@@ -6,7 +6,7 @@ public class ULauncherHandler extends UnitHandler {
 	
 	private static RobotType myType = RobotType.LAUNCHER;
 	private static RobotInfo[] enemies;
-	private static int minDistance = Integer.MAX_VALUE;
+	private static int minDistance = 999999;
 	private static MapLocation closestLocation;
 	private static LauncherState state = LauncherState.RALLY;
 	private static LauncherState nextLauncherState;
@@ -49,10 +49,12 @@ public class ULauncherHandler extends UnitHandler {
 	protected static void execute() throws GameActionException {
 		executeUnit();
 		readBroadcasts();
-		for (MapLocation tower : enemyTowers) {
-			int distanceSquared = myHQ.distanceSquaredTo(tower);
+		minDistance = 999999;
+		for (int i = enemyTowers.length; --i >= 0;) {
+			System.out.println(enemyTowers.length);
+			int distanceSquared = myHQ.distanceSquaredTo(enemyTowers[i]);
 			if (distanceSquared <= minDistance) {
-				closestLocation = tower;
+				closestLocation = enemyTowers[i];
 				minDistance = distanceSquared;
 			}
 		}		
@@ -137,7 +139,8 @@ public class ULauncherHandler extends UnitHandler {
 	}
 
 	public static boolean decideAttack() {
-		enemies = rc.senseNearbyRobots(myType.sensorRadiusSquared, otherTeam);
+		enemies = rc.senseNearbyRobots(typ.sensorRadiusSquared, otherTeam);
+		rc.setIndicatorString(0, Clock.getRoundNum() + " " + enemies.length);
 		if (enemies.length > 0 || closestLocation.distanceSquaredTo(myLoc) <= 35) {
 			return true;
 		}

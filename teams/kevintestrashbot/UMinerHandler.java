@@ -1,5 +1,7 @@
 package kevintestrashbot;
 
+import pusheenBot.Handler;
+import pusheenBot.MapUtils;
 import battlecode.common.*;
 
 public class UMinerHandler extends UnitHandler {
@@ -169,6 +171,16 @@ public class UMinerHandler extends UnitHandler {
         return null;
     }
 
+	public static boolean[][] getOccupiedTiles(int range) {
+		RobotInfo[] robots = Handler.rc.senseNearbyRobots(range, Handler.myTeam);
+		boolean[][] occupied = new boolean[GameConstants.MAP_MAX_WIDTH][GameConstants.MAP_MAX_HEIGHT];
+		for (int i = robots.length; --i >= 0;) {
+			MapLocation convertedLocation = MapUtils.encodeMapLocation(robots[i].location);
+			occupied[convertedLocation.x][convertedLocation.y] = true;
+		}
+		return occupied;
+	}
+    
     // This method will attempt to move in Direction d (or as close to it as
     // possible)
     static void tryMove(Direction d) throws GameActionException {

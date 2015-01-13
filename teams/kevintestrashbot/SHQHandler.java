@@ -100,9 +100,6 @@ public class SHQHandler extends StructureHandler {
 	    if(frontier != 0){
             int priority = frontier >>> 16;
             MapLocation loc = MapUtils.decode(frontier & 0xFFFF);
-            System.out.println("Frontier location: " + loc + " with priority " + priority);
-	    } else {
-	        System.out.println("No frontier location.");
 	    }
 	}
 	
@@ -235,7 +232,7 @@ public class SHQHandler extends StructureHandler {
 		int mlx = 0;
 		int mly = 0;
 		myRobots = rc.senseNearbyRobots(999999, myTeam);
-		numAerospaceLabs = numBeavers = numLaunchers = numMiners = numMinerFactories = numTanks = numSupplyDepots = numHelipads = 0;
+		numAerospaceLabs = numBeavers = numLaunchers = numMiners = numMinerFactories = numTanks = numSupplyDepots = numHelipads = numDrones = 0;
 		for (RobotInfo r : myRobots) {
 			RobotType type = r.type;
 			switch (type) {

@@ -35,16 +35,20 @@ public class UMissileHandler extends UnitHandler {
 	// Currently completely ineffective against kiting.
 	protected static void execute() throws GameActionException {
 		myLoc = rc.getLocation();
-		enemies = rc.senseNearbyRobots(24, otherTeam);
-		if (enemies.length > 0 && destination == null) {
-			destination = enemies[0].location;
+		
+		if (destination == null) {
+			enemies = rc.senseNearbyRobots(24, otherTeam);
+			if (enemies.length > 0) {
+				destination = enemies[0].location;
+			}
 		}
-		if (destination.distanceSquaredTo(myLoc) <= 2) {
-			rc.explode();
-		} else {
-			tryMove(myLoc.directionTo(destination));
+		if (destination != null) {
+			if (destination.distanceSquaredTo(myLoc) <= 2) {
+				rc.explode();
+			} else {
+				tryMove(myLoc.directionTo(destination));
+			}
 		}
-		rc.yield();
 	}
 
 	

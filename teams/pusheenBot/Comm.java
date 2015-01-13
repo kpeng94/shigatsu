@@ -1,4 +1,4 @@
-package kevintestrashbot;
+package pusheenBot;
 
 import battlecode.common.*;
 
@@ -23,6 +23,7 @@ public class Comm {
 	public static final int GARBAGE_CHAN = 2;
 	public static final int LAST_GARBAGE_TURN_CHAN = 3;
 	public static final int TASK_CHAN = 4;
+	public static final int STATE_CHAN = 5;
 	
 	// Maps
 	public static final int HQ_MAP_CHAN = 20;

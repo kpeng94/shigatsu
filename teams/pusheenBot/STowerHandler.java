@@ -1,4 +1,4 @@
-package kevintestrashbot;
+package pusheenBot;
 
 import battlecode.common.*;
 
@@ -35,9 +35,9 @@ public class STowerHandler extends StructureHandler {
 			tryAttack();
 		}
 		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
-//		Distribution.spendBytecodesCalculating(1000);
 	}
 	
+	// Attacks the closest enemy
 	protected static void tryAttack() throws GameActionException {
 		if (inRangeEnemies.length > 0) {
 			MapLocation minLoc = inRangeEnemies[0].location;

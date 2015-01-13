@@ -6,7 +6,7 @@ public class ULauncherHandler extends UnitHandler {
 	
 	private static RobotType myType = RobotType.LAUNCHER;
 	private static RobotInfo[] enemies;
-	private static int minDistance = Integer.MAX_VALUE;
+	private static int minDistance = 999999;
 	private static MapLocation closestLocation;
 	private static LauncherState state = LauncherState.RALLY;
 	private static LauncherState nextLauncherState;
@@ -49,10 +49,14 @@ public class ULauncherHandler extends UnitHandler {
 	protected static void execute() throws GameActionException {
 		executeUnit();
 		readBroadcasts();
-		for (MapLocation tower : enemyTowers) {
-			int distanceSquared = myHQ.distanceSquaredTo(tower);
+		minDistance = Integer.MAX_VALUE;
+		if (enemyTowers.length == 0) {
+			closestLocation = enemyHQ;
+		}
+		for (int i = enemyTowers.length; --i >= 0;) {
+			int distanceSquared = myHQ.distanceSquaredTo(enemyTowers[i]);
 			if (distanceSquared <= minDistance) {
-				closestLocation = tower;
+				closestLocation = enemyTowers[i];
 				minDistance = distanceSquared;
 			}
 		}		
@@ -80,8 +84,9 @@ public class ULauncherHandler extends UnitHandler {
 	}
 
 	private static void rushCode() throws GameActionException {
-		MapLocation destination;
-		switch (myHQ.directionTo(closestLocation)) {
+		MapLocation destination = closestLocation.add(myHQToEnemyHQ, -4);
+		if (closestLocation != null) {
+			switch (myHQ.directionTo(closestLocation)) {
 			case NORTH_EAST:
 			case NORTH_WEST:
 			case SOUTH_EAST:
@@ -95,10 +100,9 @@ public class ULauncherHandler extends UnitHandler {
 				destination = closestLocation.add(myHQToEnemyHQ, -4).add(myHQToEnemyHQ.rotateRight().rotateRight(), -3);
 				break;
 			default:
-				destination = closestLocation.add(myHQToEnemyHQ, -4);
 				break;
+			}
 		}
-		rc.setIndicatorString(0, "" + destination);
 		NavTangentBug.setDest(destination);
 		NavTangentBug.calculate(2500);
 		if (rc.isCoreReady() && rc.senseNearbyRobots(15, otherTeam).length == 0) {
@@ -124,7 +128,6 @@ public class ULauncherHandler extends UnitHandler {
 		if (myLoc.distanceSquaredTo(rallyPoint) <= 8) {
 			broadcastNearRallyPoint();
 		}
-//		System.out.println(numberOfLaunchersRallied);
 		if (numberOfLaunchersRallied >= Constants.LAUNCHER_RUSH_COUNT) {
 			broadcastTeamRush();
 		}
@@ -137,7 +140,7 @@ public class ULauncherHandler extends UnitHandler {
 	}
 
 	public static boolean decideAttack() {
-		enemies = rc.senseNearbyRobots(myType.sensorRadiusSquared, otherTeam);
+		enemies = rc.senseNearbyRobots(typ.sensorRadiusSquared, otherTeam);
 		if (enemies.length > 0 || closestLocation.distanceSquaredTo(myLoc) <= 35) {
 			return true;
 		}

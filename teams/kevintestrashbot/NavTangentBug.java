@@ -70,7 +70,7 @@ public class NavTangentBug {
 					if (testDir != null) forwardDir = testDir.opposite();
 					
 					Direction leftDir = forwardDir.rotateLeft(); // Check left side first
-					for (int i = 4; --i >= 0;) {
+					for (int i = 8; --i >= 0;) {
 						MapLocation leftPos = cur.add(leftDir);
 						TerrainTile leftTile = Handler.rc.senseTerrainTile(leftPos);
 						if (leftTile == TerrainTile.UNKNOWN) { // Unable to sense yet

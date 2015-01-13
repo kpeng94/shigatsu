@@ -9,6 +9,7 @@ public class UBeaverHandler extends UnitHandler {
 	private static int numberOfMiningFactories;
 	private static int numberOfHelipads;
 	private static int numberOfAerospaceLabs;
+	private static int numberOfSupplyDepots;
 	
 	private static MapLocation nextTargetLoc;
 	private static boolean atTargetDest = true;
@@ -54,7 +55,6 @@ public class UBeaverHandler extends UnitHandler {
 
 	protected static void init(RobotController rcon) throws GameActionException {
 		initUnit(rcon);
-		NavTangentBug.setDest(enemyHQ);
 	}
 
 	protected static void execute() throws GameActionException {
@@ -75,6 +75,9 @@ public class UBeaverHandler extends UnitHandler {
 				break;
 			case BUILDING_AEROSPACELABORATORIES:
 				buildingAerospaceLaboratoriesCode();
+				break;
+			case BUILDING_SUPPLYDEPOTS:
+				buildingSupplyDepotsCode();
 				break;
 			case COMPUTING:
 				computingCode();
@@ -154,7 +157,12 @@ public class UBeaverHandler extends UnitHandler {
 		}
 		if (atTargetDest) {
 			if (rc.isCoreReady()) {
-				tryBuild(myLoc.directionTo(nextTargetLoc), RobotType.AEROSPACELAB, oreAmount);
+				Direction buildDir = Spawner.getBuildDirection(RobotType.AEROSPACELAB, false);
+				if (buildDir == Direction.NONE) {
+					NavSimple.walkRandom();
+				} else {
+					rc.build(buildDir, RobotType.AEROSPACELAB);
+				}
 				broadcastLastBuildingLoc(nextTargetLoc);
 				targetDestSet = false;
 				atTargetDest = false;				
@@ -168,7 +176,7 @@ public class UBeaverHandler extends UnitHandler {
 		if (numberOfHelipads >= Constants.NUM_OF_INITIAL_HELIPADS && numberOfAerospaceLabs < Constants.NUM_OF_AEROSPACELABS) {
 			nextBeaverState = BeaverState.BUILDING_AEROSPACELABORATORIES;
 		} else if (numberOfHelipads >= Constants.NUM_OF_HELIPADS) {
-			nextBeaverState = BeaverState.MINING;
+			nextBeaverState = BeaverState.BUILDING_SUPPLYDEPOTS;
 		} else {
 			if (!targetDestSet) {
 //				int mlx = 0;
@@ -200,7 +208,12 @@ public class UBeaverHandler extends UnitHandler {
 			}
 			if (atTargetDest) {
 				if (rc.isCoreReady()) {
-					tryBuild(myLoc.directionTo(nextTargetLoc), RobotType.HELIPAD, oreAmount);
+					Direction buildDir = Spawner.getBuildDirection(RobotType.HELIPAD, false);
+					if (buildDir == Direction.NONE) {
+						NavSimple.walkRandom();
+					} else {
+						rc.build(buildDir, RobotType.HELIPAD);
+					}
 					broadcastLastBuildingLoc(nextTargetLoc);
 					nextBeaverState = BeaverState.BUILDING_AEROSPACELABORATORIES;
 					targetDestSet = false;
@@ -212,28 +225,48 @@ public class UBeaverHandler extends UnitHandler {
 	}
 
 	private static void buildingMiningFactoriesCode() throws GameActionException {
-		dirFromHQ = myHQ.directionTo(myLoc);
-		if (numberOfMiningFactories >= 2) {
+		System.out.println(numberOfMiningFactories);
+		if (numberOfMiningFactories >= Constants.NUM_OF_MININGFACTORIES) {
 			nextBeaverState = BeaverState.BUILDING_HELIPADS;
 		} else {
-			if (numberOfMiningFactories == 0) {
-				tryBuild(dirFromHQ.rotateRight(), RobotType.MINERFACTORY, oreAmount);		
-			} else if (numberOfMiningFactories == 1) {
-				tryBuild(dirFromHQ.rotateLeft(), RobotType.MINERFACTORY, oreAmount);		
+			if (rc.isCoreReady()) {
+				Direction buildDir = Spawner.getBuildDirection(RobotType.MINERFACTORY, false);
+				if (buildDir == Direction.NONE) {
+					NavSimple.walkRandom();
+				} else {
+					rc.build(buildDir, RobotType.MINERFACTORY);
+				}
 			}
 		}
 		
 	}
+	
+	private static void buildingSupplyDepotsCode() throws GameActionException {
+		if (numberOfSupplyDepots >= Constants.NUM_OF_SUPPLYDEPOTS) {
+			nextBeaverState = BeaverState.MINING;
+		} else {
+			if (rc.isCoreReady()) {
+				Direction buildDir = Spawner.getBuildDirection(RobotType.SUPPLYDEPOT, false);
+				if (buildDir == Direction.NONE) {
+					NavSimple.walkRandom();
+				} else {
+					rc.build(buildDir, RobotType.SUPPLYDEPOT);
+				}
+			}
+		}
+	}
 
 	private static void newCode() throws GameActionException {
 		readBroadcasts();
-		if (numberOfMiningFactories < 2) {
+		if (numberOfMiningFactories < Constants.NUM_OF_MININGFACTORIES) {
 			nextBeaverState = BeaverState.BUILDING_MININGFACTORIES;
 			buildingMiningFactoriesCode();
 		} else if (numberOfHelipads >= 1 && numberOfAerospaceLabs <= Constants.NUM_OF_AEROSPACELABS) {
 			nextBeaverState = BeaverState.BUILDING_AEROSPACELABORATORIES;
 		} else if (numberOfHelipads < 1) {
 			nextBeaverState = BeaverState.BUILDING_HELIPADS;
+		} else {
+			nextBeaverState = BeaverState.BUILDING_SUPPLYDEPOTS;
 		}
 	}
 	
@@ -242,6 +275,7 @@ public class UBeaverHandler extends UnitHandler {
 		numberOfMiningFactories = Comm.readBlock(Comm.getMinerfactId(), 1);
 		numberOfHelipads = Comm.readBlock(Comm.getHeliId(), 1);
 		numberOfAerospaceLabs = Comm.readBlock(Comm.getAeroId(), 1);
+		numberOfSupplyDepots = Comm.readBlock(Comm.getSupplyId(), 1);
 	}
 	
 	private static void getLastBuildingLoc() throws GameActionException {
@@ -262,16 +296,16 @@ public class UBeaverHandler extends UnitHandler {
 		Comm.writeBlock(Comm.getBeaverId(), 4, mlx * 256 + mly);
 	}
 	
-	static void tryBuild(Direction d, RobotType type, double oreAmount) throws GameActionException {
-		int offsetIndex = 0;
-		int[] offsets = {0,1,-1,2,-2,3,-3,4};
-		int dirint = directionToInt(d);
-		while (offsetIndex < 8 && !rc.canMove(directions[(dirint+offsets[offsetIndex]+8)%8])) {
-			offsetIndex++;
-		}
-		if (offsetIndex < 8 && oreAmount >= type.oreCost) {
-			rc.build(directions[(dirint+offsets[offsetIndex]+8)%8], type);
-			targetDestSet = false;
-		}
-	}	
+//	static void tryBuild(Direction d, RobotType type, double oreAmount) throws GameActionException {
+//		int offsetIndex = 0;
+//		int[] offsets = {0,1,-1,2,-2,3,-3,4};
+//		int dirint = directionToInt(d);
+//		while (offsetIndex < 8 && !rc.canMove(directions[(dirint+offsets[offsetIndex]+8)%8])) {
+//			offsetIndex++;
+//		}
+//		if (offsetIndex < 8 && oreAmount >= type.oreCost) {
+//			rc.build(directions[(dirint+offsets[offsetIndex]+8)%8], type);
+//			targetDestSet = false;
+//		}
+//	}	
 }

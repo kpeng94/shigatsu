@@ -1,6 +1,5 @@
 package kevintestrashbot;
 
-import droneScoutRecall.Scout;
 import battlecode.common.*;
 
 public class UDroneHandler extends UnitHandler {

@@ -1,6 +1,5 @@
 package kevintestrashbot;
 
-import droneScoutRecall.Scout;
 import battlecode.common.*;
 
 public class SHQHandler extends StructureHandler {

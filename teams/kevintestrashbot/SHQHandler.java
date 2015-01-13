@@ -1,7 +1,5 @@
 package kevintestrashbot;
 
-import navBot.Comm;
-import navBot.NavBFS;
 import battlecode.common.*;
 
 public class SHQHandler extends StructureHandler {

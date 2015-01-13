@@ -59,7 +59,7 @@ public class UMinerHandler extends UnitHandler {
                     NavTangentBug.calculate(2500);
                     Direction nextMove = NavTangentBug.getNextMove();
                     if (nextMove != Direction.NONE) {
-                    	NavSimple.walkTowardsDirected(nextMove);
+                    	NavSimple.walkTowards(nextMove);
                     }
                     if (myLoc.distanceSquaredTo(NavTangentBug.dest) <= 2) {
                         movingToFrontier = false;

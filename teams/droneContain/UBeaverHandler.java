@@ -1,11 +1,10 @@
-package droneOffenseDefensev2;
+package droneContain;
 
 import battlecode.common.*;
 
 public class UBeaverHandler extends UnitHandler {
 	private static RobotInfo[] inRangeEnemies;
-	
-	private static int numFactories;
+
 	private static int numHelipads;
 	private static MapLocation[] sites;
 	private static int buildCount;
@@ -36,16 +35,18 @@ public class UBeaverHandler extends UnitHandler {
 		sites = new MapLocation[towers.length + 1];
 		buildCount = 0;
 		siteIndex = 0;
-		
-		sites[0] = myHQ;
-		for (int i = 0; i < towers.length; i++) {
-			sites[i+1] = towers[i];
-		}
 	}
 
 	protected static void execute() throws GameActionException {
 		executeUnit();
 		updateCounts();
+
+		MapLocation[] towers = rc.senseTowerLocations();
+		sites = new MapLocation[towers.length + 1];
+		sites[0] = myHQ;
+		for (int i = 0; i < towers.length; i++) {
+			sites[i+1] = towers[i];
+		}
 		
 		if (rc.isWeaponReady()) {
 			inRangeEnemies = rc.senseNearbyRobots(typ.attackRadiusSquared,
@@ -78,25 +79,11 @@ public class UBeaverHandler extends UnitHandler {
 	
 	protected static void updateCounts() throws GameActionException {
 		numHelipads = Comm.readBlock(Comm.getHeliId(), 0);
-		numFactories = Comm.readBlock(Comm.getMinerfactId(), 0);
 	}
 	
 	protected static void act() throws GameActionException {
 		double oreAmount = rc.getTeamOre();
-		// Prioritize miner factories
-		if (numFactories < Constants.NUM_OF_MININGFACTORIES) {
-			if (!inOrbitCenter() || !canBuildWithGap()) {
-				walkToOrbitCenter();
-			} else if (oreAmount >= RobotType.MINERFACTORY.oreCost) {
-				buildWithGap(RobotType.MINERFACTORY);
-			} else if (oreAmount <= RobotType.MINERFACTORY.oreCost - GameConstants.HQ_ORE_INCOME * RobotType.BEAVER.movementDelay) {
-				if (rc.senseOre(myLoc) >= Constants.BEAVER_ORE_THRESHOLD && rc.canMine()) {
-					rc.mine();
-				} else {
-					NavSimple.walkRandom();
-				}
-			}
-		} else if (rc.getTeamOre() > numHelipads * RobotType.DRONE.oreCost) {
+		if (rc.getTeamOre() > numHelipads * RobotType.DRONE.oreCost) {
 			if (!inOrbitCenter() || !canBuildWithGap()) {
 				walkToOrbitCenter();
 			} else if (oreAmount >= RobotType.HELIPAD.oreCost) {
@@ -117,7 +104,6 @@ public class UBeaverHandler extends UnitHandler {
 	}
 	
 	private static void walkToOrbitCenter() throws GameActionException {
-		rc.setIndicatorString(0, ""+sites[1].x);
 		Direction approx = Direction.NONE;
 		int closestDist = Integer.MAX_VALUE;
 		for (Direction dir : MapUtils.dirs) {

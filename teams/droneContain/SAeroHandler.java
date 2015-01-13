@@ -1,8 +1,8 @@
-package droneOffenseDefensev2;
+package droneContain;
 
 import battlecode.common.*;
 
-public class SHeliHandler extends StructureHandler {
+public class SAeroHandler extends StructureHandler {
 
 	public static void loop(RobotController rcon) {
 		try {
@@ -29,13 +29,6 @@ public class SHeliHandler extends StructureHandler {
 
 	protected static void execute() throws GameActionException {
 		executeStructure();
-		if (rc.isCoreReady() && rc.getTeamOre() >= RobotType.DRONE.oreCost) {
-			for (Direction dir: MapUtils.dirs) {
-				if (rc.canSpawn(dir, RobotType.DRONE)) {
-					Spawner.trySpawn(dir, RobotType.DRONE);
-					return;
-				}
-			}
-		}
 	}
+
 }

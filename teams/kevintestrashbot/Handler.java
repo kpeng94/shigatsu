@@ -1,6 +1,5 @@
 package kevintestrashbot;
 
-import navBot.Comm;
 import battlecode.common.*;
 
 public class Handler {

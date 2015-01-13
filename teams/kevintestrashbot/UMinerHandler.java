@@ -1,7 +1,5 @@
 package kevintestrashbot;
 
-import navBot.Distribution;
-import navBot.Handler;
 import battlecode.common.*;
 
 public class UMinerHandler extends UnitHandler {
@@ -130,8 +128,8 @@ public class UMinerHandler extends UnitHandler {
     
     public static MapLocation findClosestMinableOreWithRespectToHQ(double threshold, int stepLimit){
         int step = 1;
-        MapLocation currentLocation = rc.getLocation();
-        Direction currentDirection = currentLocation.directionTo(myHQ);
+        MapLocation currentLocation = Handler.myLoc;
+        Direction currentDirection = currentLocation.directionTo(Handler.myHQ);
         if(currentDirection.isDiagonal())
             currentDirection = currentDirection.rotateRight();
         int bestDistance = 2000000;
@@ -140,27 +138,24 @@ public class UMinerHandler extends UnitHandler {
         while (step < stepLimit) {
             for (int i = step; --i >= 0;) {
                 currentLocation = currentLocation.add(currentDirection);
-                int distance = currentLocation.distanceSquaredTo(myHQ);
-                if (rc.senseOre(currentLocation) > threshold && rc.canMove(currentDirection) && distance < bestDistance
-                        && rc.senseNearbyRobots(currentLocation, 0, myTeam).length == 0){
+                int distance = currentLocation.distanceSquaredTo(Handler.myHQ);
+                if (Handler.rc.senseOre(currentLocation) > threshold && Handler.rc.canMove(Handler.myLoc.directionTo(currentLocation)) && distance < bestDistance
+                        && Handler.rc.senseNearbyRobots(currentLocation, 0, Handler.myTeam).length == 0){
                     bestLocation = currentLocation;
                     bestDistance = distance;
                 }
             }
+
             if(step > 2 && bestDistance < 2000000){
-                if(bestLocation == null)
-                    rc.setIndicatorString(1, Clock.getRoundNum() + ": " + "null");
-                else 
-                    rc.setIndicatorString(1, Clock.getRoundNum() + ": " + bestLocation);
                 return bestLocation;
             }
             currentDirection = currentDirection.rotateLeft();
             currentDirection = currentDirection.rotateLeft();
             for (int i = step; --i >= 0;) {
-                currentLocation = currentLocation.add(currentDirection);
-                int distance = currentLocation.distanceSquaredTo(myHQ);
-                if (rc.senseOre(currentLocation) > threshold && rc.canMove(currentDirection) && distance < bestDistance
-                        && rc.senseNearbyRobots(currentLocation, 0, myTeam).length == 0){
+                currentLocation = currentLocation.add(currentDirection);                
+                int distance = currentLocation.distanceSquaredTo(Handler.myHQ);
+                if (Handler.rc.senseOre(currentLocation) > threshold && Handler.rc.canMove(Handler.myLoc.directionTo(currentLocation)) && distance < bestDistance
+                        && Handler.rc.senseNearbyRobots(currentLocation, 0, Handler.myTeam).length == 0){
                     bestLocation = currentLocation;
                     bestDistance = distance;
                 }
@@ -169,6 +164,7 @@ public class UMinerHandler extends UnitHandler {
             currentDirection = currentDirection.rotateLeft();
             step++;
         }
+        Handler.rc.setIndicatorString(2, "myLoc: " + Handler.myLoc + " " + Clock.getRoundNum() + ": " + "null");
 
         return null;
     }

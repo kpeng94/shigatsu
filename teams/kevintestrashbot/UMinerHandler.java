@@ -1,7 +1,5 @@
 package kevintestrashbot;
 
-import pusheenBot.Handler;
-import pusheenBot.MapUtils;
 import battlecode.common.*;
 
 public class UMinerHandler extends UnitHandler {

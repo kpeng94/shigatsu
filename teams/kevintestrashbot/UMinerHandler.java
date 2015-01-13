@@ -59,7 +59,7 @@ public class UMinerHandler extends UnitHandler {
                     NavTangentBug.calculate(2500);
                     Direction nextMove = NavTangentBug.getNextMove();
                     if (nextMove != Direction.NONE) {
-                        NavSimple.walkTowardsDirected(nextMove);
+                    	NavSimple.walkTowardsDirected(nextMove);
                     }
                     if (myLoc.distanceSquaredTo(NavTangentBug.dest) <= 2) {
                         movingToFrontier = false;
@@ -69,7 +69,11 @@ public class UMinerHandler extends UnitHandler {
                 MapLocation ml;
                 ml = findClosestMinableOreWithRespectToHQ(Constants.MINER_ORE_THRESHOLD, 6);
                 RobotInfo[] nearbyRobots = rc.senseNearbyRobots(myLoc, 2, myTeam);
-                if (nearbyRobots.length > 2) {
+                int numMiners = 0;
+    			for (int i = nearbyRobots.length; --i >= 0;) {
+    				if (nearbyRobots[i].type == RobotType.MINER) numMiners++;
+    			}
+    			if (numMiners > 2) {
                     if (ml != null) {
                         tryMove(myLoc.directionTo(ml));
                     } else {

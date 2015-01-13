@@ -28,10 +28,8 @@ public class Supply {
 			double over = Handler.rc.getSupplyLevel() - avgSupply;
 			double under = avgSupply - minSupply;
 			if (over > threshold && under >= over) {
-				Handler.rc.setIndicatorString(0, "" + over);
 				Handler.rc.transferSupplies((int) over, minLocation);
 			} else if (under > threshold && over > under) {
-				Handler.rc.setIndicatorString(0, "" + under);
 				Handler.rc.transferSupplies((int) under, minLocation);
 			}
 		}

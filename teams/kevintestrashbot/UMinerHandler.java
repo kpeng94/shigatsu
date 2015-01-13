@@ -14,6 +14,7 @@ public class UMinerHandler extends UnitHandler {
     static MapLocation[] path;
 
     public static final int FRONTIER_OFFSET = 100;
+    public static final int FRONTIER_RND_NUM = 101;
 
     public static void loop(RobotController rcon) {
         try {
@@ -196,7 +197,8 @@ public class UMinerHandler extends UnitHandler {
             }
 
             if (step > 2 && bestDistance < 2000000) {
-                updateFrontier(myLoc, totalOre / tilesSeen);
+                if(tilesSeen != 0)
+                    updateFrontier(myLoc, totalOre / tilesSeen);
                 return bestLocation;
             }
             currentDirection = currentDirection.rotateLeft();
@@ -219,23 +221,32 @@ public class UMinerHandler extends UnitHandler {
             currentDirection = currentDirection.rotateLeft();
             step++;
         }
-
-        updateFrontier(myLoc, totalOre / tilesSeen);
+        
+        if(tilesSeen != 0)
+            updateFrontier(myLoc, totalOre / tilesSeen);
         return null;
     }
 
     public static void updateFrontier(MapLocation location, double heuristic) throws GameActionException {
+        if(heuristic <= Constants.MINER_ORE_THRESHOLD){
+            return;
+        }
+        
         int minerBlockId = Comm.getMinerId();
         int frontierBlock = Comm.readBlock(minerBlockId, FRONTIER_OFFSET);
+        int frontierRoundNum = Comm.readBlock(minerBlockId, FRONTIER_RND_NUM);
         int encodedLoc = MapUtils.encode(location);
-        int heuristicInt = (int) (heuristic * 100);
-        int encodedInfo = heuristicInt << 16 | encodedLoc;
+        int heuristicInt = (int) (heuristic * 32);
+        int encodedInfo = (heuristicInt << 16) | encodedLoc;
+        int roundNum = Clock.getRoundNum();
         if (frontierBlock != 0) {
-            if (heuristicInt > frontierBlock) {
+            if (heuristicInt > (frontierBlock >>> 16) || roundNum >= frontierRoundNum + 3) {
                 Comm.writeBlock(minerBlockId, FRONTIER_OFFSET, encodedInfo);
+                Comm.writeBlock(minerBlockId, FRONTIER_RND_NUM, roundNum);
             }
         } else {
             Comm.writeBlock(minerBlockId, FRONTIER_OFFSET, encodedInfo);
+            Comm.writeBlock(minerBlockId, FRONTIER_RND_NUM, roundNum);
         }
     }
 

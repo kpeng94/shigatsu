@@ -23,7 +23,7 @@ public class UCommanderHandler extends UnitHandler {
 		}
 	}
 
-	protected static void init(RobotController rcon) {
+	protected static void init(RobotController rcon) throws GameActionException {
 		initUnit(rcon);
 	}
 

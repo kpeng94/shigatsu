@@ -3,7 +3,8 @@ package team096;
 import battlecode.common.*;
 
 public class SHQHandler extends StructureHandler {
-	public static final int splashRange = 52;
+	public static final RobotType myType = RobotType.HQ;
+	public static final int SPLASH_RANGE = 52;
 	
 	public static MapLocation[] towerLocs;
 	public static int towerNum;
@@ -12,13 +13,18 @@ public class SHQHandler extends StructureHandler {
 	public static boolean splash;
 	public static RobotInfo[] inRangeEnemies;
 	
-	private static int nextTriggerRound;
-	private static int waveNumber;
+	private static int hqDistX, hqDistY, maxTowerDistX, maxTowerDistY;
+	public static RobotInfo[] myRobots;
+	static int numBeavers = 0;
+	static int numLaunchers = 0;
+    static int numMiners = 0;
+    static int numMinerFactories = 0;
+    static int numTanks = 0;
+    static int numSupplyDepots = 0;
+    static int numHelipads = 0;
+    static int numAerospaceLabs = 0;
+    private static double oreAmount = 0;
 	
-	private static int numBeavers;
-	private static int numDrones;
-	private static int numHelipads;
-
 	public static void loop(RobotController rcon) {
 		try {
 			init(rcon);
@@ -31,33 +37,42 @@ public class SHQHandler extends StructureHandler {
 			try {
 				execute();
 			} catch (Exception e) {
-				// e.printStackTrace();
+				e.printStackTrace();
 				System.out.println(typ + " Execution Exception");
 			}
 			rc.yield(); // Yields to save remaining bytecodes
 		}
 	}
 
-	protected static void init(RobotController rcon) {
+	protected static void init(RobotController rcon) throws GameActionException {
 		initStructure(rcon);
-		rc.setIndicatorString(0, "DOD");
-		nextTriggerRound = 0;
-		waveNumber = 1;
+        rc.broadcast(Comm.HQ_MAP_CHAN, NavBFS.newBFSTask(myHQ));
 	}
 
 	protected static void execute() throws GameActionException {
 		executeStructure();
+		oreAmount = rc.getTeamOre();
 		updateTowers();
-		updateCounts();
-		supplyDrones();
-		setRallyPoints();
-		if (rc.isWeaponReady()) {
+		updateUnitCounts();
+		if(Clock.getRoundNum() % 3 == 0)
+		    resetMinerFrontier();
+		if (rc.isWeaponReady()) { // Try to attack
 			calculateAttackable();
 			tryAttack();
 		}
-		if (rc.isCoreReady()) {
-			spawnBeaver();
+		if (rc.isCoreReady()) { // Try to spawn
+			if (numBeavers < 1) {
+				Spawner.trySpawn(myLoc.directionTo(enemyHQ).opposite(), RobotType.BEAVER, oreAmount);
+			}
 		}
+		RobotInfo[] nearbyUnits = rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED, myTeam);
+		for (int i = nearbyUnits.length; --i >= 0;) {
+			if (nearbyUnits[i].supplyLevel == 0) {
+				rc.transferSupplies(2000, nearbyUnits[i].location);
+			}
+		}
+		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
+		Distribution.spendBytecodesCalculating(7500);
 	}
 	
 	protected static void updateTowers() {
@@ -65,11 +80,20 @@ public class SHQHandler extends StructureHandler {
 		towerNum = towerLocs.length;
 	}
 	
+	protected static void resetMinerFrontier() throws GameActionException{
+	    int frontier = Comm.readBlock(Comm.getMinerId(), UMinerHandler.FRONTIER_OFFSET);
+	    if(frontier != 0){
+            int priority = frontier >>> 16;
+            MapLocation loc = MapUtils.decode(frontier & 0xFFFF);
+	    }
+	    Comm.writeBlock(Comm.getMinerId(), UMinerHandler.FRONTIER_OFFSET, 0);
+	}
+	
 	protected static void calculateAttackable() {
 		if (towerNum >= 5) {
 			range = GameConstants.HQ_BUFFED_ATTACK_RADIUS_SQUARED;
 			splash = true;
-			inRangeEnemies = rc.senseNearbyRobots(splashRange, otherTeam);
+			inRangeEnemies = rc.senseNearbyRobots(SPLASH_RANGE, otherTeam);
 		} else {
 			range = typ.attackRadiusSquared;
 			splash = false;
@@ -77,11 +101,45 @@ public class SHQHandler extends StructureHandler {
 		}
 	}
 	
+	/**
+	 * Calculates the best target to attack for the HQ taking the following heuristics 
+	 *   into account:
+	 *     -Amount of damage done to enemy units
+	 *     -HP that the opponents have left [TODO]
+	 *     -The rate that the opponents can attack you [TODO]
+	 *     -Priority for robots that have large amounts of supply [TODO]
+	 * @return
+	 */
+	public MapLocation calculateBestTarget() throws GameActionException {
+		double baseDamage = myType.attackPower;
+		if (towerNum >= 6) {
+			baseDamage *= GameConstants.HQ_BUFFED_DAMAGE_MULTIPLIER_LEVEL_2;			
+		} else if (towerNum >= 3) {
+			baseDamage *= GameConstants.HQ_BUFFED_DAMAGE_MULTIPLIER_LEVEL_1;
+		}
+		double maxDamage = baseDamage;
+		RobotInfo[] enemies = rc.senseNearbyRobots(myType.sensorRadiusSquared, otherTeam);
+		MapLocation bestLocation = null;
+		
+		for (RobotInfo enemy : enemies) {
+			double damage = baseDamage;
+			MapLocation location = enemy.location;
+			RobotInfo[] enemiesHitBySplash = rc.senseNearbyRobots(location, GameConstants.HQ_BUFFED_SPLASH_RADIUS_SQUARED, otherTeam);
+			damage += enemiesHitBySplash.length * GameConstants.HQ_BUFFED_SPLASH_RATE * baseDamage;
+			if (damage >= maxDamage) {
+				maxDamage = damage;
+				bestLocation = location;
+			}
+		}
+		
+		return bestLocation;
+	}
+	
 	protected static void tryAttack() throws GameActionException {
 		if (inRangeEnemies.length > 0) {
 			MapLocation minLoc = inRangeEnemies[0].location;
 			int minRange = myLoc.distanceSquaredTo(minLoc);
-			for (int i = inRangeEnemies.length - 1; i > 0; i--) { // Get minimum in array
+			for (int i = inRangeEnemies.length; --i >= 0;) { // Get minimum in array
 				RobotInfo enemy = inRangeEnemies[i];
 				MapLocation enemyLoc = enemy.location;
 				int enemyRange = myLoc.distanceSquaredTo(enemyLoc);
@@ -103,134 +161,111 @@ public class SHQHandler extends StructureHandler {
 			}
 		}
 	}
+
 	
-	protected static void updateCounts() throws GameActionException {
-		RobotInfo[] myRobots = rc.senseNearbyRobots(999999, myTeam);
-		numBeavers = 0;
-		numDrones = 0;
-		numHelipads = 0;
+	public static void calculateLooseBoundsOnMap() {
+		hqDistX = myHQ.x > enemyHQ.x ? (myHQ.x - enemyHQ.x) : (enemyHQ.x - myHQ.x);
+		hqDistY = myHQ.y > enemyHQ.y ? (myHQ.y - enemyHQ.y) : (enemyHQ.y - myHQ.y);
+		MapLocation[] towerLocations = rc.senseTowerLocations();
+		MapLocation[] enemyTowerLocations = rc.senseEnemyTowerLocations();
+		int minTowerX = Integer.MAX_VALUE;
+		int minTowerY = Integer.MAX_VALUE;
+		int maxTowerX = Integer.MIN_VALUE;
+		int maxTowerY = Integer.MIN_VALUE;
+		int minETowerX = Integer.MAX_VALUE;
+		int minETowerY = Integer.MAX_VALUE;
+		int maxETowerX = Integer.MIN_VALUE;
+		int maxETowerY = Integer.MIN_VALUE;
+		for (MapLocation towerLocation : towerLocations) {
+			if (towerLocation.x < minTowerX) {
+				minTowerX = towerLocation.x;				
+			}
+			if (towerLocation.x > maxTowerX) {
+				maxTowerX = towerLocation.x;
+			}
+			if (towerLocation.y < minTowerY) {
+				minTowerY = towerLocation.y;
+			}
+			if (towerLocation.y > maxTowerY) {
+				maxTowerY = towerLocation.y;
+			}
+		}
+		for (MapLocation towerLocation : enemyTowerLocations) {
+			if (towerLocation.x < minETowerX) {
+				minETowerX = towerLocation.x;				
+			}
+			if (towerLocation.x > maxETowerX) {
+				maxETowerX = towerLocation.x;
+			}
+			if (towerLocation.y < minETowerY) {
+				minETowerY = towerLocation.y;
+			}
+			if (towerLocation.y > maxETowerY) {
+				maxETowerY = towerLocation.y;
+			}
+		}
+		
+//		The width of the map must be at least as big as the distance between the largest X and smallest X of opposing sides
+        int dx1 = maxTowerX - minETowerX;
+        int dx2 = maxETowerX - minETowerX;
+        maxTowerDistX = (dx1 - dx2 > 0) ? dx1 : dx2;
+        int dy1 = maxTowerY - minETowerY;
+        int dy2 = maxETowerY - minETowerY;
+        maxTowerDistY = (dy1 - dy2 > 0) ? dy1 : dy2;
+	}	
+	
+	protected static void updateUnitCounts() throws GameActionException {
+		int mlx = 0;
+		int mly = 0;
+		myRobots = rc.senseNearbyRobots(999999, myTeam);
+		numAerospaceLabs = numBeavers = numLaunchers = numMiners = numMinerFactories = numTanks = numSupplyDepots = numHelipads = 0;
 		for (RobotInfo r : myRobots) {
 			RobotType type = r.type;
-			if (type == RobotType.DRONE) {
-				numDrones++;
-			} else if (type == RobotType.BEAVER) {
-				numBeavers++;
-			} else if (type == RobotType.HELIPAD) {
-				numHelipads++;
+			switch (type) {
+				case BEAVER:
+					numBeavers++;
+					break;
+				case LAUNCHER:
+					numLaunchers++;
+					break;
+				case MINER:
+					mlx += r.location.x;
+					mly += r.location.y;
+					numMiners++;
+					break;
+				case MINERFACTORY:
+					numMinerFactories++;
+					break;
+				case TANK:
+					numTanks++;
+					break;
+				case SUPPLYDEPOT:
+					numSupplyDepots++;
+					break;
+				case HELIPAD:
+					numHelipads++;
+					break;
+				case AEROSPACELAB:
+					numAerospaceLabs++;
+					break;
+					
 			}
 		}
-		
-		rc.broadcast(NUM_BEAVER_CHANNEL, numBeavers);
-		rc.broadcast(NUM_DRONE_CHANNEL, numDrones);
-		rc.broadcast(NUM_HELIPAD_CHANNEL, numHelipads);
-	}
-	
-	protected static void supplyDrones() throws GameActionException {
-		// Give supply to every drone in the vicinity if they need
-		// some
-		RobotInfo[] allies = rc.senseNearbyRobots(rc.getLocation(),
-				15, myTeam);
-		for (int i = 0; i < allies.length; i++) {
-			if (allies[i].type == RobotType.DRONE
-					&& allies[i].supplyLevel == 0) {
-				rc.transferSupplies(
-						Math.max((int) rc.getSupplyLevel(), 300),
-						allies[i].location);
-			}
+		if (numMiners != 0) {
+			mlx /= numMiners;
+			mly /= numMiners;
+			mlx = (mlx - myHQ.x + 256) % 256;
+			mly = (mly - myHQ.y + 256) % 256;
+			int averagePosOfMiners = mlx * 256 + mly;
+			Comm.writeBlock(Comm.getMinerId(), 2, averagePosOfMiners);			
 		}
-
-		// Supply drones if about to attack
-		if (Clock.getRoundNum() % INTERWAVE_TIME == INTERWAVE_TIME - 1) {
-			for (int i = 0; i < allies.length; i++) {
-				if (allies[i].type == RobotType.DRONE
-						&& allies[i].supplyLevel == 0) {
-					rc.transferSupplies(Math.min(
-							(int) rc.getSupplyLevel(), 500),
-							allies[i].location);
-				}
-			}
-		}
-	}
-	
-	protected static void setRallyPoints() throws GameActionException {
-		
-		// Determining the rally position for the defensive swarm
-		// Position is determined as the weakest tower
-		MapLocation nextGuardSite = myHQ;
-		double minTowerHealth = Double.MAX_VALUE;
-		int maxNumEnemies = 0;
-		for (int i = 0; i < towerLocs.length; i++) {
-			double towerHealth = rc.senseRobotAtLocation(towerLocs[i]).health;
-			int numNearbyEnemies = rc.senseNearbyRobots(myLoc, 35, otherTeam).length;
-			if (towerHealth < minTowerHealth) {
-				nextGuardSite = towerLocs[i];
-				minTowerHealth = towerHealth;
-			}
-			else if (towerHealth == minTowerHealth && numNearbyEnemies > maxNumEnemies) {
-				nextGuardSite = towerLocs[i];
-				maxNumEnemies = numNearbyEnemies;
-			}
-		}
-		
-		// Determining the rally and target positions for the offensive swarm
-		// Positions are determined as the closest pair of team/enemy towers
-		MapLocation nextRallySite = myHQ;
-		MapLocation nextTargetSite = enemyHQ;
-		
-		int minDistanceFromEnemy = Integer.MAX_VALUE;
-
-		MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
-		for (int j = 0; j < enemyTowers.length; j++) {
-			int distanceFromEnemy = myHQ
-					.distanceSquaredTo(enemyTowers[j]);
-			if (distanceFromEnemy < minDistanceFromEnemy) {
-				nextTargetSite = enemyTowers[j];
-				minDistanceFromEnemy = distanceFromEnemy;
-			}
-		}
-		for (int i = 0; i < towerLocs.length; i++) {
-			for (int j = 0; j < enemyTowers.length; j++) {
-				int distanceFromEnemy = towerLocs[i]
-						.distanceSquaredTo(enemyTowers[j]);
-				if (distanceFromEnemy < minDistanceFromEnemy) {
-					nextRallySite = towerLocs[i];
-					nextTargetSite = enemyTowers[j];
-					minDistanceFromEnemy = distanceFromEnemy;
-				}
-			}
-			if (enemyTowers.length == 0) {
-				int distanceFromEnemy = towerLocs[i]
-						.distanceSquaredTo(enemyHQ);
-				if (distanceFromEnemy < minDistanceFromEnemy) {
-					nextRallySite = towerLocs[i];
-					nextTargetSite = enemyHQ;
-					minDistanceFromEnemy = distanceFromEnemy;
-				}
-			}
-		}
-		rc.broadcast(WAVE_NUMBER_CHANNEL, waveNumber);
-
-		rc.broadcast(NEXT_RALLY_X_CHANNEL, nextRallySite.x);
-		rc.broadcast(NEXT_RALLY_Y_CHANNEL, nextRallySite.y);
-		rc.broadcast(NEXT_TARGET_X_CHANNEL, nextTargetSite.x);
-		rc.broadcast(NEXT_TARGET_Y_CHANNEL, nextTargetSite.y);
-		rc.broadcast(NEXT_GUARD_X_CHANNEL, nextGuardSite.x);
-		rc.broadcast(NEXT_GUARD_Y_CHANNEL, nextGuardSite.y);
-
-		if (Clock.getRoundNum() == nextTriggerRound) {
-			rc.broadcast(DRONE_PROMOTION_CHANNEL, 1);
-			nextTriggerRound += INTERWAVE_TIME;
-			waveNumber++;
-		} else {
-			rc.broadcast(DRONE_PROMOTION_CHANNEL, 0);
-		}
-	}
-	
-	protected static void spawnBeaver() throws GameActionException {
-		if (rc.getTeamOre() >= 100
-				&& rand.nextInt(10000) < Math.pow(1.2, 12 - numBeavers) * 10000
-				&& Clock.getRoundNum() < 1000) {
-			Spawner.trySpawn(MapUtils.dirs[rand.nextInt(8)], RobotType.BEAVER);
-		}
-	}
+		Comm.writeBlock(Comm.getHeliId(), 1, numHelipads);
+		Comm.writeBlock(Comm.getBeaverId(), 1, numBeavers);
+		Comm.writeBlock(Comm.getLauncherId(), 1,numLaunchers);
+		Comm.writeBlock(Comm.getMinerId(), 1, numMiners);
+		Comm.writeBlock(Comm.getTankId(), 1, numTanks);
+		Comm.writeBlock(Comm.getMinerfactId(), 1, numMinerFactories);
+		Comm.writeBlock(Comm.getSupplyId(), 1, numSupplyDepots);
+		Comm.writeBlock(Comm.getAeroId(), 1, numAerospaceLabs);
+	}	
 }

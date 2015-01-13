@@ -4,6 +4,9 @@ import battlecode.common.*;
 
 public class SAeroHandler extends StructureHandler {
 
+	private static double oreAmount = 0.0;
+	private static int lastReset = 0;
+			
 	public static void loop(RobotController rcon) {
 		try {
 			init(rcon);
@@ -23,12 +26,32 @@ public class SAeroHandler extends StructureHandler {
 		}
 	}
 
-	protected static void init(RobotController rcon) {
+	protected static void init(RobotController rcon) throws GameActionException {
 		initStructure(rcon);
 	}
 
 	protected static void execute() throws GameActionException {
+		oreAmount = rc.getTeamOre();
 		executeStructure();
+		readBroadcasts();
+		if (lastReset != Clock.getRoundNum()) {
+			writeBroadcasts();
+		}
+		if (rc.isCoreReady() && rc.getTeamOre() >= RobotType.LAUNCHER.oreCost) {
+			Spawner.trySpawn(myHQToEnemyHQ, RobotType.LAUNCHER, oreAmount);
+		}
+		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 	}
+	
+	public static void readBroadcasts() throws GameActionException {
+//		numberOfLiveMiners  = Comm.readBlock(Comm.getMinerId(), 1);
+		lastReset = Comm.readBlock(Comm.getLauncherId(), 3);
+	}	
+	
+	public static void writeBroadcasts() throws GameActionException {
+		Comm.writeBlock(Comm.getLauncherId(), 2, 0);
+		Comm.writeBlock(Comm.getLauncherId(), 3, Clock.getRoundNum());
+	}
+
 
 }

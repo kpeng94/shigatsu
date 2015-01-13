@@ -4,7 +4,7 @@ import battlecode.common.*;
 
 public class StructureHandler extends Handler {
 	
-	protected static void initStructure(RobotController rcon) {
+	protected static void initStructure(RobotController rcon) throws GameActionException {
 		initGeneral(rcon);
 	}
 	

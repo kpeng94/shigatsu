@@ -23,7 +23,7 @@ public class SHandwashHandler extends StructureHandler {
 		}
 	}
 
-	protected static void init(RobotController rcon) {
+	protected static void init(RobotController rcon) throws GameActionException {
 		initStructure(rcon);
 	}
 

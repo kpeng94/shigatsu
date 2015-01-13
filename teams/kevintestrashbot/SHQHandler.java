@@ -54,8 +54,6 @@ public class SHQHandler extends StructureHandler {
 		oreAmount = rc.getTeamOre();
 		updateTowers();
 		updateUnitCounts();
-		if(Clock.getRoundNum() % 3 == 0)
-		    resetMinerFrontier();
 		if (rc.isWeaponReady()) { // Try to attack
 			calculateAttackable();
 			tryAttack();
@@ -80,13 +78,15 @@ public class SHQHandler extends StructureHandler {
 		towerNum = towerLocs.length;
 	}
 	
-	protected static void resetMinerFrontier() throws GameActionException{
+	protected static void checkMinerFrontier() throws GameActionException{
 	    int frontier = Comm.readBlock(Comm.getMinerId(), UMinerHandler.FRONTIER_OFFSET);
 	    if(frontier != 0){
             int priority = frontier >>> 16;
             MapLocation loc = MapUtils.decode(frontier & 0xFFFF);
+            System.out.println("Frontier location: " + loc + " with priority " + priority);
+	    } else {
+	        System.out.println("No frontier location.");
 	    }
-	    Comm.writeBlock(Comm.getMinerId(), UMinerHandler.FRONTIER_OFFSET, 0);
 	}
 	
 	protected static void calculateAttackable() {

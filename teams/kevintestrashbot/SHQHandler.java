@@ -50,10 +50,13 @@ public class SHQHandler extends StructureHandler {
 	}
 
 	protected static void execute() throws GameActionException {
+	    
 		executeStructure();
 		oreAmount = rc.getTeamOre();
 		updateTowers();
 		updateUnitCounts();
+		if(Clock.getRoundNum() % 3 == 0)
+		    resetMinerFrontier();
 		if (rc.isWeaponReady()) { // Try to attack
 			calculateAttackable();
 			tryAttack();
@@ -76,6 +79,16 @@ public class SHQHandler extends StructureHandler {
 	protected static void updateTowers() {
 		towerLocs = rc.senseTowerLocations();
 		towerNum = towerLocs.length;
+	}
+	
+	protected static void resetMinerFrontier() throws GameActionException{
+	    int frontier = Comm.readBlock(Comm.getMinerId(), UMinerHandler.FRONTIER_OFFSET);
+	    if(frontier != 0){
+            int priority = frontier >>> 16;
+            MapLocation loc = MapUtils.decode(frontier & 0xFFFF);
+	        System.out.println("Current miner frontier: " + loc + " with priority " + priority);
+	    }
+	    Comm.writeBlock(Comm.getMinerId(), UMinerHandler.FRONTIER_OFFSET, 0);
 	}
 	
 	protected static void calculateAttackable() {

@@ -8,6 +8,13 @@ public class UMinerHandler extends UnitHandler {
     static MapLocation averagePositionOfMiners = null;
     static Direction lastDirectionMoved = null;
 
+    static boolean movingToFrontier = false;
+    static boolean usingBFS = false;
+    static int pathIndex = 0;
+    static MapLocation[] path;
+
+    public static final int FRONTIER_OFFSET = 100;
+
     public static void loop(RobotController rcon) {
         try {
             init(rcon);
@@ -37,36 +44,58 @@ public class UMinerHandler extends UnitHandler {
         if (rc.isWeaponReady() && decideAttack()) {
             attack();
         } else if (rc.isCoreReady()) {
-            MapLocation ml;
-            ml = findClosestMinableOreWithRespectToHQ(Constants.MINER_ORE_THRESHOLD, 6);
-            if (ml != null)
-                rc.setIndicatorString(2, Clock.getRoundNum() + ": " + ml.toString());
-            else
-                rc.setIndicatorString(2, Clock.getRoundNum() + ": " + "null");
-            RobotInfo[] nearbyRobots = rc.senseNearbyRobots(myLoc, 2, myTeam);
-            if (nearbyRobots.length > 2) {
-                if (ml != null) {
-                    tryMove(myLoc.directionTo(ml));
+            if (movingToFrontier) {
+                if (usingBFS) {
+                    if (pathIndex < path.length - 1) {
+                        while (myLoc.distanceSquaredTo(path[pathIndex]) <= 2) {
+                            pathIndex++;
+                        }
+                    }
+                    if (pathIndex == path.length - 1) {
+                        movingToFrontier = false;
+                    }
+                    NavSimple.walkTowardsDirected(myLoc.directionTo(path[pathIndex]));
                 } else {
-                    if (averagePositionOfMiners != null) {
-                        tryMove(myLoc.directionTo(averagePositionOfMiners));
+                    NavTangentBug.calculate(2500);
+                    Direction nextMove = NavTangentBug.getNextMove();
+                    if (nextMove != Direction.NONE) {
+                        NavSimple.walkTowardsDirected(nextMove);
+                    }
+                    if (myLoc.distanceSquaredTo(NavTangentBug.dest) <= 2) {
+                        movingToFrontier = false;
                     }
                 }
-            } else if (rc.senseOre(myLoc) >= Constants.MINER_ORE_THRESHOLD && rc.canMine()) {
-                // System.out.println("Still mining");
-                rc.mine();
             } else {
-                if (ml != null) {
-                    tryMove(myLoc.directionTo(ml));
-                } else {
-                    if (averagePositionOfMiners != null) {
-                        // rc.setIndicatorString(1, "averagePositionOfMiners: " + averagePositionOfMiners + " myLoc: " + myLoc);
-                        // System.out.println("" +
-                        // myLoc.directionTo(averagePositionOfMiners));
-                        tryMove(myLoc.directionTo(averagePositionOfMiners));
+                MapLocation ml;
+                ml = findClosestMinableOreWithRespectToHQ(Constants.MINER_ORE_THRESHOLD, 6);
+                RobotInfo[] nearbyRobots = rc.senseNearbyRobots(myLoc, 2, myTeam);
+                if (nearbyRobots.length > 2) {
+                    if (ml != null) {
+                        tryMove(myLoc.directionTo(ml));
                     } else {
-                        // System.out.println("It's null though?" +
-                        // averagePositionOfMiners);
+                        if (averagePositionOfMiners != null) {
+                            tryMove(myLoc.directionTo(averagePositionOfMiners));
+                        }
+                    }
+                } else if (rc.senseOre(myLoc) >= Constants.MINER_ORE_THRESHOLD && rc.canMine()) {
+                    // System.out.println("Still mining");
+                    rc.mine();
+                } else {
+                    if (ml != null) {
+                        tryMove(myLoc.directionTo(ml));
+                    } else {
+                        int frontier = Comm.readBlock(Comm.getMinerId(), FRONTIER_OFFSET);
+                        if (frontier != 0) {
+                            movingToFrontier = true;
+                            int hqMapBaseBlock = rc.readBroadcast(Comm.HQ_MAP_CHAN);
+                            if (myLoc.distanceSquaredTo(myHQ) < 8 && !(NavBFS.readMapDataUncached(hqMapBaseBlock, frontier & 0xFFFF) == 0)) {
+                                usingBFS = true;
+                                path = NavBFS.backtrace(hqMapBaseBlock, MapUtils.decode(frontier & 0xFFFF));
+                            } else {
+                                usingBFS = false;
+                                NavTangentBug.setDest(MapUtils.decode(frontier & 0xFFFF));
+                            }
+                        }
                     }
                 }
             }
@@ -74,7 +103,7 @@ public class UMinerHandler extends UnitHandler {
 
         Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
         Distribution.spendBytecodesCalculating(Handler.rc.getSupplyLevel() > 50 ? 7500 : 2500);
-        
+
     }
 
     /**
@@ -99,23 +128,21 @@ public class UMinerHandler extends UnitHandler {
     public static MapLocation findClosestMinableOre(double threshold, int stepLimit, Direction startingDirection) {
         int step = 1;
         Direction currentDirection = startingDirection;
-        if(startingDirection.isDiagonal())
+        if (startingDirection.isDiagonal())
             currentDirection = currentDirection.rotateLeft();
         MapLocation currentLocation = rc.getLocation();
 
         while (step < stepLimit) {
             for (int i = step; --i >= 0;) {
                 currentLocation = currentLocation.add(currentDirection);
-                if (rc.senseOre(currentLocation) > threshold && rc.canMove(currentDirection)
-                        && rc.senseNearbyRobots(currentLocation, 0, myTeam).length == 0)
+                if (rc.senseOre(currentLocation) > threshold && rc.canMove(currentDirection) && rc.senseNearbyRobots(currentLocation, 0, myTeam).length == 0)
                     return currentLocation;
             }
             currentDirection = currentDirection.rotateLeft();
             currentDirection = currentDirection.rotateLeft();
             for (int i = step; --i >= 0;) {
                 currentLocation = currentLocation.add(currentDirection);
-                if (rc.senseOre(currentLocation) > threshold && rc.canMove(currentDirection)
-                        && rc.senseNearbyRobots(currentLocation, 0, myTeam).length == 0)
+                if (rc.senseOre(currentLocation) > threshold && rc.canMove(currentDirection) && rc.senseNearbyRobots(currentLocation, 0, myTeam).length == 0)
                     return currentLocation;
             }
             currentDirection = currentDirection.rotateLeft();
@@ -125,37 +152,54 @@ public class UMinerHandler extends UnitHandler {
 
         return null;
     }
-    
-    public static MapLocation findClosestMinableOreWithRespectToHQ(double threshold, int stepLimit){
+
+    public static MapLocation findClosestMinableOreWithRespectToHQ(double threshold, int stepLimit) throws GameActionException {
         int step = 1;
         MapLocation currentLocation = Handler.myLoc;
         Direction currentDirection = currentLocation.directionTo(Handler.myHQ);
-        if(currentDirection.isDiagonal())
+        if (currentDirection.isDiagonal())
             currentDirection = currentDirection.rotateRight();
         int bestDistance = 2000000;
         MapLocation bestLocation = null;
+
+        // OH GOD PLEASE CHANGE THE NUMBER WHEN YOU CHANGE STEPLIMIT
+        boolean[] occupied = getOccupiedTiles(18);
+        int tilesSeen = 0;
+        double totalOre = 0;
+        double ore;
 
         while (step < stepLimit) {
             for (int i = step; --i >= 0;) {
                 currentLocation = currentLocation.add(currentDirection);
                 int distance = currentLocation.distanceSquaredTo(Handler.myHQ);
-                if (Handler.rc.senseOre(currentLocation) > threshold && Handler.rc.canMove(Handler.myLoc.directionTo(currentLocation)) && distance < bestDistance
-                        && Handler.rc.senseNearbyRobots(currentLocation, 0, Handler.myTeam).length == 0){
+                ore = rc.senseOre(currentLocation);
+                if (occupied[MapUtils.encode(currentLocation)]) {
+                    totalOre += ore;
+                    tilesSeen++;
+                }
+                if (ore > threshold && Handler.rc.canMove(Handler.myLoc.directionTo(currentLocation)) && distance < bestDistance
+                        && !occupied[MapUtils.encode(currentLocation)]) {
                     bestLocation = currentLocation;
                     bestDistance = distance;
                 }
             }
 
-            if(step > 2 && bestDistance < 2000000){
+            if (step > 2 && bestDistance < 2000000) {
+                updateFrontier(myLoc, totalOre / tilesSeen);
                 return bestLocation;
             }
             currentDirection = currentDirection.rotateLeft();
             currentDirection = currentDirection.rotateLeft();
             for (int i = step; --i >= 0;) {
-                currentLocation = currentLocation.add(currentDirection);                
+                currentLocation = currentLocation.add(currentDirection);
+                ore = rc.senseOre(currentLocation);
+                if (occupied[MapUtils.encode(currentLocation)]) {
+                    totalOre += ore;
+                    tilesSeen++;
+                }
                 int distance = currentLocation.distanceSquaredTo(Handler.myHQ);
-                if (Handler.rc.senseOre(currentLocation) > threshold && Handler.rc.canMove(Handler.myLoc.directionTo(currentLocation)) && distance < bestDistance
-                        && Handler.rc.senseNearbyRobots(currentLocation, 0, Handler.myTeam).length == 0){
+                if (Handler.rc.senseOre(currentLocation) > threshold && Handler.rc.canMove(Handler.myLoc.directionTo(currentLocation))
+                        && distance < bestDistance && !occupied[MapUtils.encode(currentLocation)]) {
                     bestLocation = currentLocation;
                     bestDistance = distance;
                 }
@@ -164,21 +208,36 @@ public class UMinerHandler extends UnitHandler {
             currentDirection = currentDirection.rotateLeft();
             step++;
         }
-        Handler.rc.setIndicatorString(2, "myLoc: " + Handler.myLoc + " " + Clock.getRoundNum() + ": " + "null");
 
+        updateFrontier(myLoc, totalOre / tilesSeen);
         return null;
     }
 
-	public static boolean[][] getOccupiedTiles(int range) {
-		RobotInfo[] robots = Handler.rc.senseNearbyRobots(range, Handler.myTeam);
-		boolean[][] occupied = new boolean[GameConstants.MAP_MAX_WIDTH][GameConstants.MAP_MAX_HEIGHT];
-		for (int i = robots.length; --i >= 0;) {
-			MapLocation convertedLocation = MapUtils.encodeMapLocation(robots[i].location);
-			occupied[convertedLocation.x][convertedLocation.y] = true;
-		}
-		return occupied;
-	}
-    
+    public static void updateFrontier(MapLocation location, double heuristic) throws GameActionException {
+        int minerBlockId = Comm.getMinerId();
+        int frontierBlock = Comm.readBlock(minerBlockId, FRONTIER_OFFSET);
+        int encodedLoc = MapUtils.encode(location);
+        int heuristicInt = (int) (heuristic * 100);
+        int encodedInfo = heuristicInt << 16 | encodedLoc;
+        if (frontierBlock != 0) {
+            if (heuristicInt > frontierBlock) {
+                Comm.writeBlock(minerBlockId, FRONTIER_OFFSET, encodedInfo);
+            }
+        } else {
+            Comm.writeBlock(minerBlockId, FRONTIER_OFFSET, encodedInfo);
+        }
+    }
+
+    public static boolean[] getOccupiedTiles(int range) {
+        RobotInfo[] robots = Handler.rc.senseNearbyRobots(range, Handler.myTeam);
+        boolean[] occupied = new boolean[1 << 16];
+        for (int i = robots.length; --i >= 0;) {
+            int convertedLocation = MapUtils.encode(robots[i].location);
+            occupied[convertedLocation] = true;
+        }
+        return occupied;
+    }
+
     // This method will attempt to move in Direction d (or as close to it as
     // possible)
     static void tryMove(Direction d) throws GameActionException {

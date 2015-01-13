@@ -1,5 +1,6 @@
 package kevintestrashbot;
 
+import droneScoutRecall.Scout;
 import battlecode.common.*;
 
 public class SHQHandler extends StructureHandler {
@@ -47,6 +48,19 @@ public class SHQHandler extends StructureHandler {
 	protected static void init(RobotController rcon) throws GameActionException {
 		initStructure(rcon);
         rc.broadcast(Comm.HQ_MAP_CHAN, NavBFS.newBFSTask(myHQ));
+        setupBounds();
+	}
+	
+	protected static void setupBounds() throws GameActionException {
+		Scout.initBounds();
+		
+		Scout.updateBounds(myHQ);
+		Scout.updateBounds(enemyHQ);
+		
+		for (MapLocation loc: rc.senseTowerLocations())
+			Scout.updateBounds(loc);
+		for (MapLocation loc: rc.senseEnemyTowerLocations())
+			Scout.updateBounds(loc);
 	}
 
 	protected static void execute() throws GameActionException {
@@ -54,6 +68,7 @@ public class SHQHandler extends StructureHandler {
 		oreAmount = rc.getTeamOre();
 		updateTowers();
 		updateUnitCounts();
+		Scout.incRecallAges();
 		if(Clock.getRoundNum() % 3 == 0)
 		    resetMinerFrontier();
 		if (rc.isWeaponReady()) { // Try to attack

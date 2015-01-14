@@ -4,25 +4,24 @@ import battlecode.common.*;
 
 public class SHQHandler extends StructureHandler {
 	public static final int SPLASH_RANGE = 52;
-	public static final int UNIT_COUNT_UPDATE_FREQ = 10;
-	
+
 	public static MapLocation[] towerLocs;
 	public static int towerNum;
 
 	public static int range;
 	public static boolean splash;
 	public static RobotInfo[] inRangeEnemies;
-	
-	public static RobotInfo[] myRobots;
-	static int numBeavers = 0;
-	static int numLaunchers = 0;
-    static int numMiners = 0;
-    static int numMinerFactories = 0;
-    static int numTanks = 0;
-    static int numSupplyDepots = 0;
-    static int numHelipads = 0;
-    static int numAerospaceLabs = 0;
-	
+
+	private static RobotInfo[] myRobots;
+	private static int numBeavers = 0;
+	private static int numMiners = 0;
+	private static int numDrones = 0;
+	private static int numLaunchers = 0;
+	private static int numMinerFactories = 0;
+	private static int numHelipads = 0;
+	private static int numAerospaceLabs = 0;
+	private static int numSupplyDepots = 0;
+
 	public static void loop(RobotController rcon) {
 		try {
 			init(rcon);
@@ -49,40 +48,20 @@ public class SHQHandler extends StructureHandler {
 
 	protected static void execute() throws GameActionException {
 		executeStructure();
-		if (Clock.getRoundNum() % UNIT_COUNT_UPDATE_FREQ == 0) {
-			updateUnitCounts();
-		}
 		updateTowers();
 		updateUnitCounts();
+
 		if (rc.isWeaponReady()) { // Try to attack
 			calculateAttackable();
 			tryAttack();
 		}
-		if (Clock.getRoundNum() == 0) {
-			rc.broadcast(Comm.STATE_CHAN, 1);
-		} else if (Clock.getRoundNum() == 40) {
-			rc.broadcast(Comm.STATE_CHAN, 2);
-		} else if (Clock.getRoundNum() == 150) {
-			rc.broadcast(Comm.STATE_CHAN, 3);
-		}
-		
+
 		if (rc.isCoreReady()) { // Try to spawn
-			if (rc.readBroadcast(Comm.STATE_CHAN) == 1 && Clock.getRoundNum() == 0) {
-				Spawner.trySpawn(myLoc.directionTo(enemyHQ).opposite(), RobotType.BEAVER);
-			} else if (rc.readBroadcast(Comm.STATE_CHAN) == 2 && Clock.getRoundNum() == 40) {
-				Spawner.trySpawn(myLoc.directionTo(enemyHQ).rotateLeft().rotateLeft(), RobotType.BEAVER);
-			} else if (Comm.readBlock(Comm.getBeaverId(), 1) < 2 && rc.readBroadcast(Comm.STATE_CHAN) >= 3) {
-				Spawner.trySpawn(myLoc.directionTo(enemyHQ).opposite(), RobotType.BEAVER);
-			}
+			trySpawn();
 		}
-		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 		
+		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 		Distribution.spendBytecodesCalculating(7500);
-	}
-	
-	protected static void updateTowers() {
-		towerLocs = rc.senseTowerLocations();
-		towerNum = towerLocs.length;
 	}
 
 	protected static void calculateAttackable() {
@@ -90,13 +69,17 @@ public class SHQHandler extends StructureHandler {
 			range = GameConstants.HQ_BUFFED_ATTACK_RADIUS_SQUARED;
 			splash = true;
 			inRangeEnemies = rc.senseNearbyRobots(SPLASH_RANGE, otherTeam);
+		} else if (towerNum >= 2) {
+			range = GameConstants.HQ_BUFFED_ATTACK_RADIUS_SQUARED;
+			splash = false;
+			inRangeEnemies = rc.senseNearbyRobots(range, otherTeam);
 		} else {
 			range = typ.attackRadiusSquared;
 			splash = false;
 			inRangeEnemies = rc.senseNearbyRobots(range, otherTeam);
 		}
 	}
-	
+
 	protected static void tryAttack() throws GameActionException {
 		if (inRangeEnemies.length > 0) {
 			MapLocation minLoc = inRangeEnemies[0].location;
@@ -110,7 +93,7 @@ public class SHQHandler extends StructureHandler {
 					minLoc = enemyLoc;
 				}
 			}
-			
+
 			if (minRange < range) { // Splash damage calculations
 				rc.attackLocation(minLoc);
 			} else {
@@ -124,41 +107,63 @@ public class SHQHandler extends StructureHandler {
 		}
 	}
 
+	protected static void trySpawn() throws GameActionException {
+		int state = rc.readBroadcast(Comm.HQ_STATE_CHAN);
+		if (state == 0) {
+			Spawner.trySpawn(myLoc.directionTo(enemyHQ).opposite(), RobotType.BEAVER);
+			state = 1;
+			rc.broadcast(Comm.HQ_STATE_CHAN, 1);
+		} else if (state == 1) {
+			
+		}
+		
+		if (rc.readBroadcast(Comm.HQ_STATE_CHAN) == 1 && Clock.getRoundNum() == 0) {
+			Spawner.trySpawn(myLoc.directionTo(enemyHQ).opposite(), RobotType.BEAVER);
+		} else if (rc.readBroadcast(Comm.HQ_STATE_CHAN) == 2 && Clock.getRoundNum() == 40) {
+			Spawner.trySpawn(myLoc.directionTo(enemyHQ).rotateLeft().rotateLeft(), RobotType.BEAVER);
+		} else if (Comm.readBlock(Comm.getBeaverId(), 1) < 2 && rc.readBroadcast(Comm.HQ_STATE_CHAN) >= 3) {
+			Spawner.trySpawn(myLoc.directionTo(enemyHQ).opposite(), RobotType.BEAVER);
+		}
+	}
+	
+	protected static void updateTowers() {
+		towerLocs = rc.senseTowerLocations();
+		towerNum = towerLocs.length;
+	}
+
 	protected static void updateUnitCounts() throws GameActionException {
 		myRobots = rc.senseNearbyRobots(999999, myTeam);
-		numAerospaceLabs = numBeavers = numLaunchers = numMiners = numMinerFactories = numTanks = numSupplyDepots = numHelipads = 0;
+		numBeavers = numMiners = numDrones = numLaunchers = 0;
+		numMinerFactories = numHelipads = numAerospaceLabs = numSupplyDepots = 0;
 		for (int i = myRobots.length; --i >= 0;) {
-			switch (myRobots[i].type) {
-			case BEAVER:
+			RobotType typ = myRobots[i].type;
+			if (typ == RobotType.BEAVER) {
 				numBeavers++;
-				break;
-			case LAUNCHER:
-				numLaunchers++;
-				break;
-			case MINER:
+			} else if (typ == RobotType.MINER) {
 				numMiners++;
-				break;
-			case MINERFACTORY:
+			} else if (typ == RobotType.DRONE) {
+				numDrones++;
+			} else if (typ == RobotType.LAUNCHER) {
+				numLaunchers++;
+			} else if (typ == RobotType.MINERFACTORY) {
 				numMinerFactories++;
-				break;
-			case SUPPLYDEPOT:
-				numSupplyDepots++;
-				break;
-			case HELIPAD:
+			} else if (typ == RobotType.HELIPAD) {
 				numHelipads++;
-				break;
-			case AEROSPACELAB:
+			} else if (typ == RobotType.AEROSPACELAB) {
 				numAerospaceLabs++;
-				break;
+			} else if (typ == RobotType.SUPPLYDEPOT) {
+				numSupplyDepots++;
 			}
 		}
-		Comm.writeBlock(Comm.getHeliId(), 1, numHelipads);
+		
 		Comm.writeBlock(Comm.getBeaverId(), 1, numBeavers);
-		Comm.writeBlock(Comm.getLauncherId(), 1,numLaunchers);
 		Comm.writeBlock(Comm.getMinerId(), 1, numMiners);
+		Comm.writeBlock(Comm.getDroneId(), 1, numDrones);
+		Comm.writeBlock(Comm.getLauncherId(), 1,numLaunchers);
 		Comm.writeBlock(Comm.getMinerfactId(), 1, numMinerFactories);
-		Comm.writeBlock(Comm.getSupplyId(), 1, numSupplyDepots);
+		Comm.writeBlock(Comm.getHeliId(), 1, numHelipads);
 		Comm.writeBlock(Comm.getAeroId(), 1, numAerospaceLabs);
-	}	
-	
+		Comm.writeBlock(Comm.getSupplyId(), 1, numSupplyDepots);
+	}
+
 }

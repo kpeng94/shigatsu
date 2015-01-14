@@ -36,21 +36,19 @@ public class NavBFS {
 		int[] dirtyQueue = new int[MAX_WRITES]; // first index is numDirty
 		int numUnknown = 0;
 		
-		loop: while (Clock.getBytecodeNum() < bytecodelimit - (dirtyQueue[0] * 50) - 500 && head != tail && dirtyQueue[0] < MAX_WRITES - MAX_BUFFER) {
+		while (Clock.getBytecodeNum() < bytecodelimit - (dirtyQueue[0] * 50) - 500 && head != tail && dirtyQueue[0] < MAX_WRITES - MAX_BUFFER) {
 			int encodedPos = readFromQueue(baseBlock, head);
 			MapLocation pos = MapUtils.decode(encodedPos);
 			TerrainTile tile = Handler.rc.senseTerrainTile(pos);
-			switch (tile) {
-			case UNKNOWN: // Requeue current tile
+			if (tile == TerrainTile.UNKNOWN) { // Requeue current tile
 				writeToQueue(baseBlock, tail, encodedPos);
 				head = nextInQueue(head);
 				tail = nextInQueue(tail);
 				numUnknown++;
 				if (numUnknown == UNKNOWN_THRESHOLD) {
-					break loop;
+					break;
 				}
-				break;
-			case NORMAL:
+			} else if (tile == TerrainTile.NORMAL) {
 				int dist = readMapData(baseBlock, encodedPos, localCache) >>> 3;
 				if (dist == 0) { // source
 					writeToMapCache(encodedPos, 1 << 3, localCache, dirty, dirtyQueue);
@@ -60,27 +58,19 @@ public class NavBFS {
 					MapLocation check = pos.add(MapUtils.dirsDiagFirst[i]);
 					TerrainTile checkTile = Handler.rc.senseTerrainTile(check);
 					int encodedCheck = MapUtils.encode(check);
-					switch (checkTile) {
-					case UNKNOWN:
-					case NORMAL:
+					if (checkTile == TerrainTile.UNKNOWN || checkTile == TerrainTile.NORMAL) {
 						int oldDist = readMapData(baseBlock, encodedCheck, localCache) >>> 3;
 						if (oldDist == 0 || dist + 1 < oldDist) {
-//							Handler.rc.setIndicatorLine(pos, check, 255, 0, 0);
+							Handler.rc.setIndicatorLine(pos, check, 255, 0, 0);
 							writeToMapCache(encodedCheck, ((dist + 1) << 3) + MapUtils.dirsDiagFirst[i].opposite().ordinal(), localCache, dirty, dirtyQueue);
 							writeToQueue(baseBlock, tail, encodedCheck);
 							tail = nextInQueue(tail);
 						}
-						break;
-					default: // Ignore tile
-						break;
 					}
 				}
-				
 				head = nextInQueue(head);
-				break;
-			default: // Ignore current tile
+			} else {
 				head = nextInQueue(head);
-				break;
 			}
 		}
 

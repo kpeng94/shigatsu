@@ -129,7 +129,6 @@ public class NavTangentBug {
 			if (curFollowing.equals(dest)) return Direction.NONE; // reached destination
 			MapLocation convertedPos = MapUtils.encodeMapLocation(curFollowing);
 			Direction next = nextDir[convertedPos.x][convertedPos.y];
-			System.out.println(curFollowing + " " + next);
 			curFollowing = curFollowing.add(next);
 		}
 		return Handler.myLoc.directionTo(curFollowing);

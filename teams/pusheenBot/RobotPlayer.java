@@ -4,70 +4,49 @@ import battlecode.common.*;
 
 public class RobotPlayer {
 	public static void run(RobotController rc) {
-		switch (rc.getType()) {
-		case HQ:
-			SHQHandler.loop(rc);
-			break;
-		case TOWER:
-			STowerHandler.loop(rc);
-			break;
-		case SUPPLYDEPOT:
-			SSupplyHandler.loop(rc);
-			break;
-		case TECHNOLOGYINSTITUTE:
-			STechHandler.loop(rc);
-			break;
-		case BARRACKS:
-			SBarrackHandler.loop(rc);
-			break;
-		case HELIPAD:
-			SHeliHandler.loop(rc);
-			break;
-		case MINERFACTORY:
-			SMinerFactoryHandler.loop(rc);
-			break;
-		case TANKFACTORY:
-			STankFactoryHandler.loop(rc);
-			break;
-		case AEROSPACELAB:
-			SAeroHandler.loop(rc);
-			break;
-		case TRAININGFIELD:
-			STrainingHandler.loop(rc);
-			break;
-		case HANDWASHSTATION:
-			SHandwashHandler.loop(rc);
-			break;
-		case BEAVER:
-			UBeaverHandler.loop(rc);
-			break;
-		case MINER:
-			UMinerHandler.loop(rc);
-			break;
-		case COMPUTER:
-			UComputerHandler.loop(rc);
-			break;
-		case SOLDIER:
-			USoldierHandler.loop(rc);
-			break;
-		case BASHER:
-			UBasherHandler.loop(rc);
-			break;
-		case DRONE:
-			UDroneHandler.loop(rc);
-			break;
-		case TANK:
-			UTankHandler.loop(rc);
-			break;
-		case LAUNCHER:
-			ULauncherHandler.loop(rc);
-			break;
-		case MISSILE:
+		RobotType typ = rc.getType();
+		if (typ == RobotType.MISSILE) { // Missile needs to be the cheapest
 			UMissileHandler.loop(rc);
-			break;
-		case COMMANDER:
+		} else if (typ == RobotType.TOWER) {
+			STowerHandler.loop(rc);
+		} else if (typ == RobotType.HQ) {
+			SHQHandler.loop(rc);
+		} else if (typ == RobotType.BEAVER) {
+			UBeaverHandler.loop(rc);
+		} else if (typ == RobotType.MINER) {
+			UMinerHandler.loop(rc);
+		} else if (typ == RobotType.DRONE) {
+			UDroneHandler.loop(rc);
+		} else if (typ == RobotType.LAUNCHER) {
+			ULauncherHandler.loop(rc);
+		} else if (typ == RobotType.MINERFACTORY) {
+			SMinerFactoryHandler.loop(rc);
+		} else if (typ == RobotType.HELIPAD) {
+			SHeliHandler.loop(rc);
+		} else if (typ == RobotType.AEROSPACELAB) {
+			SAeroHandler.loop(rc);
+		} else if (typ == RobotType.SUPPLYDEPOT) {
+			SSupplyHandler.loop(rc);
+		} else if (typ == RobotType.TANK) {
+			UTankHandler.loop(rc);
+		} else if (typ == RobotType.COMMANDER) {
 			UCommanderHandler.loop(rc);
-			break;
+		} else if (typ == RobotType.BASHER) {
+			UBasherHandler.loop(rc);
+		} else if (typ == RobotType.SOLDIER) {
+			USoldierHandler.loop(rc);
+		} else if (typ == RobotType.COMPUTER) {
+			UComputerHandler.loop(rc);
+		} else if (typ == RobotType.TANKFACTORY) {
+			STankFactoryHandler.loop(rc);
+		} else if (typ == RobotType.BARRACKS) {
+			SBarrackHandler.loop(rc);
+		} else if (typ == RobotType.TRAININGFIELD) {
+			STrainingHandler.loop(rc);
+		} else if (typ == RobotType.TECHNOLOGYINSTITUTE) {
+			STechHandler.loop(rc);
+		} else if (typ == RobotType.HANDWASHSTATION) {
+			SHandwashHandler.loop(rc);
 		}
 	}
 }

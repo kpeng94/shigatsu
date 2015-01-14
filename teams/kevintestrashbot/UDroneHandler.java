@@ -22,7 +22,7 @@ public class UDroneHandler extends UnitHandler {
 			try {
 				execute();
 			} catch (Exception e) {
-				// e.printStackTrace();
+				 e.printStackTrace();
 				System.out.println(typ + " Execution Exception");
 			}
 			rc.yield(); // Yields to save remaining bytecodes
@@ -68,13 +68,19 @@ public class UDroneHandler extends UnitHandler {
 								minDistance = distanceSquared;
 							}
 						}
-						NavSimple.walkTowards(myLoc.directionTo(closestLocation.add(myHQToEnemyHQ, -4)));
+						if (rc.isCoreReady()) {
+							NavSimple.walkTowards(myLoc.directionTo(closestLocation.add(myHQToEnemyHQ, -4)));
+						}
 					} else {
-						NavSimple.walkTowards(myLoc.directionTo(MapUtils.pointSection(myHQ, enemyHQ, 0.75)));
+						if (rc.isCoreReady()) {
+							NavSimple.walkTowards(myLoc.directionTo(MapUtils.pointSection(myHQ, enemyHQ, 0.75)));
+						}
 					}
 				}
 			} else {
-				NavSimple.walkTowards(myLoc.directionTo(myHQ));
+				if (rc.isCoreReady()) {
+					NavSimple.walkTowards(myLoc.directionTo(myHQ));
+				}
 			}
 		}
 	}

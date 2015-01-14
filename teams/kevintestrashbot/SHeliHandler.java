@@ -31,7 +31,7 @@ public class SHeliHandler extends StructureHandler {
 		executeStructure();
 		int count = Comm.readBlock(Comm.getDroneId(), 1);
 		if (rc.isCoreReady() && count < 4) {
-			Spawner.trySpawn(myLoc.directionTo(enemyHQ), RobotType.DRONE, RobotType.DRONE.oreCost);
+			Spawner.trySpawn(myLoc.directionTo(enemyHQ), RobotType.DRONE, rc.getTeamOre());
 		}
 		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 	}

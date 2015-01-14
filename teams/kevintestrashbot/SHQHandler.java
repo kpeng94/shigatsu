@@ -108,6 +108,10 @@ public class SHQHandler extends StructureHandler {
 			range = GameConstants.HQ_BUFFED_ATTACK_RADIUS_SQUARED;
 			splash = true;
 			inRangeEnemies = rc.senseNearbyRobots(SPLASH_RANGE, otherTeam);
+		} else if (towerNum >= 2) {
+			range = GameConstants.HQ_BUFFED_ATTACK_RADIUS_SQUARED;
+			splash = false;
+			inRangeEnemies = rc.senseNearbyRobots(range, otherTeam);
 		} else {
 			range = typ.attackRadiusSquared;
 			splash = false;

@@ -225,7 +225,6 @@ public class UBeaverHandler extends UnitHandler {
 	}
 
 	private static void buildingMiningFactoriesCode() throws GameActionException {
-		System.out.println(numberOfMiningFactories);
 		if (numberOfMiningFactories >= Constants.NUM_OF_MININGFACTORIES) {
 			nextBeaverState = BeaverState.BUILDING_HELIPADS;
 		} else {

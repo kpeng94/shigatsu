@@ -11,24 +11,21 @@ public class SHQHandler extends StructureHandler {
 	public static int range;
 	public static boolean splash;
 	public static RobotInfo[] inRangeEnemies;
+	
+	private static int prevOre = 0;
 
 	private static RobotInfo[] myRobots;
-	private static int numBeavers = 0;
-	private static int numMiners = 0;
-	private static int numDrones = 0;
-	private static int numLaunchers = 0;
-	private static int numMinerFactories = 0;
-	private static int numHelipads = 0;
-	private static int numAerospaceLabs = 0;
-	private static int numSupplyDepots = 0;
-
-	private static int prevOre = 0;
+	
+	private static RobotType[] countTyps = {RobotType.BEAVER, RobotType.MINER, RobotType.DRONE, RobotType.LAUNCHER,
+		RobotType.MINERFACTORY, RobotType.HELIPAD, RobotType.AEROSPACELAB, RobotType.SUPPLYDEPOT};
+	private static int[] countChans;
+	private static int[] counts;
 
 	public static void loop(RobotController rcon) {
 		try {
 			init(rcon);
 		} catch (Exception e) {
-			// e.printStackTrace();
+			e.printStackTrace();
 			System.out.println(typ + " Initialization Exception");
 		}
 
@@ -46,8 +43,14 @@ public class SHQHandler extends StructureHandler {
 	protected static void init(RobotController rcon) throws GameActionException {
 		initStructure(rcon);
 		rc.broadcast(Comm.HQ_MAP_CHAN, NavBFS.newBFSTask(myHQ));
-		Comm.writeBlock(Comm.getBeaverId(), 2, 1); // Maintain 1 beaver
+		
 		prevOre = GameConstants.ORE_INITIAL_AMOUNT;
+		
+		countChans = new int[]{Comm.getBeaverId(), Comm.getMinerId(), Comm.getDroneId(), Comm.getLauncherId(),
+			Comm.getMinerfactId(), Comm.getHeliId(), Comm.getAeroId(), Comm.getSupplyId()};
+		counts = new int[countTyps.length];
+		
+		Comm.writeBlock(countChans[0], 2, 1); // Maintain 1 beaver
 	}
 
 	protected static void execute() throws GameActionException {
@@ -112,12 +115,9 @@ public class SHQHandler extends StructureHandler {
 	}
 
 	protected static void trySpawn() throws GameActionException {
-		int beaverLimit = Comm.readBlock(Comm.getBeaverId(), 2);
-		if (numBeavers < beaverLimit) {
-			if (Spawner.trySpawn(myLoc.directionTo(enemyHQ).opposite(), RobotType.BEAVER)) {
-				numBeavers++;
-				Comm.writeBlock(Comm.getBeaverId(), 1, numBeavers);
-			}
+		int beaverLimit = Comm.readBlock(countChans[0], 2);
+		if (counts[0] < beaverLimit) {
+			Spawner.trySpawn(myLoc.directionTo(enemyHQ).opposite(), RobotType.BEAVER, countChans[0]);
 		}
 	}
 
@@ -128,52 +128,36 @@ public class SHQHandler extends StructureHandler {
 
 	protected static void updateUnitCounts() throws GameActionException {
 		myRobots = rc.senseNearbyRobots(999999, myTeam);
-		numBeavers = numMiners = numDrones = numLaunchers = 0;
-		numMinerFactories = numHelipads = numAerospaceLabs = numSupplyDepots = 0;
+		counts = new int[countTyps.length];
 		for (int i = myRobots.length; --i >= 0;) {
 			RobotType typ = myRobots[i].type;
-			if (typ == RobotType.BEAVER) {
-				numBeavers++;
-			} else if (typ == RobotType.MINER) {
-				numMiners++;
-			} else if (typ == RobotType.DRONE) {
-				numDrones++;
-			} else if (typ == RobotType.LAUNCHER) {
-				numLaunchers++;
-			} else if (typ == RobotType.MINERFACTORY) {
-				numMinerFactories++;
-			} else if (typ == RobotType.HELIPAD) {
-				numHelipads++;
-			} else if (typ == RobotType.AEROSPACELAB) {
-				numAerospaceLabs++;
-			} else if (typ == RobotType.SUPPLYDEPOT) {
-				numSupplyDepots++;
+			for (int j = 0; j < countTyps.length; j++) {
+				if (typ == countTyps[j]) {
+					counts[j]++;
+					break;
+				}
 			}
 		}
 
-		Comm.writeBlock(Comm.getBeaverId(), 1, numBeavers);
-		Comm.writeBlock(Comm.getMinerId(), 1, numMiners);
-		Comm.writeBlock(Comm.getDroneId(), 1, numDrones);
-		Comm.writeBlock(Comm.getLauncherId(), 1,numLaunchers);
-		Comm.writeBlock(Comm.getMinerfactId(), 1, numMinerFactories);
-		Comm.writeBlock(Comm.getHeliId(), 1, numHelipads);
-		Comm.writeBlock(Comm.getAeroId(), 1, numAerospaceLabs);
-		Comm.writeBlock(Comm.getSupplyId(), 1, numSupplyDepots);
+		for (int j = 0; j < countTyps.length; j++) {
+			Comm.writeBlock(countChans[j], 1, counts[j]);
+		}
 	}
 
 	protected static void updateOre() throws GameActionException {
 		int spent = rc.readBroadcast(Comm.SPENT_ORE_BUFFER_CHAN);
 		int gained = (int) (rc.getTeamOre() - prevOre + spent);
+		prevOre = (int) rc.getTeamOre();
 		rc.broadcast(Comm.SPENT_ORE_BUFFER_CHAN, 0);
-		rc.broadcast(Comm.PREV_ORE_CHAN, (int) rc.getTeamOre());
 		rc.broadcast(Comm.PREV_ORE_CHAN, prevOre);
+		rc.broadcast(Comm.SPENT_ORE_CHAN, spent);
 		rc.broadcast(Comm.GAINED_ORE_CHAN, gained);
 	}
 
 	protected static void updateBuildStates() throws GameActionException {
-		if (numBeavers == 1) {
+		if (counts[0] == 1) {
 			Comm.writeBlock(Comm.getMinerfactId(), 2, 1);
-			Comm.writeBlock(Comm.getMinerId(), 2, 30);
+			Comm.writeBlock(Comm.getMinerId(), 2, 50);
 		}
 	}
 

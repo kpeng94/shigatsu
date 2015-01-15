@@ -38,10 +38,7 @@ public class SMinerFactoryHandler extends StructureHandler {
 		int numMiners = Comm.readBlock(Comm.getMinerId(), 1);
 		int minerLimit = Comm.readBlock(Comm.getMinerId(), 2);
 		if (numMiners < minerLimit) {
-			if (Spawner.trySpawn(myLoc.directionTo(enemyHQ).opposite(), RobotType.MINER)) {
-				numMiners++;
-				Comm.writeBlock(Comm.getMinerId(), 1, numMiners);
-			}
+			Spawner.trySpawn(myLoc.directionTo(enemyHQ).opposite(), RobotType.MINER, Comm.getMinerId());
 		}
 	}
 	

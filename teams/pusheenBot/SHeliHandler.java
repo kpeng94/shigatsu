@@ -30,9 +30,6 @@ public class SHeliHandler extends StructureHandler {
 	protected static void execute() throws GameActionException {
 		executeStructure();
 		if (rc.isCoreReady()) { // Try to spawn
-			if (Clock.getRoundNum() == 150) {
-				Spawner.trySpawn(myLoc.directionTo(enemyHQ), RobotType.DRONE);
-			}
 		}
 	}
 	

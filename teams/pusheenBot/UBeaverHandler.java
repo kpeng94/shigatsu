@@ -7,7 +7,6 @@ public class UBeaverHandler extends UnitHandler {
 //	public static boolean smart;
 //	public static MapLocation[] path;
 //	public static int pathIndex;
-	public static int beaverId;
 	
 	public static void loop(RobotController rcon) {
 		try {
@@ -30,11 +29,6 @@ public class UBeaverHandler extends UnitHandler {
 
 	protected static void init(RobotController rcon) throws GameActionException {
 		initUnit(rcon);
-		if (Clock.getRoundNum() == 0) {
-			beaverId = 1;
-		} else if (Clock.getRoundNum() == 40) {
-			beaverId = 2;
-		}
 		Spawner.HQxMod = myHQ.x % 2;
 		Spawner.HQyMod = myHQ.y % 2;
 //		NavTangentBug.setDest(rc.senseEnemyTowerLocations()[2]);
@@ -54,16 +48,13 @@ public class UBeaverHandler extends UnitHandler {
 	protected static void execute() throws GameActionException {
 		executeUnit();
 		if (rc.isCoreReady()) {
-			if (beaverId == 1 && Clock.getRoundNum() == 20) {
-				Direction dir = Spawner.getBuildDirection(RobotType.MINERFACTORY, true);
-				if (dir != Direction.NONE) {
-					rc.build(dir, RobotType.MINERFACTORY);
+			if (!tryBuild()) {
+				if (myLoc.distanceSquaredTo(myHQ) > 10) {
+					NavSimple.walkTowards(myLoc.directionTo(myHQ));
+				} else {
+					NavSimple.walkRandom();
 				}
-			} else if (beaverId == 2 && Clock.getRoundNum() == 100) {
-				Direction dir = Spawner.getBuildDirection(RobotType.HELIPAD, true);
-				if (dir != Direction.NONE) {
-					rc.build(dir, RobotType.HELIPAD);
-				}
+				// Random mining code
 			}
 		}
 //		if (!smart) NavTangentBug.calculate(2500);
@@ -84,6 +75,37 @@ public class UBeaverHandler extends UnitHandler {
 //		}
 		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 		Distribution.spendBytecodesCalculating(Handler.rc.getSupplyLevel() > 50 ? 7500 : 2500);
+	}
+	
+	protected static boolean tryBuild() throws GameActionException {
+		Direction dir = Spawner.getBuildDirection(false);
+		if (dir != Direction.NONE) {
+			int minerFactNum = Comm.readBlock(Comm.getMinerfactId(), 1);
+			int minerFactLimit = Comm.readBlock(Comm.getMinerfactId(), 2);
+			if (minerFactNum < minerFactLimit && rc.getTeamOre() >= RobotType.MINERFACTORY.oreCost) {
+				rc.build(dir, RobotType.MINERFACTORY);
+				return true;
+			}
+			int heliNum = Comm.readBlock(Comm.getHeliId(), 1);
+			int heliLimit = Comm.readBlock(Comm.getHeliId(), 2);
+			if (heliNum < heliLimit && rc.getTeamOre() >= RobotType.HELIPAD.oreCost) {
+				rc.build(dir, RobotType.HELIPAD);
+				return true;
+			}
+			int aeroNum = Comm.readBlock(Comm.getAeroId(), 1);
+			int aeroLimit = Comm.readBlock(Comm.getAeroId(), 2);
+			if (aeroNum < aeroLimit && rc.getTeamOre() >= RobotType.AEROSPACELAB.oreCost) {
+				rc.build(dir, RobotType.AEROSPACELAB);
+				return true;
+			}
+			int supplyNum = Comm.readBlock(Comm.getSupplyId(), 1);
+			int supplyLimit = Comm.readBlock(Comm.getSupplyId(), 2);
+			if (supplyNum < supplyLimit && rc.getTeamOre() >= RobotType.SUPPLYDEPOT.oreCost) {
+				rc.build(dir, RobotType.SUPPLYDEPOT);
+				return true;
+			}
+		}
+		return false;
 	}
 	
 }

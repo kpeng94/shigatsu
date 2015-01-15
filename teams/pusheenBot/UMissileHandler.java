@@ -24,11 +24,11 @@ public class UMissileHandler extends UnitHandler {
 	}
 
 	protected static void init(RobotController rcon) throws GameActionException {
-		initUnit(rcon);
+
 	}
 
 	protected static void execute() {
-		executeUnit();
+
 	}
 	
 }

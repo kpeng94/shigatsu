@@ -3,9 +3,10 @@ package pusheenBot;
 import battlecode.common.*;
 
 public class UMinerHandler extends UnitHandler {
-	public static final int MINER_PROXIMITY = 2;
-	public static final int ADJ_THRESHOLD = 2;
-	public static final int ORE_THRESHOLD = 2;
+	public static boolean movingToFrontier = false;
+	public static boolean usingBFS = false;
+	public static int pathIndex = 0;
+	public static MapLocation[] path;
 
 	public static void loop(RobotController rcon) {
 		try {
@@ -19,7 +20,7 @@ public class UMinerHandler extends UnitHandler {
 			try {
 				execute();
 			} catch (Exception e) {
-				 e.printStackTrace();
+				e.printStackTrace();
 				System.out.println(typ + " Execution Exception");
 			}
 			rc.yield(); // Yields to save remaining bytecodes
@@ -32,60 +33,84 @@ public class UMinerHandler extends UnitHandler {
 
 	protected static void execute() throws GameActionException {
 		executeUnit();
+		if (rc.isWeaponReady()) {
+			tryAttack();
+		}
+		
 		if (rc.isCoreReady()) {
-			RobotInfo[] adjBots = rc.senseNearbyRobots(MINER_PROXIMITY, myTeam);
-			int numMiners = 0;
-			for (int i = adjBots.length; --i >= 0;) {
-				if (adjBots[i].type == RobotType.MINER) numMiners++;
-			}
-			if (numMiners > ADJ_THRESHOLD) {
-				MapLocation closest = Mining.findClosestMinableOreWithRespectToHQ(ORE_THRESHOLD, 6);
-				Direction dir = closest == null ? null : myLoc.directionTo(closest);
-				Handler.rc.setIndicatorString(1, Clock.getRoundNum() + " " + closest + " " + dir);
-				if (dir != null) {
-					if (rc.canMove(dir)) rc.move(dir);
-					else {
-						NavTangentBug.setDest(closest);
-						NavTangentBug.calculate(4000);
-						dir = NavTangentBug.getNextMove();
-						Handler.rc.setIndicatorString(0, "bugging to " + closest + " " + dir);
-						if (dir != Direction.NONE) NavSimple.walkTowardsDirected(dir);
+			// Moving to frontier
+			miningOverride: if (movingToFrontier) {
+				if(rc.senseOre(myLoc) >= Mining.ORE_THRESHOLD && rc.canMine()){
+					movingToFrontier = false;
+					rc.mine();
+					break miningOverride;
+				}
+				if (usingBFS) {
+					while (pathIndex < path.length - 1 && myLoc.distanceSquaredTo(path[pathIndex]) <= 2) {
+						pathIndex++;
+					}
+					if (pathIndex == path.length - 1) {
+						movingToFrontier = false;
+					}
+					NavSimple.walkTowardsDirected(myLoc.directionTo(path[pathIndex]));
+				} else {
+					NavTangentBug.calculate(2500);
+					Direction nextMove = NavTangentBug.getNextMove();
+					if (nextMove != Direction.NONE) {
+						NavSimple.walkTowards(nextMove);
+					}
+					if (myLoc.distanceSquaredTo(NavTangentBug.dest) <= 2) {
+						movingToFrontier = false;
 					}
 				}
 			} else {
-				if (rc.senseOre(myLoc) > ORE_THRESHOLD) {
+				// Check ore tiles around you
+				MapLocation ml;
+				ml = Mining.findClosestMinableOreWithRespectToHQ(Mining.ORE_THRESHOLD, 6);
+				RobotInfo[] nearbyRobots = rc.senseNearbyRobots(myLoc, 1, myTeam);
+				int numMiners = 0;
+				for (int i = nearbyRobots.length; --i >= 0;) {
+					if (nearbyRobots[i].type == RobotType.MINER) numMiners++;
+				}
+				if (numMiners > Mining.ADJ_THRESHOLD) {
+					if (ml != null) {
+						NavSimple.walkTowards(myLoc.directionTo(ml));
+					}
+				} else if (rc.senseOre(myLoc) >= Mining.ORE_THRESHOLD && rc.canMine()) {
+					// System.out.println("Still mining");
 					rc.mine();
 				} else {
-					MapLocation closest = Mining.findClosestMinableOreWithRespectToHQ(ORE_THRESHOLD, 6);
-					Direction dir = closest == null ? null : myLoc.directionTo(closest);
-					Handler.rc.setIndicatorString(1, Clock.getRoundNum() + " " + closest + " " + dir);
-					if (dir != null) {
-						if (rc.canMove(dir)) rc.move(dir);
-						else {
-							NavTangentBug.setDest(closest);
-							NavTangentBug.calculate(4000);
-							dir = NavTangentBug.getNextMove();
-							Handler.rc.setIndicatorString(0, "bugging to " + closest + " " + dir);
-							if (dir != Direction.NONE) NavSimple.walkTowards(dir);
+					if (ml != null) {
+						NavSimple.walkTowards(myLoc.directionTo(ml));
+					} else {
+						int frontier = Comm.readBlock(Comm.getMinerId(), Mining.FRONTIER_OFFSET);
+						if (frontier != 0) {
+							movingToFrontier = true;
+							int hqMapBaseBlock = rc.readBroadcast(Comm.HQ_MAP_CHAN);
+							if (myLoc.distanceSquaredTo(myHQ) < 8 && !(NavBFS.readMapDataUncached(hqMapBaseBlock, frontier & 0xFFFF) == 0)) {
+								usingBFS = true;
+								path = NavBFS.backtrace(hqMapBaseBlock, MapUtils.decode(frontier & 0xFFFF));
+								pathIndex = 0;
+							} else {
+								usingBFS = false;
+								NavTangentBug.setDest(MapUtils.decode(frontier & 0xFFFF));
+							}
 						}
 					}
 				}
 			}
 		}
+
 		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
+		Distribution.spendBytecodesCalculating(Handler.rc.getSupplyLevel() > 50 ? 7500 : 2500);
+
 	}
-	
-	protected static Direction towardsNextMineableSquare() throws GameActionException {
-//		boolean[][] occupied = Mining.getOccupiedTiles(8);
-//		MapLocation closest = Mining.findRangeNOre(ORE_THRESHOLD, 2, occupied);
-//		if (closest == null) {
-//			closest = Mining.findRangeNOre(ORE_THRESHOLD, 8, occupied);
-//		}
-		MapLocation closest = Mining.findClosestMinableOreWithRespectToHQ(ORE_THRESHOLD, 6);
-		if (closest != null) {
-			return myLoc.directionTo(closest);
+
+	public static void tryAttack() throws GameActionException {
+		RobotInfo[] enemies = rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam);
+		if (enemies.length > 0) {
+			rc.attackLocation(enemies[0].location);
 		}
-		return null;
 	}
-	
+
 }

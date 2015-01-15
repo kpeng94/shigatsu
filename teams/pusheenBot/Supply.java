@@ -3,7 +3,7 @@ package pusheenBot;
 import battlecode.common.*;
 
 public class Supply {
-	public static final int DEFAULT_THRESHOLD = 100;
+	public static final int DEFAULT_THRESHOLD = 50;
 
 	public static void spreadSupplies(int threshold) throws GameActionException {
 		double totalSupply = Handler.rc.getSupplyLevel();

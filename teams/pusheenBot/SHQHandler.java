@@ -22,6 +22,8 @@ public class SHQHandler extends StructureHandler {
 	private static int numAerospaceLabs = 0;
 	private static int numSupplyDepots = 0;
 
+	private static int prevOre = 0;
+
 	public static void loop(RobotController rcon) {
 		try {
 			init(rcon);
@@ -44,12 +46,15 @@ public class SHQHandler extends StructureHandler {
 	protected static void init(RobotController rcon) throws GameActionException {
 		initStructure(rcon);
 		rc.broadcast(Comm.HQ_MAP_CHAN, NavBFS.newBFSTask(myHQ));
+		Comm.writeBlock(Comm.getBeaverId(), 2, 1); // Maintain 1 beaver
+		prevOre = GameConstants.ORE_INITIAL_AMOUNT;
 	}
 
 	protected static void execute() throws GameActionException {
 		executeStructure();
 		updateTowers();
 		updateUnitCounts();
+		updateOre();
 
 		if (rc.isWeaponReady()) { // Try to attack
 			calculateAttackable();
@@ -59,7 +64,8 @@ public class SHQHandler extends StructureHandler {
 		if (rc.isCoreReady()) { // Try to spawn
 			trySpawn();
 		}
-		
+		updateBuildStates();
+
 		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 		Distribution.spendBytecodesCalculating(7500);
 	}
@@ -97,9 +103,7 @@ public class SHQHandler extends StructureHandler {
 			if (minRange < range) { // Splash damage calculations
 				rc.attackLocation(minLoc);
 			} else {
-				int dx = minLoc.x - myLoc.x;
-				int dy = minLoc.y - myLoc.y;
-				MapLocation newLoc = new MapLocation(minLoc.x - ((dx == 0) ? 0 : ((dx > 0) ? 1 : -1)), minLoc.y - ((dy == 0) ? 0 : ((dy > 0) ? 1 : -1)));
+				MapLocation newLoc = minLoc.add(minLoc.directionTo(myLoc));
 				if (myLoc.distanceSquaredTo(newLoc) < range) {
 					rc.attackLocation(newLoc);
 				}
@@ -108,24 +112,15 @@ public class SHQHandler extends StructureHandler {
 	}
 
 	protected static void trySpawn() throws GameActionException {
-		int state = rc.readBroadcast(Comm.HQ_STATE_CHAN);
-		if (state == 0) {
-			Spawner.trySpawn(myLoc.directionTo(enemyHQ).opposite(), RobotType.BEAVER);
-			state = 1;
-			rc.broadcast(Comm.HQ_STATE_CHAN, 1);
-		} else if (state == 1) {
-			
-		}
-		
-		if (rc.readBroadcast(Comm.HQ_STATE_CHAN) == 1 && Clock.getRoundNum() == 0) {
-			Spawner.trySpawn(myLoc.directionTo(enemyHQ).opposite(), RobotType.BEAVER);
-		} else if (rc.readBroadcast(Comm.HQ_STATE_CHAN) == 2 && Clock.getRoundNum() == 40) {
-			Spawner.trySpawn(myLoc.directionTo(enemyHQ).rotateLeft().rotateLeft(), RobotType.BEAVER);
-		} else if (Comm.readBlock(Comm.getBeaverId(), 1) < 2 && rc.readBroadcast(Comm.HQ_STATE_CHAN) >= 3) {
-			Spawner.trySpawn(myLoc.directionTo(enemyHQ).opposite(), RobotType.BEAVER);
+		int beaverLimit = Comm.readBlock(Comm.getBeaverId(), 2);
+		if (numBeavers < beaverLimit) {
+			if (Spawner.trySpawn(myLoc.directionTo(enemyHQ).opposite(), RobotType.BEAVER)) {
+				numBeavers++;
+				Comm.writeBlock(Comm.getBeaverId(), 1, numBeavers);
+			}
 		}
 	}
-	
+
 	protected static void updateTowers() {
 		towerLocs = rc.senseTowerLocations();
 		towerNum = towerLocs.length;
@@ -155,7 +150,7 @@ public class SHQHandler extends StructureHandler {
 				numSupplyDepots++;
 			}
 		}
-		
+
 		Comm.writeBlock(Comm.getBeaverId(), 1, numBeavers);
 		Comm.writeBlock(Comm.getMinerId(), 1, numMiners);
 		Comm.writeBlock(Comm.getDroneId(), 1, numDrones);
@@ -164,6 +159,22 @@ public class SHQHandler extends StructureHandler {
 		Comm.writeBlock(Comm.getHeliId(), 1, numHelipads);
 		Comm.writeBlock(Comm.getAeroId(), 1, numAerospaceLabs);
 		Comm.writeBlock(Comm.getSupplyId(), 1, numSupplyDepots);
+	}
+
+	protected static void updateOre() throws GameActionException {
+		int spent = rc.readBroadcast(Comm.SPENT_ORE_BUFFER_CHAN);
+		int gained = (int) (rc.getTeamOre() - prevOre + spent);
+		rc.broadcast(Comm.SPENT_ORE_BUFFER_CHAN, 0);
+		rc.broadcast(Comm.PREV_ORE_CHAN, (int) rc.getTeamOre());
+		rc.broadcast(Comm.PREV_ORE_CHAN, prevOre);
+		rc.broadcast(Comm.GAINED_ORE_CHAN, gained);
+	}
+
+	protected static void updateBuildStates() throws GameActionException {
+		if (numBeavers == 1) {
+			Comm.writeBlock(Comm.getMinerfactId(), 2, 1);
+			Comm.writeBlock(Comm.getMinerId(), 2, 30);
+		}
 	}
 
 }

@@ -24,13 +24,19 @@ public class Comm {
 	public static final int LAST_GARBAGE_TURN_CHAN = 3;
 	public static final int TASK_CHAN = 4;
 	
-	// States
-	public static final int HQ_STATE_CHAN = 5;
-	public static final int BEAVER_STATE_CHAN = 6;
-	
 	// Maps
 	public static final int HQ_MAP_CHAN = 20;
 	
+	// Ore Info
+	public static final int SPENT_ORE_BUFFER_CHAN = 30;
+	public static final int PREV_ORE_CHAN = 31;
+	public static final int SPENT_ORE_CHAN = 32;
+	public static final int GAINED_ORE_CHAN = 33;
+//	public static final int AVG5_SPENT_ORE_CHAN = 34;
+//	public static final int AVG5_GAINED_ORE_CHAN = 35;
+	
+	// Apparently offset 1 = count
+	// offset 2 = intended count
 	// Structures
 	public static final int HQ_BLOCK = 100;
 	public static final int TOWER_BLOCK = 101;

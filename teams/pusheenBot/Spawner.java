@@ -13,14 +13,15 @@ public class Spawner {
 	public static int HQxMod;
 	public static int HQyMod;
 
-	public static void trySpawn(Direction dir, RobotType typ) throws GameActionException {
+	public static boolean trySpawn(Direction dir, RobotType typ) throws GameActionException {
 		Direction[] dirs = MapUtils.dirsAroundRev(dir);
 		for (int i = dirs.length; --i >= 0;) {
 			if (Handler.rc.canSpawn(dirs[i], typ)) {
 				Handler.rc.spawn(dirs[i], typ);
-				return;
+				return true;
 			}
 		}
+		return false;
 	}
 	
 	public static Direction checkBuildArray(Direction[] dirs, RobotType typ) {
@@ -31,25 +32,26 @@ public class Spawner {
 	}
 	
 	// Tries to build on the HQ grid
-	public static Direction getBuildDirection(RobotType typ, boolean tryNonGrid) {
+	// Uses a hacky method of trying the cheapest tower: supply depots
+	public static Direction getBuildDirection(boolean tryNonGrid) {
 		if (Handler.myLoc.x % 2 == HQxMod) { // Along same x grid
 			if (Handler.myLoc.y % 2 != HQyMod) {
-				Direction dir = checkBuildArray(NS, typ);
+				Direction dir = checkBuildArray(NS, RobotType.SUPPLYDEPOT);
 				if (dir == Direction.NONE && tryNonGrid) {
-					dir = checkBuildArray(NOT_NS, typ);
+					dir = checkBuildArray(NOT_NS, RobotType.SUPPLYDEPOT);
 				}
 				return dir;
 			}
 		} else if (Handler.myLoc.y % 2 == HQyMod) { // Along same 
-			Direction dir = checkBuildArray(WE, typ);
+			Direction dir = checkBuildArray(WE, RobotType.SUPPLYDEPOT);
 			if (dir == Direction.NONE && tryNonGrid) {
-				dir = checkBuildArray(NOT_WE, typ);
+				dir = checkBuildArray(NOT_WE, RobotType.SUPPLYDEPOT);
 			}
 			return dir;
 		} else {
-			Direction dir = checkBuildArray(DIAGS, typ);
+			Direction dir = checkBuildArray(DIAGS, RobotType.SUPPLYDEPOT);
 			if (dir == Direction.NONE && tryNonGrid) {
-				dir = checkBuildArray(ADJS, typ);
+				dir = checkBuildArray(ADJS, RobotType.SUPPLYDEPOT);
 			}
 			return dir;
 		}

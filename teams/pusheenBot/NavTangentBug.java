@@ -3,9 +3,10 @@ package pusheenBot;
 import battlecode.common.*;
 
 public class NavTangentBug {
-	public static int DIST_MIN = 5;
-	public static int PROXIMITY = 2;
-	public static int SMART_FUTURE_SENSING = 2;
+	public static final int DIST_MIN = 5;
+	public static final int PROXIMITY = 2;
+	public static final int SMART_FUTURE_SENSING = 2;
+	public static final int CHECK_LIMIT = 5;
 	
 	public static MapLocation dest;
 	public static MapLocation convertedDest;
@@ -129,12 +130,14 @@ public class NavTangentBug {
 	
 	public static Direction getNextMove() {
 		if (Handler.myLoc.distanceSquaredTo(dest) < PROXIMITY) return Direction.NONE;
-		while (Handler.myLoc.distanceSquaredTo(curFollowing) <= SMART_FUTURE_SENSING) {
+		int checkAmount = 0;
+		while (Handler.myLoc.distanceSquaredTo(curFollowing) <= SMART_FUTURE_SENSING && checkAmount < CHECK_LIMIT) {
 			if (curFollowing.equals(dest)) return Direction.NONE; // reached destination
 			int encodedPos = MapUtils.encode(curFollowing);
 			Direction next = nextDir[encodedPos];
 			if (next == null) return Handler.myLoc.directionTo(curFollowing);
 			curFollowing = curFollowing.add(next);
+			checkAmount++;
 		}
 		return Handler.myLoc.directionTo(curFollowing);
 	}

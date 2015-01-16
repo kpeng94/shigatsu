@@ -29,15 +29,14 @@ public class SMinerFactoryHandler extends StructureHandler {
 
 	protected static void execute() throws GameActionException {
 		executeStructure();
+		Count.incrementBuffer(Comm.getMinerfactId());
 		if (rc.isCoreReady()) { // Try to spawn
 			trySpawn();
 		}
 	}
 	
 	protected static void trySpawn() throws GameActionException {
-		int numMiners = Comm.readBlock(Comm.getMinerId(), 1);
-		int minerLimit = Comm.readBlock(Comm.getMinerId(), 2);
-		if (numMiners < minerLimit) {
+		if (Count.getCount(Comm.getMinerId()) < Count.getLimit(Comm.getMinerId())) {
 			Spawner.trySpawn(myLoc.directionTo(enemyHQ).opposite(), RobotType.MINER, Comm.getMinerId());
 		}
 	}

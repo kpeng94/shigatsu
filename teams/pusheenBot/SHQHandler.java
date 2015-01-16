@@ -13,13 +13,8 @@ public class SHQHandler extends StructureHandler {
 	public static RobotInfo[] inRangeEnemies;
 	
 	private static int prevOre = 0;
-
-	private static RobotInfo[] myRobots;
 	
-	private static RobotType[] countTyps = {RobotType.BEAVER, RobotType.MINER, RobotType.DRONE, RobotType.LAUNCHER,
-		RobotType.MINERFACTORY, RobotType.HELIPAD, RobotType.AEROSPACELAB, RobotType.SUPPLYDEPOT};
 	private static int[] countChans;
-	private static int[] counts;
 
 	public static void loop(RobotController rcon) {
 		try {
@@ -46,18 +41,22 @@ public class SHQHandler extends StructureHandler {
 		
 		prevOre = GameConstants.ORE_INITIAL_AMOUNT;
 		
-		countChans = new int[]{Comm.getBeaverId(), Comm.getMinerId(), Comm.getDroneId(), Comm.getLauncherId(),
-			Comm.getMinerfactId(), Comm.getHeliId(), Comm.getAeroId(), Comm.getSupplyId()};
-		counts = new int[countTyps.length];
+		countChans = new int[]{Comm.getBeaverId(), Comm.getMinerId(), Comm.getDroneId(),
+			Comm.getMinerfactId(), Comm.getHeliId(), Comm.getSupplyId()};
 		
-		Comm.writeBlock(countChans[0], 2, 1); // Maintain 1 beaver
+		initCounts();
+
+		Count.setLimit(countChans[0], 1); // Maintain 1 beaver
 	}
 
 	protected static void execute() throws GameActionException {
 		executeStructure();
 		updateTowers();
-		updateUnitCounts();
+		for (int i = countChans.length; --i >= 0;) {
+			Count.resetBuffer(countChans[i]);
+		}
 		updateOre();
+		Count.incrementBuffer(Comm.getHqId());
 
 		if (rc.isWeaponReady()) { // Try to attack
 			calculateAttackable();
@@ -115,8 +114,7 @@ public class SHQHandler extends StructureHandler {
 	}
 
 	protected static void trySpawn() throws GameActionException {
-		int beaverLimit = Comm.readBlock(countChans[0], 2);
-		if (counts[0] < beaverLimit) {
+		if (Count.getCount(countChans[0]) < Count.getLimit(countChans[0])) {
 			Spawner.trySpawn(myLoc.directionTo(enemyHQ).opposite(), RobotType.BEAVER, countChans[0]);
 		}
 	}
@@ -126,22 +124,10 @@ public class SHQHandler extends StructureHandler {
 		towerNum = towerLocs.length;
 	}
 
-	protected static void updateUnitCounts() throws GameActionException {
-		myRobots = rc.senseNearbyRobots(999999, myTeam);
-		counts = new int[countTyps.length];
-		for (int i = myRobots.length; --i >= 0;) {
-			RobotType typ = myRobots[i].type;
-			for (int j = 0; j < countTyps.length; j++) {
-				if (typ == countTyps[j]) {
-					counts[j]++;
-					break;
-				}
-			}
-		}
-
-		for (int j = 0; j < countTyps.length; j++) {
-			Comm.writeBlock(countChans[j], 1, counts[j]);
-		}
+	protected static void initCounts() throws GameActionException {
+		int towers = rc.senseTowerLocations().length;
+		Comm.writeBlock(Comm.getHqId(), Count.COUNT_BUFFER_START, 1);
+		Comm.writeBlock(Comm.getTowerId(), Count.COUNT_BUFFER_START, towers);
 	}
 
 	protected static void updateOre() throws GameActionException {
@@ -155,20 +141,20 @@ public class SHQHandler extends StructureHandler {
 	}
 
 	protected static void updateBuildStates() throws GameActionException {
-		if (counts[2] >= 20 || Clock.getRoundNum() >= 500) {
-			Comm.writeBlock(Comm.getMinerfactId(), 2, 1);
-			Comm.writeBlock(Comm.getMinerId(), 2, 40);
-			Comm.writeBlock(Comm.getBeaverId(), 2, 2);
-			Comm.writeBlock(Comm.getHeliId(), 2, 5);
-			Comm.writeBlock(Comm.getDroneId(), 2, 999);
-			Comm.writeBlock(Comm.getSupplyId(), 2, 30);
-		} else if (counts[4] == 1) {
-			Comm.writeBlock(Comm.getBeaverId(), 2, 2);
-			Comm.writeBlock(Comm.getHeliId(), 2, 1);
-			Comm.writeBlock(Comm.getDroneId(), 2, 999);
-		} else if (counts[0] == 1) {
-			Comm.writeBlock(Comm.getMinerfactId(), 2, 1);
-			Comm.writeBlock(Comm.getMinerId(), 2, 25);
+		if (Count.getCount(countChans[2]) >= 20 || Clock.getRoundNum() >= 500) { // Drones > 20
+			Count.setLimit(Comm.getMinerfactId(), 1);
+			Count.setLimit(Comm.getMinerId(), 40);
+			Count.setLimit(Comm.getBeaverId(), 2);
+			Count.setLimit(Comm.getHeliId(), 5);
+			Count.setLimit(Comm.getDroneId(), 999);
+			Count.setLimit(Comm.getSupplyId(), 30);
+		} else if (Count.getCount(countChans[3]) == 1) { // 1 mining fact
+			Count.setLimit(Comm.getBeaverId(), 2);
+			Count.setLimit(Comm.getHeliId(), 1);
+			Count.setLimit(Comm.getDroneId(), 999);
+		} else if (Count.getCount(countChans[0]) == 1) { // 1 beaver
+			Count.setLimit(Comm.getMinerfactId(), 1);
+			Count.setLimit(Comm.getMinerId(), 25);
 		}
 		
 	}

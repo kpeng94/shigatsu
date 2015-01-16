@@ -29,16 +29,14 @@ public class SHeliHandler extends StructureHandler {
 
 	protected static void execute() throws GameActionException {
 		executeStructure();
+		Count.incrementBuffer(Comm.getHeliId());
 		if (rc.isCoreReady()) { // Try to spawn
 			trySpawn();
 		}
-		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 	}
 	
 	protected static void trySpawn() throws GameActionException {
-		int numDrones = Comm.readBlock(Comm.getDroneId(), 1);
-		int droneLimit = Comm.readBlock(Comm.getDroneId(), 2);
-		if (numDrones < droneLimit) {
+		if (Count.getCount(Comm.getDroneId()) < Count.getLimit(Comm.getDroneId())) {
 			Spawner.trySpawn(myLoc.directionTo(enemyHQ).opposite(), RobotType.DRONE, Comm.getDroneId());
 		}
 	}

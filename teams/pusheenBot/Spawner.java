@@ -15,13 +15,13 @@ public class Spawner {
 	public static void spawn(Direction dir, RobotType typ, int countBlock) throws GameActionException {
 		Handler.rc.spawn(dir, typ);
 		Handler.rc.broadcast(Comm.SPENT_ORE_BUFFER_CHAN, Handler.rc.readBroadcast(Comm.SPENT_ORE_BUFFER_CHAN) + typ.oreCost);
-		Comm.writeBlock(countBlock, 1, Comm.readBlock(countBlock, 1) + 1);
+		Count.incrementBoth(countBlock);
 	}
 	
 	public static void build(Direction dir, RobotType typ, int countBlock) throws GameActionException {
 		Handler.rc.build(dir, typ);
 		Handler.rc.broadcast(Comm.SPENT_ORE_BUFFER_CHAN, Handler.rc.readBroadcast(Comm.SPENT_ORE_BUFFER_CHAN) + typ.oreCost);
-		Comm.writeBlock(countBlock, 1, Comm.readBlock(countBlock, 1) + 1);
+		Count.incrementBoth(countBlock);
 	}
 	
 	public static void trySpawn(Direction dir, RobotType typ, int countBlock) throws GameActionException {

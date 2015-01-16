@@ -29,7 +29,7 @@ public class SSupplyHandler extends StructureHandler {
 
 	protected static void execute() throws GameActionException {
 		executeStructure();
-		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
+		Count.incrementBuffer(Comm.getSupplyId());
 	}
 	
 }

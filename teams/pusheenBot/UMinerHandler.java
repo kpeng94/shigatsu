@@ -39,6 +39,7 @@ public class UMinerHandler extends UnitHandler {
 
 	protected static void execute() throws GameActionException {
 		executeUnit();
+		Count.incrementBuffer(Comm.getMinerId());
 		if (rc.isWeaponReady()) {
 			tryAttack();
 		}
@@ -67,9 +68,7 @@ public class UMinerHandler extends UnitHandler {
 						NavTangentBug.setDest(MapUtils.decode(frontier & 0xFFFF));
 					}
 					NavTangentBug.calculate(2500);
-//					rc.setIndicatorString(1, "tangent " + Clock.getRoundNum());
 					Direction nextMove = NavTangentBug.getNextMove();
-					rc.setIndicatorString(0, "tangent " + Clock.getRoundNum());
 					if (nextMove != Direction.NONE) {
 						NavSimple.walkTowards(nextMove);
 					}

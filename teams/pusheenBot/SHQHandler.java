@@ -157,7 +157,7 @@ public class SHQHandler extends StructureHandler {
 	protected static void updateBuildStates() throws GameActionException {
 		if (counts[2] >= 20 || Clock.getRoundNum() >= 500) {
 			Comm.writeBlock(Comm.getMinerfactId(), 2, 1);
-			Comm.writeBlock(Comm.getMinerId(), 2, 50);
+			Comm.writeBlock(Comm.getMinerId(), 2, 40);
 			Comm.writeBlock(Comm.getBeaverId(), 2, 2);
 			Comm.writeBlock(Comm.getHeliId(), 2, 5);
 			Comm.writeBlock(Comm.getDroneId(), 2, 999);

@@ -7,6 +7,11 @@ public class UMinerHandler extends UnitHandler {
 	public static boolean usingBFS = false;
 	public static int pathIndex = 0;
 	public static MapLocation[] path;
+	
+	public static int lastTangentReset;
+	public static MapLocation lastTangentStart;
+	
+	public static Direction checkDir;
 
 	public static void loop(RobotController rcon) {
 		try {
@@ -29,6 +34,7 @@ public class UMinerHandler extends UnitHandler {
 
 	protected static void init(RobotController rcon) throws GameActionException {
 		initUnit(rcon);
+		checkDir = MapUtils.dirs[rand.nextAnd(7)];
 	}
 
 	protected static void execute() throws GameActionException {
@@ -54,8 +60,16 @@ public class UMinerHandler extends UnitHandler {
 					}
 					NavSimple.walkTowardsDirected(myLoc.directionTo(path[pathIndex]));
 				} else {
+					if (myLoc.distanceSquaredTo(lastTangentStart) < Clock.getRoundNum() - lastTangentReset - 5) {
+						int frontier = Comm.readBlock(Comm.getMinerId(), Mining.FRONTIER_OFFSET);
+						lastTangentReset = Clock.getRoundNum();
+						lastTangentStart = myLoc;
+						NavTangentBug.setDest(MapUtils.decode(frontier & 0xFFFF));
+					}
 					NavTangentBug.calculate(2500);
+//					rc.setIndicatorString(1, "tangent " + Clock.getRoundNum());
 					Direction nextMove = NavTangentBug.getNextMove();
+					rc.setIndicatorString(0, "tangent " + Clock.getRoundNum());
 					if (nextMove != Direction.NONE) {
 						NavSimple.walkTowards(nextMove);
 					}
@@ -93,7 +107,16 @@ public class UMinerHandler extends UnitHandler {
 								pathIndex = 0;
 							} else {
 								usingBFS = false;
+								lastTangentReset = Clock.getRoundNum();
+								lastTangentStart = myLoc;
 								NavTangentBug.setDest(MapUtils.decode(frontier & 0xFFFF));
+							}
+						} else {
+							if (rc.canMove(checkDir)) {
+								rc.move(checkDir);
+							} else {
+								checkDir = MapUtils.dirs[rand.nextAnd(7)];
+								NavSimple.walkTowards(checkDir);
 							}
 						}
 					}

@@ -30,7 +30,7 @@ public class UDroneHandler extends UnitHandler {
 
 	protected static void execute() throws GameActionException {
 		executeUnit();
-		if (Comm.readBlock(Comm.getDroneId(), 1) > 50) {
+		if (Comm.readBlock(Comm.getDroneId(), 1) > 50 || Clock.getRoundNum() > 1750) {
 			attackState = true;
 		}
 		if (attackState) {

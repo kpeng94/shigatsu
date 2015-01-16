@@ -48,6 +48,11 @@ public class UBeaverHandler extends UnitHandler {
 				}
 				// Random mining code
 			}
+//			Direction dir = NavSafeBug.dirToBugIn(enemyHQ);
+//			rc.setIndicatorString(0, "" + dir);
+//			if (dir != Direction.NONE) {
+//				rc.move(dir);
+//			}
 		}
 		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 		Distribution.spendBytecodesCalculating(Handler.rc.getSupplyLevel() > 50 ? 7500 : 2500);

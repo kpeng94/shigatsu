@@ -29,6 +29,7 @@ public class SAeroHandler extends StructureHandler {
 
 	protected static void execute() throws GameActionException {
 		executeStructure();
+		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 	}
 
 }

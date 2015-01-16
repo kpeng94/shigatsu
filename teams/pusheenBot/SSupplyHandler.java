@@ -27,8 +27,9 @@ public class SSupplyHandler extends StructureHandler {
 		initStructure(rcon);
 	}
 
-	protected static void execute() {
+	protected static void execute() throws GameActionException {
 		executeStructure();
+		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 	}
 	
 }

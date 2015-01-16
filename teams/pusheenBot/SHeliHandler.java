@@ -30,6 +30,16 @@ public class SHeliHandler extends StructureHandler {
 	protected static void execute() throws GameActionException {
 		executeStructure();
 		if (rc.isCoreReady()) { // Try to spawn
+			trySpawn();
+		}
+		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
+	}
+	
+	protected static void trySpawn() throws GameActionException {
+		int numDrones = Comm.readBlock(Comm.getDroneId(), 1);
+		int droneLimit = Comm.readBlock(Comm.getDroneId(), 2);
+		if (numDrones < droneLimit) {
+			Spawner.trySpawn(myLoc.directionTo(enemyHQ).opposite(), RobotType.DRONE, Comm.getDroneId());
 		}
 	}
 	

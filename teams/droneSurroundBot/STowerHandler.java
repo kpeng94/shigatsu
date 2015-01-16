@@ -30,11 +30,11 @@ public class STowerHandler extends StructureHandler {
 
 	protected static void execute() throws GameActionException {
 		executeStructure();
+		Count.incrementBuffer(Comm.getTowerId());
 		if (rc.isWeaponReady()) {
 			inRangeEnemies = rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam);
 			tryAttack();
 		}
-		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 	}
 	
 	// Attacks the closest enemy

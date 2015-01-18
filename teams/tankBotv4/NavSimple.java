@@ -1,4 +1,4 @@
-package tankBotv3;
+package tankBotv4;
 
 import battlecode.common.*;
 

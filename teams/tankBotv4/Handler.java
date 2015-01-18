@@ -1,4 +1,4 @@
-package tankBotv3;
+package tankBotv4;
 
 import battlecode.common.*;
 
@@ -123,7 +123,13 @@ public class Handler {
 
     public static boolean enemyHQAttackCanMe(MapLocation loc) {
         int distance = enemyHQ.distanceSquaredTo(myLoc);
-        if (distance < RobotType.HQ.attackRadiusSquared) {
+        int enemyHQAttackRadius;
+        if (enemyTowers.length >= 2) {
+            enemyHQAttackRadius = GameConstants.HQ_BUFFED_ATTACK_RADIUS_SQUARED;
+        } else {
+            enemyHQAttackRadius = RobotType.HQ.attackRadiusSquared;
+        }
+        if (distance < enemyHQAttackRadius) {
             return true;
         }
         return false;

@@ -1,4 +1,4 @@
-package tankBotv3;
+package tankBotv4;
 
 import battlecode.common.*;
 
@@ -18,6 +18,7 @@ public class UTankHandler extends UnitHandler {
     private static int damageIAmTaking;
     private static int alliesDamage;
     private static int[] revDirections = { 4, -3, 3, -2, 2, -1, 1, 0 };
+    private static RobotInfo[] alliesTwoAround;
 
     private enum TankState {
         NEW, RALLY, RUSH, SWARM, FIGHTING
@@ -62,9 +63,18 @@ public class UTankHandler extends UnitHandler {
                 minDistance = distanceSquared;
             }
         }
-        if (rc.isWeaponReady() && decideAttack()) {
-            attack();
-        }
+
+        // boolean shouldMoveInstead = false;
+        // alliesTwoAround = rc.senseNearbyRobots(myLoc, 2, myTeam);
+        // for (int i = alliesTwoAround.length; --i >= 0;) {
+        // if (alliesTwoAround[i].location.distanceSquaredTo(closestLocation) >
+        // typ.attackRadiusSquared) {
+        // shouldMoveInstead = true;
+        // }
+        // }
+        // if (rc.isCoreReady() && shouldMoveInstead) {
+        //
+        // }
 
         switch (state) {
             case NEW:
@@ -88,7 +98,14 @@ public class UTankHandler extends UnitHandler {
     }
 
     private static void fightingCode() throws GameActionException {
-        nubMicro();
+        if (rc.isWeaponReady() && decideAttack()) {
+            attack();
+        }
+        if (rc.isCoreReady()
+                && rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam).length == 0) {
+            tryMoveCloserToEnemy(closestLocation, 1, closestLocation != enemyHQ);
+        }
+        // nubMicro();
     }
 
     private static void nubMicro() throws GameActionException {
@@ -182,8 +199,7 @@ public class UTankHandler extends UnitHandler {
                 && rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam).length == 0) {
             Direction nextMove = NavTangentBug.getNextMove();
             if (myLoc.distanceSquaredTo(closestLocation) <= 35) {
-                tryMoveCloserToEnemy(closestLocation, 1,
-                        closestLocation != enemyHQ);
+                nextState = TankState.FIGHTING;
             } else if (nextMove != Direction.NONE) {
                 NavSimple.walkTowardsDirected(nextMove);
             }
@@ -368,8 +384,10 @@ public class UTankHandler extends UnitHandler {
                 toEnemy.rotateRight().rotateRight(),
                 toEnemy.rotateLeft().rotateLeft(), toEnemy.rotateRight(),
                 toEnemy.rotateLeft(), toEnemy };
+        String s = "I am trying to move in";
         for (int i = tryDirs.length; --i >= 0;) {
             Direction tryDir = tryDirs[i];
+            s += " " + tryDir;
             if (!rc.canMove(tryDir))
                 continue;
             int newX = myLoc.x + tryDir.dx;
@@ -394,6 +412,8 @@ public class UTankHandler extends UnitHandler {
             }
             if (enemyHQAttackCanMe(myLoc) && ignoreHQ)
                 continue;
+            s += " I have success on" + Clock.getRoundNum();
+            rc.setIndicatorString(0, s);
             rc.move(tryDir);
             return;
         }

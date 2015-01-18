@@ -181,7 +181,10 @@ public class UTankHandler extends UnitHandler {
         if (rc.isCoreReady()
                 && rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam).length == 0) {
             Direction nextMove = NavTangentBug.getNextMove();
-            if (nextMove != Direction.NONE) {
+            if (myLoc.distanceSquaredTo(closestLocation) <= 35) {
+                tryMoveCloserToEnemy(closestLocation, 1,
+                        closestLocation != enemyHQ);
+            } else if (nextMove != Direction.NONE) {
                 NavSimple.walkTowardsDirected(nextMove);
             }
         }
@@ -358,15 +361,41 @@ public class UTankHandler extends UnitHandler {
     }
 
     public static void tryMoveCloserToEnemy(MapLocation location,
-            int maxEnemyExposure) throws GameActionException {
+            int maxEnemyExposure, boolean ignoreHQ) throws GameActionException {
         Direction toEnemy = myLoc.directionTo(location);
-        Direction[] tryDirs = new Direction[] { toEnemy.rotateRight(),
+        int distanceSquaredToLoc = myLoc.distanceSquaredTo(location);
+        Direction[] tryDirs = new Direction[] {
+                toEnemy.rotateRight().rotateRight(),
+                toEnemy.rotateLeft().rotateLeft(), toEnemy.rotateRight(),
                 toEnemy.rotateLeft(), toEnemy };
         for (int i = tryDirs.length; --i >= 0;) {
             Direction tryDir = tryDirs[i];
             if (!rc.canMove(tryDir))
                 continue;
+            int newX = myLoc.x + tryDir.dx;
+            int newY = myLoc.y + tryDir.dy;
+            int deltaX = Math.abs(newX - location.x)
+                    - Math.abs(myLoc.x - location.x);
+            int deltaY = Math.abs(newY - location.y)
+                    - Math.abs(myLoc.y - location.y);
+            MapLocation newLoc = new MapLocation(newX, newY);
+            int changingParams = 0;
+            if (deltaY > 0) {
+                changingParams++;
+            }
+            if (deltaX > 0) {
+                changingParams++;
+            }
+            if (newLoc.distanceSquaredTo(location) >= distanceSquaredToLoc) {
+                changingParams++;
+            }
+            if (changingParams >= 2) {
+                continue;
+            }
+            if (enemyHQAttackCanMe(myLoc) && ignoreHQ)
+                continue;
+            rc.move(tryDir);
+            return;
         }
-
     }
 }

@@ -41,7 +41,7 @@ public class UMinerHandler extends UnitHandler {
 		executeUnit();
 		Count.incrementBuffer(Comm.getMinerId());
 		if (rc.isWeaponReady()) {
-			tryAttack();
+			Attack.tryAttackClosestButKillIfPossible();
 		}
 		
 		if (rc.isCoreReady()) {
@@ -126,13 +126,6 @@ public class UMinerHandler extends UnitHandler {
 		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 		Distribution.spendBytecodesCalculating(Handler.rc.getSupplyLevel() > 50 ? 7500 : 2500);
 
-	}
-
-	public static void tryAttack() throws GameActionException {
-		RobotInfo[] enemies = rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam);
-		if (enemies.length > 0) {
-			rc.attackLocation(enemies[0].location);
-		}
 	}
 
 }

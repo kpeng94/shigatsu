@@ -3,7 +3,6 @@ package pusheenBot;
 import battlecode.common.*;
 
 public class STowerHandler extends StructureHandler {
-	public static RobotInfo[] inRangeEnemies;
 
 	public static void loop(RobotController rcon) {
 		try {
@@ -32,27 +31,7 @@ public class STowerHandler extends StructureHandler {
 		executeStructure();
 		Count.incrementBuffer(Comm.getTowerId());
 		if (rc.isWeaponReady()) {
-			inRangeEnemies = rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam);
-			tryAttack();
-		}
-	}
-	
-	// Attacks the closest enemy
-	protected static void tryAttack() throws GameActionException {
-		if (inRangeEnemies.length > 0) {
-			MapLocation minLoc = inRangeEnemies[0].location;
-			int minRange = myLoc.distanceSquaredTo(minLoc);
-			for (int i = inRangeEnemies.length; --i >= 0;) { // Get minimum in array
-				RobotInfo enemy = inRangeEnemies[i];
-				MapLocation enemyLoc = enemy.location;
-				int enemyRange = myLoc.distanceSquaredTo(enemyLoc);
-				if (enemyRange < minRange) {
-					minRange = enemyRange;
-					minLoc = enemyLoc;
-				}
-			}
-			
-			rc.attackLocation(minLoc);
+			Attack.tryAttackClosestButKillIfPossible();
 		}
 	}
 	

@@ -27,8 +27,18 @@ public class STankFactoryHandler extends StructureHandler {
 		initStructure(rcon);
 	}
 
-	protected static void execute() {
+	protected static void execute() throws GameActionException {
 		executeStructure();
+		Count.incrementBuffer(Comm.getTankfactId());
+		if (rc.isCoreReady()) { // Try to spawn
+			trySpawn();
+		}
+	}
+	
+	protected static void trySpawn() throws GameActionException {
+		if (Count.getCount(Comm.getTankId()) < Count.getLimit(Comm.getTankId())) {
+			Spawner.trySpawn(myLoc.directionTo(enemyHQ), RobotType.TANK, Comm.getTankId());
+		}
 	}
 	
 }

@@ -41,12 +41,12 @@ public class SHQHandler extends StructureHandler {
 		
 		prevOre = GameConstants.ORE_INITIAL_AMOUNT;
 		
-		countChans = new int[]{Comm.getBeaverId(), Comm.getMinerId(), Comm.getDroneId(),
-			Comm.getMinerfactId(), Comm.getHeliId(), Comm.getSupplyId()};
+		countChans = new int[]{Comm.getBeaverId(), Comm.getMinerId(), Comm.getTankId(),
+			Comm.getMinerfactId(), Comm.getBarrackId(), Comm.getTankfactId(), Comm.getSupplyId()};
 		
 		initCounts();
 
-		Count.setLimit(countChans[0], 1); // Maintain 1 beaver
+		Count.setLimit(Comm.getBeaverId(), 1); // Maintain 1 beaver
 	}
 
 	protected static void execute() throws GameActionException {
@@ -141,20 +141,25 @@ public class SHQHandler extends StructureHandler {
 	}
 
 	protected static void updateBuildStates() throws GameActionException {
-		if (Count.getCount(countChans[2]) >= 20 || Clock.getRoundNum() >= 500) { // Drones > 20
+		if (Count.getCount(Comm.getMinerId()) >= 25) { // Miners >= 25
 			Count.setLimit(Comm.getMinerfactId(), 1);
 			Count.setLimit(Comm.getMinerId(), 40);
 			Count.setLimit(Comm.getBeaverId(), 2);
-			Count.setLimit(Comm.getHeliId(), 5);
-			Count.setLimit(Comm.getDroneId(), 999);
+			Count.setLimit(Comm.getBarrackId(), 1);
+			Count.setLimit(Comm.getTankfactId(), 4);
+			Count.setLimit(Comm.getTankId(), 999);
 			Count.setLimit(Comm.getSupplyId(), 30);
-		} else if (Count.getCount(countChans[3]) == 1) { // 1 mining fact
-			Count.setLimit(Comm.getBeaverId(), 2);
-			Count.setLimit(Comm.getHeliId(), 1);
-			Count.setLimit(Comm.getDroneId(), 999);
-		} else if (Count.getCount(countChans[0]) == 1) { // 1 beaver
-			Count.setLimit(Comm.getMinerfactId(), 1);
+		} else if (Count.getCount(Comm.getTankfactId()) == 1) { // Tank factory
 			Count.setLimit(Comm.getMinerId(), 25);
+		} else if (Count.getCount(Comm.getMinerId()) >= 10) { // 10 miners
+			Count.setLimit(Comm.getTankfactId(), 1);
+			Count.setLimit(Comm.getTankId(), 999);
+		} else if (Count.getCount(Comm.getMinerfactId()) == 1) { // 1 mining fact
+			Count.setLimit(Comm.getBeaverId(), 2);
+			Count.setLimit(Comm.getBarrackId(), 1);
+		} else if (Count.getCount(Comm.getBeaverId()) == 1) { // 1 beaver
+			Count.setLimit(Comm.getMinerfactId(), 1);
+			Count.setLimit(Comm.getMinerId(), 10);
 		}
 		
 	}

@@ -29,6 +29,7 @@ public class SBarrackHandler extends StructureHandler {
 
 	protected static void execute() throws GameActionException {
 		executeStructure();
+		Count.incrementBuffer(Comm.getBarrackId());
 	}
 	
 }

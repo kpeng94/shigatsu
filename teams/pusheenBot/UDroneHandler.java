@@ -36,7 +36,7 @@ public class UDroneHandler extends UnitHandler {
 		Count.incrementBuffer(Comm.getDroneId());
 		if (attackState) {
 			if (rc.isWeaponReady()) {
-				tryAttackPrioritizeTowers();
+				Attack.tryAttackPrioritizeTowers();
 			}
 			if (rc.isCoreReady()) {
 				if (enemyTowers.length > 0) {
@@ -61,7 +61,7 @@ public class UDroneHandler extends UnitHandler {
 			}
 		} else {
 			if (rc.isWeaponReady()) {
-				tryAttackNormal();
+				Attack.tryAttackClosestButKillIfPossible();
 			}
 			if (rc.isCoreReady()) {
 				Direction dir = NavSafeBug.dirToBugIn(enemyHQ);
@@ -71,28 +71,6 @@ public class UDroneHandler extends UnitHandler {
 			}
 		}
 		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
-	}
-	
-	protected static void tryAttackNormal() throws GameActionException {
-		RobotInfo[] enemies = rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam);
-		if (enemies.length > 0) {
-			rc.attackLocation(enemies[0].location);
-		}
-	}
-	
-	protected static void tryAttackPrioritizeTowers() throws GameActionException {
-		if (rc.canAttackLocation(enemyHQ)) {
-			rc.attackLocation(enemyHQ);
-			return;
-		}
-		for (int i = enemyTowers.length; --i >= 0;) {
-			if (rc.canAttackLocation(enemyTowers[i])) {
-				rc.attackLocation(enemyTowers[i]);
-				return;
-			}
-		}
-		
-		tryAttackNormal();
 	}
 	
 }

@@ -30,6 +30,15 @@ public class SBarrackHandler extends StructureHandler {
 	protected static void execute() throws GameActionException {
 		executeStructure();
 		Count.incrementBuffer(Comm.getBarrackId());
+		if (rc.isCoreReady()) { // Try to spawn
+			trySpawn();
+		}
+	}
+	
+	protected static void trySpawn() throws GameActionException {
+		if (Count.getCount(Comm.getSoldierId()) < Count.getLimit(Comm.getSoldierId())) {
+			Spawner.trySpawn(myLoc.directionTo(enemyHQ), RobotType.SOLDIER, Comm.getSoldierId());
+		}
 	}
 	
 }

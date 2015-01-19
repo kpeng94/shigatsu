@@ -3,7 +3,11 @@ package pusheenBot;
 import battlecode.common.*;
 
 public class UTankHandler extends UnitHandler {
-	private static boolean attackState;
+	public static final int ATTACK_THRESHOLD = 10;
+	public static MapLocation rallyPoint;
+	
+	private static boolean isAttacking;
+	private static boolean newRallyFound;
 
 	public static void loop(RobotController rcon) {
 		try {
@@ -26,53 +30,112 @@ public class UTankHandler extends UnitHandler {
 
 	protected static void init(RobotController rcon) throws GameActionException {
 		initUnit(rcon);
+		rallyPoint = MapUtils.pointSection(myHQ, enemyHQ, 0.5);
+		isAttacking = false;
+		newRallyFound = false;
 	}
 
 	protected static void execute() throws GameActionException {
 		executeUnit();
-//		if (Count.getCount(Comm.getTankId()) > 20 || Clock.getRoundNum() > 1750) {
-//			attackState = true;
-//		}
 		Count.incrementBuffer(Comm.getTankId());
-		if (attackState) {
+		
+		if (Clock.getRoundNum() >= 1800) {
+			isAttacking = true;
+		} else {
+			if (myLoc.distanceSquaredTo(rallyPoint) <= 24) {
+				if (Clock.getRoundNum() >= 1500) {
+					isAttacking = true;
+				} else {
+					int tankCount = 0;
+					RobotInfo[] aroundRally = rc.senseNearbyRobots(rallyPoint, 24, myTeam);
+					if (aroundRally.length >= ATTACK_THRESHOLD) {
+						for (int i = aroundRally.length; --i >= 0;) {
+							if (aroundRally[i].type == RobotType.TANK) {
+								tankCount++;
+							}
+						}
+						if (tankCount >= ATTACK_THRESHOLD) {
+							isAttacking = true;
+						}
+					}
+				}
+			}
+		}
+		
+		RobotInfo[] enemies = rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam);
+		
+		if (isAttacking) {
 			if (rc.isWeaponReady()) {
 				Attack.tryAttackPrioritizeTowers();
 			}
-			if (rc.isCoreReady()) {
+			if (rc.isCoreReady() && enemies.length == 0) {
 				if (enemyTowers.length > 0) {
-					if (myLoc.distanceSquaredTo(enemyTowers[0]) > 35) {
-						Direction dir = NavSafeBug.dirToBugIn(enemyTowers[0]);
-						if (dir != Direction.NONE) {
-							rc.move(dir);
-						}
-					} else {
-						NavSimple.walkTowards(myLoc.directionTo(enemyTowers[0]));
+					MapLocation towerDest = getClosestTower();
+					NavTangentBug.setDest(towerDest);
+					NavTangentBug.calculate(2500);
+					Direction dir = NavTangentBug.getNextMove();
+					if (dir != Direction.NONE) {
+						NavSimple.walkTowards(dir);
 					}
 				} else {
-					if (myLoc.distanceSquaredTo(enemyHQ) > 52) {
-						Direction dir = NavSafeBug.dirToBugIn(enemyHQ);
-						if (dir != Direction.NONE) {
-							rc.move(dir);
-						}
-					} else {
-						NavSimple.walkTowards(myLoc.directionTo(enemyHQ));
+					NavTangentBug.setDest(enemyHQ);
+					NavTangentBug.calculate(2500);
+					Direction dir = NavTangentBug.getNextMove();
+					if (dir != Direction.NONE) {
+						NavSimple.walkTowards(dir);
 					}
 				}
 			}
 		} else {
-			if (rc.isWeaponReady()) {
-				Attack.tryAttackClosestButKillIfPossible();
+			if (!newRallyFound) {
+				int dest = rc.readBroadcast(Comm.RALLY_DEST_CHAN);
+				if (dest > 0) { // new rally destination
+					rallyPoint = MapUtils.decode(dest);
+					newRallyFound = true;
+				}
 			}
-			if (rc.isCoreReady()) {
-				NavTangentBug.setDest(enemyHQ);
-				NavTangentBug.calculate(2500);
-				Direction dir = NavTangentBug.getNextMove();
-				if (dir != Direction.NONE) {
-					NavSimple.walkTowards(dir);
+			if (rc.isWeaponReady()) {
+				Attack.tryAttackClosestButKillIfPossible(enemies);
+			}
+			if (rc.isCoreReady() && enemies.length == 0) {
+				if (newRallyFound) {
+					int curPosInfo = NavBFS.readMapDataUncached(rc.readBroadcast(Comm.RALLY_MAP_CHAN), MapUtils.encode(myLoc));
+					if (curPosInfo == 0) {
+						NavTangentBug.setDest(rallyPoint);
+						NavTangentBug.calculate(2500);
+						Direction dir = NavTangentBug.getNextMove();
+						if (dir != Direction.NONE) {
+							NavSimple.walkTowards(dir);
+						}
+					} else {
+						NavSimple.walkTowardsDirected(MapUtils.dirs[curPosInfo & 0x00000007]);
+					}
+				} else {
+					NavTangentBug.setDest(rallyPoint);
+					NavTangentBug.calculate(2500);
+					Direction dir = NavTangentBug.getNextMove();
+					if (dir != Direction.NONE) {
+						NavSimple.walkTowards(dir);
+					}
 				}
 			}
 		}
+
 		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
+	}
+	
+	private static MapLocation getClosestTower() {
+		int minDist = 999999;
+		MapLocation minTower = null;
+		for (int i = enemyTowers.length; --i >= 0;) {
+			MapLocation tower = enemyTowers[i];
+			int towerDist = myLoc.distanceSquaredTo(tower);
+			if (towerDist < minDist) {
+				minDist = towerDist;
+				minTower = tower;
+			}
+		}
+		return minTower;
 	}
 	
 }

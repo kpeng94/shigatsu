@@ -36,7 +36,7 @@ public class UDroneHandler extends UnitHandler {
 		Count.incrementBuffer(Comm.getDroneId());
 		if (attackState) {
 			if (rc.isWeaponReady()) {
-				Attack.tryAttackPrioritizeTowers();
+				Attack.tryAttackClosestButKillIfPossible(rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam));
 			}
 			if (rc.isCoreReady()) {
 				if (enemyTowers.length > 0) {
@@ -61,7 +61,7 @@ public class UDroneHandler extends UnitHandler {
 			}
 		} else {
 			if (rc.isWeaponReady()) {
-				Attack.tryAttackClosestButKillIfPossible();
+				Attack.tryAttackClosestButKillIfPossible(rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam));
 			}
 			if (rc.isCoreReady()) {
 				Direction dir = NavSafeBug.dirToBugIn(enemyHQ);

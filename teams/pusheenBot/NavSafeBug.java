@@ -141,7 +141,7 @@ public class NavSafeBug {
 		return Direction.NONE;
 	}
 	
-	private static boolean safeTile(MapLocation loc) {
+	public static boolean safeTile(MapLocation loc) {
 		if (Handler.enemyTowers.length >= 5) { // Enemy HQ has splash
 			if (loc.add(loc.directionTo(Handler.enemyHQ)).distanceSquaredTo(Handler.enemyHQ) <= GameConstants.HQ_BUFFED_ATTACK_RADIUS_SQUARED) {
 				return false;

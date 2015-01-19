@@ -62,7 +62,7 @@ public class UBeaverHandler extends UnitHandler {
 		Direction dir = Spawner.getBuildDirection(false);
 		if (dir != Direction.NONE) {
 			for (int i = 0; i < buildTyps.length; i++) {
-				if (Count.getCount(buildChans[i]) < Count.getLimit(buildChans[i]) && rc.getTeamOre() >= buildTyps[i].oreCost) {
+				if (Count.getCount(buildChans[i]) < Count.getLimit(buildChans[i]) && rc.canBuild(dir, buildTyps[i])) {
 					Spawner.build(dir, buildTyps[i], buildChans[i]);
 					curBuildingChan = buildChans[i];
 					return true;

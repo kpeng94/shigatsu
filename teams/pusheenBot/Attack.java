@@ -7,8 +7,7 @@ import battlecode.common.RobotType;
 
 public class Attack {
 
-	public static void tryAttackClosestButKillIfPossible() throws GameActionException {
-		RobotInfo[] enemies = Handler.rc.senseNearbyRobots(Handler.typ.attackRadiusSquared, Handler.otherTeam);
+	public static void tryAttackClosestButKillIfPossible(RobotInfo[] enemies) throws GameActionException {
 		if (enemies.length == 0) return;
 		
 		int minDist = 999999;
@@ -63,7 +62,7 @@ public class Attack {
 			}
 		}
 		
-		tryAttackClosestButKillIfPossible();
+		tryAttackClosestButKillIfPossible(Handler.rc.senseNearbyRobots(Handler.typ.attackRadiusSquared, Handler.otherTeam));
 	}
 	
 }

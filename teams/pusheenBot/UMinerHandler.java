@@ -41,7 +41,7 @@ public class UMinerHandler extends UnitHandler {
 		executeUnit();
 		Count.incrementBuffer(Comm.getMinerId());
 		if (rc.isWeaponReady()) {
-			Attack.tryAttackClosestButKillIfPossible();
+			Attack.tryAttackClosestButKillIfPossible(rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam));
 		}
 		
 		if (rc.isCoreReady()) {

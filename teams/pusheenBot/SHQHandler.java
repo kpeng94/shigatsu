@@ -141,6 +141,9 @@ public class SHQHandler extends StructureHandler {
 	}
 
 	protected static void updateBuildStates() throws GameActionException {
+		if (Count.getCount(Comm.getTankId()) >= 25) { // Tanks >= 25
+			Count.setLimit(Comm.getSupplyId(), 30);
+		}
 		if (Count.getCount(Comm.getMinerId()) >= 25) { // Miners >= 25
 			Count.setLimit(Comm.getMinerfactId(), 1);
 			Count.setLimit(Comm.getMinerId(), 40);
@@ -148,7 +151,7 @@ public class SHQHandler extends StructureHandler {
 			Count.setLimit(Comm.getBarrackId(), 1);
 			Count.setLimit(Comm.getTankfactId(), 4);
 			Count.setLimit(Comm.getTankId(), 999);
-			Count.setLimit(Comm.getSupplyId(), 30);
+			Count.setLimit(Comm.getSupplyId(), 10);
 		} else if (Count.getCount(Comm.getTankfactId()) == 1) { // Tank factory
 			Count.setLimit(Comm.getMinerId(), 25);
 		} else if (Count.getCount(Comm.getMinerId()) >= 10) { // 10 miners
@@ -157,6 +160,7 @@ public class SHQHandler extends StructureHandler {
 		} else if (Count.getCount(Comm.getMinerfactId()) == 1) { // 1 mining fact
 			Count.setLimit(Comm.getBeaverId(), 2);
 			Count.setLimit(Comm.getBarrackId(), 1);
+			Count.setLimit(Comm.getSoldierId(), 1); // random soldier scout guy
 		} else if (Count.getCount(Comm.getBeaverId()) == 1) { // 1 beaver
 			Count.setLimit(Comm.getMinerfactId(), 1);
 			Count.setLimit(Comm.getMinerId(), 10);

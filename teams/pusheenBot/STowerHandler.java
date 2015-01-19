@@ -31,7 +31,7 @@ public class STowerHandler extends StructureHandler {
 		executeStructure();
 		Count.incrementBuffer(Comm.getTowerId());
 		if (rc.isWeaponReady()) {
-			Attack.tryAttackClosestButKillIfPossible();
+			Attack.tryAttackClosestButKillIfPossible(rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam));
 		}
 	}
 	

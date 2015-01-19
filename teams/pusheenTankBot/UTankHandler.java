@@ -39,20 +39,24 @@ public class UTankHandler extends UnitHandler {
 		executeUnit();
 		Count.incrementBuffer(Comm.getTankId());
 		
-		if (myLoc.distanceSquaredTo(rallyPoint) <= 24) {
-			if (Clock.getRoundNum() >= 1500) {
-				isAttacking = true;
-			} else {
-				int tankCount = 0;
-				RobotInfo[] aroundRally = rc.senseNearbyRobots(rallyPoint, 24, myTeam);
-				if (aroundRally.length >= ATTACK_THRESHOLD) {
-					for (int i = aroundRally.length; --i >= 0;) {
-						if (aroundRally[i].type == RobotType.TANK) {
-							tankCount++;
+		if (Clock.getRoundNum() >= 1800) {
+			isAttacking = true;
+		} else {
+			if (myLoc.distanceSquaredTo(rallyPoint) <= 24) {
+				if (Clock.getRoundNum() >= 1500) {
+					isAttacking = true;
+				} else {
+					int tankCount = 0;
+					RobotInfo[] aroundRally = rc.senseNearbyRobots(rallyPoint, 24, myTeam);
+					if (aroundRally.length >= ATTACK_THRESHOLD) {
+						for (int i = aroundRally.length; --i >= 0;) {
+							if (aroundRally[i].type == RobotType.TANK) {
+								tankCount++;
+							}
 						}
-					}
-					if (tankCount >= ATTACK_THRESHOLD) {
-						isAttacking = true;
+						if (tankCount >= ATTACK_THRESHOLD) {
+							isAttacking = true;
+						}
 					}
 				}
 			}

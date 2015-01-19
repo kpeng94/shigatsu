@@ -4,7 +4,7 @@ import battlecode.common.*;
 
 public class BuildRadial {
 	
-	private static final int EXPAND_THRESHOLD = 8;
+	private static final int EXPAND_THRESHOLD = 30;
 	
 	private static int timeSinceBuild;
 	private static Direction buildDir;
@@ -37,7 +37,7 @@ public class BuildRadial {
 		if (!Handler.rc.isBuildingSomething() && Handler.rc.getTeamOre() > robot.oreCost) {
 			timeSinceBuild++;
 		}
-		if (timeSinceBuild > 30) {
+		if (timeSinceBuild > EXPAND_THRESHOLD) {
 			timeSinceBuild = 0;
 			buildRadius += 2;
 		}

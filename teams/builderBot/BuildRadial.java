@@ -47,11 +47,14 @@ public class BuildRadial {
 		buildDir = Direction.NONE;
 		if (!inBuildRadius(Handler.myLoc)) { // Move to build radius
 			walkToBuildRadius();
-		} else if (!canBuildWithGap()) { // Move along build radius until we find a good site
-			walkAlongBuildRadius();
-		} else if (Handler.rc.getTeamOre() >= robot.oreCost) {
-			Spawner.build(buildDir, robot, channelOfStructure(robot));
-			timeSinceBuild = 0; // Reset the age so we can put off expanding
+		} else {
+			walkAlongBuildRadius(); 
+			if (!canBuildWithGap() || Handler.rc.getTeamOre() < robot.oreCost) { // Move along build radius until we find a good site
+				NavSimple.walkTowards(heading);
+			} else {
+				Spawner.build(buildDir, robot, channelOfStructure(robot));
+				timeSinceBuild = 0; // Reset the age so we can put off expanding
+			}	
 		}
 	}
 	
@@ -93,12 +96,20 @@ public class BuildRadial {
 				heading = Direction.NONE;
 			}
 		}
-		NavSimple.walkTowards(heading);
 	}
 	
 	private static boolean canBuildWithGap() throws GameActionException {
 		for (Direction d: MapUtils.dirs) {
+			if (d == heading) {
+				continue;
+			}
+			
 			MapLocation site = Handler.myLoc.add(d);
+			
+			if (inBuildRadius(site)) {
+				continue;
+			}
+			
 			boolean canBuild = Handler.rc.senseRobotAtLocation(site) == null;
 			for (Direction d2: MapUtils.dirs) {
 				RobotInfo info = Handler.rc.senseRobotAtLocation(site.add(d2));

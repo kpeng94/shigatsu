@@ -1,4 +1,4 @@
-package launcherDroneShield;
+package pusheenTankBotMiningFixed;
 
 import battlecode.common.*;
 
@@ -41,25 +41,22 @@ public class SHQHandler extends StructureHandler {
 		
 		prevOre = GameConstants.ORE_INITIAL_AMOUNT;
 		
-		countChans = new int[]{Comm.getBeaverId(), Comm.getMinerId(), Comm.getDroneId(), Comm.getLauncherId(), 
-			Comm.getMinerfactId(), Comm.getHeliId(), Comm.getAeroId(), Comm.getSupplyId()};
+		countChans = new int[]{Comm.getBeaverId(), Comm.getMinerId(), Comm.getTankId(),
+			Comm.getMinerfactId(), Comm.getBarrackId(), Comm.getTankfactId(), Comm.getSupplyId()};
 		
 		initCounts();
-		
-		// For initializing launcher rally position
-		Rally.set(ULauncherHandler.LAUNCHER_RALLY_NUM, MapUtils.pointSection(myHQ, enemyHQ, 0.75));
 
 		Count.setLimit(Comm.getBeaverId(), 1); // Maintain 1 beaver
 	}
 
 	protected static void execute() throws GameActionException {
-		for (int channel : countChans) {
-			Count.resetBuffer(channel);
-		}
-		
 		executeStructure();
 		updateTowers();
+		for (int i = countChans.length; --i >= 0;) {
+			Count.resetBuffer(countChans[i]);
+		}
 		updateOre();
+		Count.incrementBuffer(Comm.getHqId());
 
 		if (rc.isWeaponReady()) { // Try to attack
 			calculateAttackable();
@@ -70,9 +67,7 @@ public class SHQHandler extends StructureHandler {
 			trySpawn();
 		}
 		updateBuildStates();
-		
-		checkForGuard();
-		
+
 		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 		Distribution.spendBytecodesCalculating(7500);
 	}
@@ -135,34 +130,6 @@ public class SHQHandler extends StructureHandler {
 		Comm.writeBlock(Comm.getTowerId(), Count.COUNT_BUFFER_START, towers);
 	}
 
-	protected static void checkForGuard() throws GameActionException {
-		// Determining the rally position for the defensive swarm
-		// Position is determined as the weakest tower
-		MapLocation nextGuardSite = null;
-		int maxNumEnemies = 0;
-		MapLocation[] towerLocs = Handler.rc.senseTowerLocations();
-
-		int numNearbyEnemies = Handler.rc.senseNearbyRobots(RobotType.TOWER.sensorRadiusSquared, Handler.otherTeam).length;
-		if (numNearbyEnemies > 0) {
-			nextGuardSite = Handler.myLoc;
-			maxNumEnemies = numNearbyEnemies;
-		}
-
-		for (MapLocation tower: towerLocs) {
-			numNearbyEnemies = Handler.rc.senseNearbyRobots(tower, RobotType.TOWER.sensorRadiusSquared, Handler.otherTeam).length;
-			if (numNearbyEnemies > maxNumEnemies) {
-				nextGuardSite = tower;
-				maxNumEnemies = numNearbyEnemies;
-			}
-		}
-
-		if (nextGuardSite != null) {
-			Rally.set(UDroneHandler.DRONE_GUARD_RALLY_NUM, nextGuardSite);
-		} else {
-			Rally.deactivate(UDroneHandler.DRONE_GUARD_RALLY_NUM);
-		}
-	}
-	
 	protected static void updateOre() throws GameActionException {
 		int spent = rc.readBroadcast(Comm.SPENT_ORE_BUFFER_CHAN);
 		int gained = (int) (rc.getTeamOre() - prevOre + spent);
@@ -174,34 +141,31 @@ public class SHQHandler extends StructureHandler {
 	}
 
 	protected static void updateBuildStates() throws GameActionException {
-		if (Count.getCount(Comm.getLauncherId()) >= 10) {
-			Count.setLimit(Comm.getBeaverId(), 1);
-			Count.setLimit(Comm.getMinerfactId(), 0);
-			Count.setLimit(Comm.getMinerId(), 0);
-			Count.setLimit(Comm.getHeliId(), 2);
-			Count.setLimit(Comm.getDroneId(), 999);
-			Count.setLimit(Comm.getAeroId(), 4);
-			Count.setLimit(Comm.getLauncherId(), 8);
-			Count.setLimit(Comm.getSupplyId(), 10);
-		} else if (Count.getCount(Comm.getAeroId()) > 0) {
-			Count.setLimit(Comm.getBeaverId(), 1);
-			Count.setLimit(Comm.getMinerfactId(), 0);
-			Count.setLimit(Comm.getMinerId(), 0);
-			Count.setLimit(Comm.getHeliId(), 2);
-			Count.setLimit(Comm.getDroneId(), 30);
-			Count.setLimit(Comm.getAeroId(), 4);
-			Count.setLimit(Comm.getLauncherId(), 8);
-			Count.setLimit(Comm.getSupplyId(), 10);
-		} else {
-			Count.setLimit(Comm.getBeaverId(), 1);
+		if (Count.getCount(Comm.getTankId()) >= 25) { // Tanks >= 25
+			Count.setLimit(Comm.getSupplyId(), 30);
+		}
+		if (Count.getCount(Comm.getMinerId()) >= 25) { // Miners >= 25
 			Count.setLimit(Comm.getMinerfactId(), 1);
 			Count.setLimit(Comm.getMinerId(), 40);
-			Count.setLimit(Comm.getHeliId(), 2);
-			Count.setLimit(Comm.getDroneId(), 999);
-			Count.setLimit(Comm.getAeroId(), 4);
-			Count.setLimit(Comm.getLauncherId(), 8);
+			Count.setLimit(Comm.getBeaverId(), 2);
+			Count.setLimit(Comm.getBarrackId(), 1);
+			Count.setLimit(Comm.getTankfactId(), 4);
+			Count.setLimit(Comm.getTankId(), 999);
 			Count.setLimit(Comm.getSupplyId(), 10);
+		} else if (Count.getCount(Comm.getTankfactId()) == 1) { // Tank factory
+			Count.setLimit(Comm.getMinerId(), 25);
+		} else if (Count.getCount(Comm.getMinerId()) >= 10) { // 10 miners
+			Count.setLimit(Comm.getTankfactId(), 1);
+			Count.setLimit(Comm.getTankId(), 999);
+		} else if (Count.getCount(Comm.getMinerfactId()) == 1) { // 1 mining fact
+			Count.setLimit(Comm.getBeaverId(), 2);
+			Count.setLimit(Comm.getBarrackId(), 1);
+			Count.setLimit(Comm.getSoldierId(), 1); // random soldier scout guy
+		} else if (Count.getCount(Comm.getBeaverId()) == 1) { // 1 beaver
+			Count.setLimit(Comm.getMinerfactId(), 1);
+			Count.setLimit(Comm.getMinerId(), 10);
 		}
+		
 	}
 
 }

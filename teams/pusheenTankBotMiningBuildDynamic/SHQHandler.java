@@ -72,7 +72,8 @@ public class SHQHandler extends StructureHandler {
         updateLimits();
         updateOreCounts();
         
-
+        checkMinerFrontier();
+        
         Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
         Distribution.spendBytecodesCalculating(7500);
     }
@@ -193,7 +194,7 @@ public class SHQHandler extends StructureHandler {
         if (frontier != 0) {
             int priority = frontier >>> 16;
             MapLocation loc = MapUtils.decode(frontier & 0xFFFF);
-            System.out.println(Clock.getRoundNum() + ": " + loc);
+            System.out.println(Clock.getRoundNum() + ": Frontier at " + loc + " with priority " + (priority / 32.0));
         }
     }
 

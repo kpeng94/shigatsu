@@ -1,4 +1,4 @@
-package pusheenTankBot;
+package pusheenLauncherBot;
 
 import battlecode.common.*;
 

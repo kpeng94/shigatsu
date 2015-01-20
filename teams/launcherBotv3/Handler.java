@@ -79,6 +79,21 @@ public class Handler {
             rc.move(directions[(dirint + offsets[offsetIndex] + 8) % 8]);
         }
     }
+    
+    // This method will attempt to move in Direction d (or as close to it as
+    // possible)
+    static void tryMoveTowerSafe(Direction d) throws GameActionException {
+        int offsetIndex = 0;
+        int[] offsets = { 0, 1, -1, 2, -2 };
+        int dirint = Utils.directionToInt(d);
+        while (offsetIndex < 5
+                && !rc.canMove(directions[(dirint + offsets[offsetIndex] + 8) % 8]) && Utils.inRangeOfOtherTowers(directions[(dirint + offsets[offsetIndex] + 8) % 8], Handler.myLoc)) {
+            offsetIndex++;
+        }
+        if (offsetIndex < 5) {
+            rc.move(directions[(dirint + offsets[offsetIndex] + 8) % 8]);
+        }
+    }
 
 
 

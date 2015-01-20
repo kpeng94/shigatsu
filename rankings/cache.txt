@@ -121,3 +121,63 @@
 444,Skillorcz,rift|0,shield|0
 442,MiracleRogue,rift|0,shield|0
 440,Designed by Committee,rift|0,shield|0
+8144,thACk,choke|1,churn|1
+8098,Mountain Goat,pile|1,eightgates|1
+8079,RoboYolo,click|0,flow|1,mesh|1
+8071,UTG,click|1,flow|1
+8067,Berserker,click|0,flow|1,mesh|1
+8063,The Moose,click|1,flow|1
+8059,Bangla Rush,click|1,flow|1
+8053,Cleanser,click|1,flow|0,mesh|1
+8045,Smooth Criminals,click|1,flow|1
+8080,M^3,click|1,flow|1
+8066,Zombie,click|1,flow|1
+8056,darkpurple,click|1,flow|1
+8052,Jeneception,click|1,flow|1
+8050,ForgoneConclusions,click|1,flow|1
+8142,The Moose,rich|0,drone|0
+8037,~=NaBIGaToPbl=~,click|1,flow|1
+8001,Fox,click|1,flow|1
+8036,Niltae,click|1,flow|1
+8020,Team Potato,click|1,flow|1
+8016,Last Picked,click|1,flow|1
+8005,ayyyyyyyylmao,click|0,flow|0
+8006,Team2,click|0,flow|0
+7989,Fragments of Hologram Rose,click|1,flow|1
+7983,Pub Knights,click|1,flow|1
+7971,2b|!2b,click|1,flow|1
+7967,Southern,click|1,flow|1
+7959,Foundation,click|1,flow|0,mesh|1
+7957,WarMachine,click|1,flow|1
+7955,Team BoomerAang,click|1,flow|1
+7953,Brandon's Bitches,click|1,flow|1
+7951,new Team();,click|1,flow|1
+7945,PaddleGoats,click|1,flow|1
+7988,thACk,click|1,flow|1
+7982,The Wackadoodles,click|1,flow|1
+7976,Programmers From Malboge,click|1,flow|1
+7974,Designed by Committee,click|1,flow|1
+7968,Mountain Goat,click|1,flow|1
+7954,Ni Shagu Nazad!,click|1,flow|1
+7952,{LoveBracketsHateSemicolons();,click|1,flow|1
+7987,FiRe NaTioN,click|0,flow|1,mesh|0
+7963,MunichSquad,click|0,flow|1,mesh|0
+7949,The Reggae Sharks,click|0,flow|0
+7950,Crash and Burn,click|0,flow|0
+7948,the other team,click|0,flow|0
+6357,Bangla Rush,choke|1,shapes|0,voracious|1
+6351,Jeneception,choke|1,shapes|1
+7944,Teh Devs,click|1,flow|1
+7130,Team Orange,shapes|1,voracious|1
+6924,Nicholas Cage,churn|1,noeffort|1
+6374,pluto,choke|1,shapes|1
+7734,Mountain Goat,eightgates|0,lanes|1,choke|0
+6335,Niltae,choke|1,shapes|1
+6315,Last Picked,choke|1,shapes|1
+6299,/tmp,choke|1,shapes|0,voracious|1
+6326,Team O,choke|1,shapes|1
+6245,PaddleGoats,choke|1,shapes|0,voracious|1
+9029,Mountain Goat,lanes|1,flow|1
+9102,kobe,onetower|1,noeffort|1
+8047,The Blue Team,click|1,flow|1
+9156,darkpurple,lanes|0,onetower|1,shapes|0

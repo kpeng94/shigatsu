@@ -1,8 +1,8 @@
-package soldierRush;
+package pusheenLauncherBot;
 
 import battlecode.common.*;
 
-public class STowerHandler extends StructureHandler {
+public class SSupplyHandler extends StructureHandler {
 
 	public static void loop(RobotController rcon) {
 		try {
@@ -23,23 +23,13 @@ public class STowerHandler extends StructureHandler {
 		}
 	}
 
-	protected static void init(RobotController rcon) {
+	protected static void init(RobotController rcon) throws GameActionException {
 		initStructure(rcon);
 	}
 
 	protected static void execute() throws GameActionException {
 		executeStructure();
-		if (rc.isWeaponReady()) {
-			attackSomething();
-		}
+		Count.incrementBuffer(Comm.getSupplyId());
 	}
-
-	// This method will attack an enemy in sight, if there is one
-	static void attackSomething() throws GameActionException {
-		RobotInfo[] enemies = rc.senseNearbyRobots(typ.attackRadiusSquared, rc.getTeam().opponent());
-		if (enemies.length > 0) {
-			rc.attackLocation(enemies[0].location);
-		}
-	}
-
+	
 }

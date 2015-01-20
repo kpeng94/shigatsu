@@ -67,9 +67,9 @@ public class Comm {
     // This channel is strictly for the reset that happened in the last round.
     public static final int RESET_ROUND = 18;
     public static final int RALLY_POINT_OFFSET = 20;
+    public static final int WAVENUM_OFFSET = 29;
 
     // Tank offsets
-    public static final int TANK_WAVE_COUNT_OFFSET = 29;
     public static final int TANK_WAVE_ONE_ACTION_OFFSET = 30;
     public static final int TANK_WAVE_ONE_RALLYPOINT_OFFSET = 31;
     public static final int TANK_WAVE_TWO_ACTION_OFFSET = 40;

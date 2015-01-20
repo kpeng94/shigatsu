@@ -154,6 +154,19 @@ public class Utils {
         }
     }
 
+    public static MapLocation getClosestTower() {
+        int minDist = 999999;
+        MapLocation minTower = null;
+        for (int i = Handler.enemyTowers.length; --i >= 0;) {
+            MapLocation tower = Handler.enemyTowers[i];
+            int towerDist = Handler.myLoc.distanceSquaredTo(tower);
+            if (towerDist < minDist) {
+                minDist = towerDist;
+                minTower = tower;
+            }
+        }
+        return minTower;
+    }
 //    public static void calculateLooseBoundsOnMap() {
 //        hqDistX = myHQ.x > enemyHQ.x ? (myHQ.x - enemyHQ.x)
 //                : (enemyHQ.x - myHQ.x);

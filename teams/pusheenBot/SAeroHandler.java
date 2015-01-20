@@ -29,7 +29,16 @@ public class SAeroHandler extends StructureHandler {
 
 	protected static void execute() throws GameActionException {
 		executeStructure();
-		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
+		Count.incrementBuffer(Comm.getAeroId());
+		if (rc.isCoreReady()) { // Try to spawn
+			trySpawn();
+		}
+	}
+	
+	protected static void trySpawn() throws GameActionException {
+		if (Count.getCount(Comm.getLauncherId()) < Count.getLimit(Comm.getLauncherId())) {
+			Spawner.trySpawn(myLoc.directionTo(enemyHQ), RobotType.LAUNCHER, Comm.getLauncherId());
+		}
 	}
 
 }

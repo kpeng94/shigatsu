@@ -32,4 +32,21 @@ public class Count {
 		Comm.writeBlock(blockId, COUNT_BUFFER_END - (Clock.getRoundNum() % 2), 0);
 	}
 	
+	public static void incrementAtRallyPoint(int blockId, int group) throws GameActionException {
+	    Comm.writeBlock(blockId, COUNT_BUFFER_END - (Clock.getRoundNum() % 2) + group * 8,
+	            1 + Comm.readBlock(blockId, COUNT_BUFFER_END - (Clock.getRoundNum() % 2) + group * 8));
+	}
+
+	public static int getCountAtRallyPoint(int blockId, int group) throws GameActionException {
+        return Comm.readBlock(blockId, COUNT_BUFFER_START + (Clock.getRoundNum() % 2) + group * 8);
+	}
+
+	public static void resetBufferForGroup(int blockId, int group) throws GameActionException {
+        Comm.writeBlock(blockId, COUNT_BUFFER_END - (Clock.getRoundNum() % 2) + group * 8, 0);
+	}
+
+	public static void incrementWaveNum(int blockId) throws GameActionException {
+	    Comm.writeBlock(blockId, Comm.WAVENUM_OFFSET, 1 + Comm.readBlock(blockId, Comm.WAVENUM_OFFSET));
+	}
+	
 }

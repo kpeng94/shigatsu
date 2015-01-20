@@ -94,20 +94,34 @@ public class USoldierHandler extends UnitHandler {
 		RobotInfo inRangeEnemy = null;
 		RobotInfo farTarget = null;
 
+		if (rc.isWeaponReady()) {
+			int minMissileDist = 999999;
+			int minMissileHP = 999999;
+			MapLocation minMissileLoc = null;
+			
+			for (int i = attackableEnemies.length; --i >= 0;) {
+				RobotInfo enemy = attackableEnemies[i];
+				if (enemy.type == RobotType.MISSILE) { // Focus lower hp missiles, followed by closer missiles
+					if (enemy.health == 1) { // insta kill low hp missile
+						rc.attackLocation(enemy.location);
+						return;
+					}
+					int dist = enemy.location.distanceSquaredTo(myLoc);
+					if (enemy.health < minMissileHP || (enemy.health == minMissileHP && dist < minMissileDist)) {
+						minMissileDist = dist;
+						minMissileHP = (int) enemy.health;
+						minMissileLoc = enemy.location;
+					}
+				}
+			}
+			if (minMissileLoc != null) {
+				rc.attackLocation(minMissileLoc);
+			}
+		}
+		
 		for (int i = sensedEnemies.length; --i >= 0;) {
 			RobotInfo enemy = sensedEnemies[i];
 			if (enemy.type == RobotType.MISSILE) { // dunno what to do with missiles right now
-				if (enemy.health == 1) { // DESTROY THE MISSILE
-					if (rc.isWeaponReady() && rc.canAttackLocation(enemy.location)) {
-						rc.attackLocation(enemy.location);
-						return;
-					}
-				} else {
-					if (rc.isWeaponReady() && rc.canAttackLocation(enemy.location)) {
-						rc.attackLocation(enemy.location);
-						return;
-					}
-				}
 				continue;
 			}
 			int dist = myLoc.distanceSquaredTo(enemy.location);

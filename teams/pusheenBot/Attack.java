@@ -1,9 +1,6 @@
 package pusheenBot;
 
-import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotInfo;
-import battlecode.common.RobotType;
+import battlecode.common.*;
 
 public class Attack {
 
@@ -77,6 +74,20 @@ public class Attack {
 			}
 		}
 		return minTower;
+	}
+	
+	public static RobotInfo getClosestEnemy(RobotInfo[] enemies) {
+		int minDist = 999999;
+        RobotInfo closestEnemy = null;
+        for (int i = enemies.length; --i >= 0;) {
+            MapLocation enemyLoc = enemies[i].location;
+            int enemyDist = Handler.myLoc.distanceSquaredTo(enemyLoc);
+            if (enemyDist < minDist) {
+                minDist = enemyDist ;
+                closestEnemy = enemies[i];
+            }
+        }
+        return closestEnemy;
 	}
 	
 }

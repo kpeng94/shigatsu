@@ -65,6 +65,15 @@ public class Comm {
 	public static final int MISSILE_BLOCK = 119;
 	public static final int COMMANDER_BLOCK = 120;
 
+    public static final int WAVENUM_OFFSET = 29;
+    // Launcher offsets
+    public static final int WAVE_ONE_ACTION_OFFSET = 30;
+    public static final int WAVE_ONE_RALLYPOINT_OFFSET = 31;
+    public static final int WAVE_TWO_ACTION_OFFSET = 40;
+    public static final int WAVE_TWO_RALLYPOINT_OFFSET = 41;
+    public static final int WAVE_THREE_ACTION_OFFSET = 50;
+    public static final int WAVE_THREE_RALLYPOINT_OFFSET = 51;
+	
 	public static void initComm() throws GameActionException {
 		Handler.rc.broadcast(FREEBLOCK_CHAN, 1);
 	}

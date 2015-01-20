@@ -11,10 +11,12 @@ public class SHQHandler extends StructureHandler {
 	public static int range;
 	public static boolean splash;
 	public static RobotInfo[] inRangeEnemies;
-	
+
 	private static int prevOre = 0;
-	
+
 	private static int[] countChans;
+
+	private static int currentLauncherWave = 1;
 
 	public static void loop(RobotController rcon) {
 		try {
@@ -38,15 +40,16 @@ public class SHQHandler extends StructureHandler {
 	protected static void init(RobotController rcon) throws GameActionException {
 		initStructure(rcon);
 		rc.broadcast(Comm.HQ_MAP_CHAN, NavBFS.newBFSTask(myHQ));
-		
+
 		prevOre = GameConstants.ORE_INITIAL_AMOUNT;
-		
-		countChans = new int[]{Comm.getBeaverId(), Comm.getMinerId(), Comm.getTankId(), Comm.getSoldierId(),
-			Comm.getMinerfactId(), Comm.getBarrackId(), Comm.getTankfactId(), Comm.getSupplyId()};
-		
+
+		countChans = new int[]{Comm.getBeaverId(), Comm.getMinerId(), Comm.getLauncherId(), Comm.getSoldierId(),
+				Comm.getMinerfactId(), Comm.getBarrackId(), Comm.getHeliId(), Comm.getAeroId(), Comm.getSupplyId()};
+
 		initCounts();
 
 		Count.setLimit(Comm.getBeaverId(), 1); // Maintain 1 beaver
+		Comm.writeBlock(Comm.getLauncherId(), Comm.WAVENUM_OFFSET, currentLauncherWave);
 	}
 
 	protected static void execute() throws GameActionException {
@@ -55,6 +58,11 @@ public class SHQHandler extends StructureHandler {
 		for (int i = countChans.length; --i >= 0;) {
 			Count.resetBuffer(countChans[i]);
 		}
+		// Reset counts for tank waves
+        for (int i = currentLauncherWave; --i >= 0;) {
+            Count.resetBufferForGroup(Comm.getLauncherId(), i + 1);
+        }
+		
 		updateOre();
 		Count.incrementBuffer(Comm.getHqId());
 
@@ -143,11 +151,12 @@ public class SHQHandler extends StructureHandler {
 	}
 
 	protected static void updateBuildStates() throws GameActionException {
-		if (Count.getCount(Comm.getTankId()) >= 25) {
-			Count.setLimit(Comm.getSupplyId(), 25);
-		} else if (Count.getCount(Comm.getSoldierId()) >= 10 && Count.getLimit(Comm.getTankfactId()) == 0) {
-			Count.setLimit(Comm.getTankfactId(), 1);
-			Count.setLimit(Comm.getTankId(), 999);
+		if (Count.getCount(Comm.getLauncherId()) >= 10) {
+			Count.setLimit(Comm.getSupplyId(), 30);
+		} else if (Count.getCount(Comm.getSoldierId()) >= 10 && Count.getLimit(Comm.getAeroId()) == 0) {
+			Count.setLimit(Comm.getAeroId(), 1);
+			Count.setLimit(Comm.getHeliId(), 1);
+			Count.setLimit(Comm.getLauncherId(), 999);
 			Count.setLimit(Comm.getSupplyId(), 10);
 		} else if (Count.getCount(Comm.getMinerId()) >= 5) { // 10 miners
 			Count.setLimit(Comm.getMinerId(), 40);
@@ -160,48 +169,52 @@ public class SHQHandler extends StructureHandler {
 			Count.setLimit(Comm.getMinerfactId(), 1);
 			Count.setLimit(Comm.getMinerId(), 10);
 		}
-		
+
+		if (Count.getCountAtRallyPoint(Comm.getLauncherId(), currentLauncherWave) >= ULauncherHandler.LAUNCHER_RUSH_COUNT) {
+			currentLauncherWave++;
+			Count.incrementWaveNum(Comm.getLauncherId());
+		}
 	}
-	
-    private static final int TURN_COUNTER = 150;
-    private static double[] oreCounts = new double[TURN_COUNTER];
-    private static final int ORE_THRESHOLD = 1500;
-    private static int turnCooldown = 0;
-	
-    /**
-     * Returns the ore delta since TURN_COUNTER turns ago. Returns -999999 if
-     * the ore TURN_COUNTER turns ago was 0 (or not enough turns have passed).
-     * 
-     * @return
-     */
-    private static double getOreChangeInLastFewTurns() {
-        int oreCountIndex = Clock.getRoundNum() % TURN_COUNTER;
-        double prevOre = oreCounts[oreCountIndex];
-        if (oreCounts[oreCountIndex] != 0) {
-            return rc.getTeamOre() - prevOre;
-        }
-        return -999999;
-    }
-    
-    private static void updateOreCounts() {
-        turnCooldown++;
-        int index = Clock.getRoundNum() % TURN_COUNTER;
-        oreCounts[index] = rc.getTeamOre();
-    }
-    
+
+	private static final int TURN_COUNTER = 150;
+	private static double[] oreCounts = new double[TURN_COUNTER];
+	private static final int ORE_THRESHOLD = 1500;
+	private static int turnCooldown = 0;
+
+	/**
+	 * Returns the ore delta since TURN_COUNTER turns ago. Returns -999999 if
+	 * the ore TURN_COUNTER turns ago was 0 (or not enough turns have passed).
+	 * 
+	 * @return
+	 */
+	private static double getOreChangeInLastFewTurns() {
+		int oreCountIndex = Clock.getRoundNum() % TURN_COUNTER;
+		double prevOre = oreCounts[oreCountIndex];
+		if (oreCounts[oreCountIndex] != 0) {
+			return rc.getTeamOre() - prevOre;
+		}
+		return -999999;
+	}
+
+	private static void updateOreCounts() {
+		turnCooldown++;
+		int index = Clock.getRoundNum() % TURN_COUNTER;
+		oreCounts[index] = rc.getTeamOre();
+	}
+
 	protected static void updateLimits() throws GameActionException {
-        if (turnCooldown >= TURN_COUNTER && rc.getTeamOre() > ORE_THRESHOLD && getOreChangeInLastFewTurns() >= 0) {
-            int barrackCount = Count.getCount(Comm.getBarrackId());
-            if (barrackCount >= 1 && barrackCount >= Count.getLimit(Comm.getBarrackId()) && barrackCount < 2) {
-                Count.setLimit(Comm.getBarrackId(), barrackCount + 1);
-                turnCooldown = 0;
-            }
-            int tankFactCount = Count.getCount(Comm.getTankfactId());
-            if (tankFactCount >= 1 && tankFactCount >= Count.getLimit(Comm.getTankfactId())) {
-            	Count.setLimit(Comm.getTankfactId(), tankFactCount + 1);
-            	turnCooldown = 0;
-            }
-        }
-    }
+		if (turnCooldown >= TURN_COUNTER && rc.getTeamOre() > ORE_THRESHOLD && getOreChangeInLastFewTurns() >= 0) {
+			int barrackCount = Count.getCount(Comm.getBarrackId());
+			if (barrackCount >= 1 && barrackCount >= Count.getLimit(Comm.getBarrackId()) && barrackCount < 2) {
+				Count.setLimit(Comm.getBarrackId(), barrackCount + 1);
+				turnCooldown = 0;
+			}
+			int aeroCount = Count.getCount(Comm.getAeroId());
+			if (aeroCount >= 1 && aeroCount >= Count.getLimit(Comm.getAeroId())) {
+				Count.setLimit(Comm.getAeroId(), aeroCount + 1);
+				turnCooldown = 0;
+			}
+		}
+	}
 
 }

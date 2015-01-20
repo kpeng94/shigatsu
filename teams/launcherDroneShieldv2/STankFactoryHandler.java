@@ -1,8 +1,8 @@
-package launcherDroneShield;
+package launcherDroneShieldv2;
 
 import battlecode.common.*;
 
-public class SHeliHandler extends StructureHandler {
+public class STankFactoryHandler extends StructureHandler {
 
 	public static void loop(RobotController rcon) {
 		try {
@@ -29,13 +29,16 @@ public class SHeliHandler extends StructureHandler {
 
 	protected static void execute() throws GameActionException {
 		executeStructure();
+		Count.incrementBuffer(Comm.getTankfactId());
 		if (rc.isCoreReady()) { // Try to spawn
-			if (Count.getCount(Comm.getDroneId()) < Count.getLimit(Comm.getDroneId())) {
-				rc.setIndicatorString(1, "Limit permits");
-				Spawner.trySpawn(myLoc.directionTo(enemyHQ).opposite(), RobotType.DRONE, Comm.getDroneId());
-			} else {
-				rc.setIndicatorString(1, "Limit doesn't permit");
-			}
+			trySpawn();
 		}
 	}
+	
+	protected static void trySpawn() throws GameActionException {
+		if (Count.getCount(Comm.getTankId()) < Count.getLimit(Comm.getTankId())) {
+			Spawner.trySpawn(myLoc.directionTo(enemyHQ), RobotType.TANK, Comm.getTankId());
+		}
+	}
+	
 }

@@ -262,7 +262,6 @@ public class SHQHandler extends StructureHandler {
         // If there are enough tanks at the rally point, increment the wave count
         // The tanks should detect this by themselves and move
         if (Count.getCountAtRallyPoint(Comm.getTankId(), currentTankWave) >= Constants.TANK_RUSH_COUNT) {
-            System.out.println("This tank wave has enough");
             currentTankWave++;
             Count.incrementWaveNum(Comm.getTankId());
         }

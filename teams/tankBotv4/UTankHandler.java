@@ -152,18 +152,19 @@ public class UTankHandler extends UnitHandler {
                 }
             }
         }
-        rc.setIndicatorString(0, "At clock turn " + Clock.getRoundNum()
-                + ", I am rallying to the rally point at: " + rallyPoint
-                + " and my rallied boolean is: " + rallied);
         numberOfTanksRallied = Count.getCountAtRallyPoint(Comm.getTankId(), myWaveNumber);
-        rc.setIndicatorString(1, "My wave number is: " + myWaveNumber + ". The number of tanks that rallied is given by: " + numberOfTanksRallied);
+//        rc.setIndicatorString(1, "My wave number is: " + myWaveNumber + ". The number of tanks that rallied is given by: " + numberOfTanksRallied);
+//        rc.setIndicatorString(2, "My loc is " + myLoc + "my dist is " + );
         // TODO: figure out this heuristic better
-        if (myLoc.distanceSquaredTo(rallyPoint) <= typ.attackRadiusSquared / 2) {
+
+        if (myLoc.distanceSquaredTo(rallyPoint) <= typ.sensorRadiusSquared) {
+//            rc.setIndicatorString(0, "At clock turn " + Clock.getRoundNum()
+//                    + ", I am rallying to the rally point at: " + rallyPoint
+//                    + " and my rallied boolean is: " + rallied);
             Count.incrementAtRallyPoint(Comm.getTankId(), myWaveNumber);
         }
         if (numberOfTanksRallied >= Constants.TANK_RUSH_COUNT) {
             nextState = TankState.RUSH;
-            rc.setIndicatorString(2, "I state transitioned to rush");
         }
 
     }

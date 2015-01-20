@@ -1,4 +1,4 @@
-package launcherDroneShield;
+package launcherDroneShieldv2;
 
 import battlecode.common.*;
 
@@ -73,7 +73,12 @@ public class SHQHandler extends StructureHandler {
 		
 		checkForGuard();
 		
-		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
+//		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
+		for (RobotInfo robot: rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED)) {
+			if (robot.type == RobotType.DRONE && robot.team == myTeam) {
+				rc.transferSupplies((int) (rc.getSupplyLevel() / 2), robot.location);
+			}
+		}
 		Distribution.spendBytecodesCalculating(7500);
 	}
 
@@ -174,16 +179,16 @@ public class SHQHandler extends StructureHandler {
 	}
 
 	protected static void updateBuildStates() throws GameActionException {
-		if (Count.getCount(Comm.getLauncherId()) >= 5) {
+		if (Count.getCount(Comm.getLauncherId()) >= 8) {
 			Count.setLimit(Comm.getMinerId(), 0);
 			Count.setLimit(Comm.getHeliId(), 5);
 			Count.setLimit(Comm.getDroneId(), 999);
-			Count.setLimit(Comm.getLauncherId(), 8);
+			Count.setLimit(Comm.getLauncherId(), 999);
 			Count.setLimit(Comm.getSupplyId(), 30);
 		} else if (Count.getCount(Comm.getAeroId()) > 0) {
 			Count.setLimit(Comm.getMinerfactId(), 0);
 			Count.setLimit(Comm.getDroneId(), 30);
-			Count.setLimit(Comm.getLauncherId(), 8);
+			Count.setLimit(Comm.getLauncherId(), Constants.LAUNCHER_RUSH_COUNT);
 			Count.setLimit(Comm.getSupplyId(), 10);
 		} else {
 			Count.setLimit(Comm.getBeaverId(), 1);

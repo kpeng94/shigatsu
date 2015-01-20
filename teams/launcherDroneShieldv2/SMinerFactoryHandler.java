@@ -1,8 +1,8 @@
-package launcherDroneShield;
+package launcherDroneShieldv2;
 
 import battlecode.common.*;
 
-public class SHeliHandler extends StructureHandler {
+public class SMinerFactoryHandler extends StructureHandler {
 
 	public static void loop(RobotController rcon) {
 		try {
@@ -30,11 +30,8 @@ public class SHeliHandler extends StructureHandler {
 	protected static void execute() throws GameActionException {
 		executeStructure();
 		if (rc.isCoreReady()) { // Try to spawn
-			if (Count.getCount(Comm.getDroneId()) < Count.getLimit(Comm.getDroneId())) {
-				rc.setIndicatorString(1, "Limit permits");
-				Spawner.trySpawn(myLoc.directionTo(enemyHQ).opposite(), RobotType.DRONE, Comm.getDroneId());
-			} else {
-				rc.setIndicatorString(1, "Limit doesn't permit");
+			if (Count.getCount(Comm.getMinerId()) < Count.getLimit(Comm.getMinerId())) {
+				Spawner.trySpawn(myLoc.directionTo(enemyHQ).opposite(), RobotType.MINER, Comm.getMinerId());
 			}
 		}
 	}

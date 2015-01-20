@@ -4,113 +4,29 @@ import battlecode.common.*;
 
 public class Rally {
 	
-	private static final int SHOULD_ATTACK = 0;
-	private static final int NEXT_TARGET_X = 1;
-	private static final int NEXT_TARGET_Y = 2;
-	private static final int SHOULD_GUARD = 10;
-	private static final int NEXT_GUARD_X = 11;
-	private static final int NEXT_GUARD_Y = 12;
+	private static final int RALLY_POINT_SIZE = 3;
+	private static final int POINT_ACTIVE_OFFSET = 0;
+	private static final int POINT_X_OFFSET = 1;
+	private static final int POINT_Y_OFFSET = 2;
 	
-	public static MapLocation getGuardPt() throws GameActionException {
-		if (Comm.readBlock(getRallyId(), SHOULD_GUARD) == 1) {
+	public static void deactivate(int rallyNum) throws GameActionException {
+		Comm.writeBlock(getRallyId(), RALLY_POINT_SIZE * rallyNum + POINT_ACTIVE_OFFSET, 0);
+	}
+	
+	public static void set(int rallyNum, MapLocation point) throws GameActionException {
+		Comm.writeBlock(getRallyId(), RALLY_POINT_SIZE * rallyNum + POINT_ACTIVE_OFFSET, 1);
+		Comm.writeBlock(getRallyId(), RALLY_POINT_SIZE * rallyNum + POINT_X_OFFSET, point.x);
+		Comm.writeBlock(getRallyId(), RALLY_POINT_SIZE * rallyNum + POINT_Y_OFFSET, point.y);
+	}
+	
+	public static MapLocation get(int rallyNum) throws GameActionException {
+		if (Comm.readBlock(getRallyId(),  RALLY_POINT_SIZE * rallyNum + POINT_ACTIVE_OFFSET) == 1) {
 			return new MapLocation(Comm.readBlock(
-					getRallyId(), NEXT_GUARD_X), Comm.readBlock(
-					getRallyId(), NEXT_GUARD_Y));
+					getRallyId(), RALLY_POINT_SIZE * rallyNum + POINT_X_OFFSET), Comm.readBlock(
+					getRallyId(), RALLY_POINT_SIZE * rallyNum + POINT_Y_OFFSET));
 		} else {
 			return null;
 		}
-	}
-	
-	public static MapLocation getTargetPt() throws GameActionException {
-		if (Comm.readBlock(getRallyId(), SHOULD_ATTACK) == 1) {
-			return new MapLocation(Comm.readBlock(
-					getRallyId(), NEXT_TARGET_X), Comm.readBlock(
-							getRallyId(), NEXT_TARGET_Y));
-		} else {
-			return null;
-		}
-	}
-	
-	public static void forceSetGuardPt(MapLocation loc) throws GameActionException {
-		Comm.writeBlock(getRallyId(), SHOULD_GUARD, 1);
-		Comm.writeBlock(getRallyId(), NEXT_GUARD_X, loc.x);
-		Comm.writeBlock(getRallyId(), NEXT_GUARD_Y, loc.y);
-	}
-	
-	public static void forceSetTargetPt(MapLocation loc) throws GameActionException {
-		Comm.writeBlock(getRallyId(), SHOULD_ATTACK, 1);
-		Comm.writeBlock(getRallyId(), NEXT_TARGET_X, loc.x);
-		Comm.writeBlock(getRallyId(), NEXT_TARGET_Y, loc.y);
-	}
-	
-	public static void setRallyPoints() throws GameActionException {
-		
-		// Determining the rally position for the defensive swarm
-		// Position is determined as the weakest tower
-		MapLocation nextGuardSite = null;
-		int maxNumEnemies = 0;
-		MapLocation[] towerLocs = Handler.rc.senseTowerLocations();
-		
-		int numNearbyEnemies = Handler.rc.senseNearbyRobots(RobotType.TOWER.sensorRadiusSquared, Handler.otherTeam).length;
-		if (numNearbyEnemies > 0) {
-			nextGuardSite = Handler.myLoc;
-			maxNumEnemies = numNearbyEnemies;
-		}
-		
-		for (MapLocation tower: towerLocs) {
-			numNearbyEnemies = Handler.rc.senseNearbyRobots(tower, RobotType.TOWER.sensorRadiusSquared, Handler.otherTeam).length;
-			if (numNearbyEnemies > maxNumEnemies) {
-				nextGuardSite = tower;
-				maxNumEnemies = numNearbyEnemies;
-			}
-		}
-		
-		if (nextGuardSite != null) {
-			forceSetGuardPt(nextGuardSite);
-		} else {
-			Comm.writeBlock(getRallyId(), SHOULD_GUARD, 0);
-		}
-		
-//		if (Clock.getRoundNum() <= 1500) {
-//			Comm.writeBlock(getRallyId(), SHOULD_ATTACK, 0);
-//			return;
-//		}
-//				
-//		// Determining the rally and target positions for the offensive swarm
-//		// Positions are determined as the closest pair of team/enemy towers
-//		MapLocation nextTargetSite = Handler.enemyHQ;
-//		
-//		int minDistanceFromEnemy = Integer.MAX_VALUE;
-//
-//		MapLocation[] enemyTowers = Handler.rc.senseEnemyTowerLocations();
-//		for (int j = 0; j < enemyTowers.length; j++) {
-//			int distanceFromEnemy = Handler.myHQ
-//					.distanceSquaredTo(enemyTowers[j]);
-//			if (distanceFromEnemy < minDistanceFromEnemy) {
-//				nextTargetSite = enemyTowers[j];
-//				minDistanceFromEnemy = distanceFromEnemy;
-//			}
-//		}
-//		for (int i = 0; i < towerLocs.length; i++) {
-//			for (int j = 0; j < enemyTowers.length; j++) {
-//				int distanceFromEnemy = towerLocs[i]
-//						.distanceSquaredTo(enemyTowers[j]);
-//				if (distanceFromEnemy < minDistanceFromEnemy) {
-//					nextTargetSite = enemyTowers[j];
-//					minDistanceFromEnemy = distanceFromEnemy;
-//				}
-//			}
-//			if (enemyTowers.length == 0) {
-//				int distanceFromEnemy = towerLocs[i]
-//						.distanceSquaredTo(Handler.enemyHQ);
-//				if (distanceFromEnemy < minDistanceFromEnemy) {
-//					nextTargetSite = Handler.enemyHQ;
-//					minDistanceFromEnemy = distanceFromEnemy;
-//				}
-//			}
-//		}
-//		
-//		forceSetTargetPt(nextTargetSite);
 	}
 
 	/*-------------------------------- COMM FUNCTIONS --------------------------------*/

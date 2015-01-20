@@ -4,18 +4,18 @@ import battlecode.common.*;
 
 public class ULauncherHandler extends UnitHandler {
 	
+	public static final int LAUNCHER_RALLY_NUM = 5;
+	public static final int NUM_RALLIED_CHANNEL = 22;
+	public static final int RUSH_CHANNEL = 24;
+	
 	private static RobotInfo[] enemies;
 	private static int minDistance;
 	private static MapLocation closestLocation;
-	private static LauncherState state = LauncherState.RALLY;
-	private static LauncherState nextLauncherState;
-	private static boolean rallied = false;
-	private static int numberOfLaunchersRallied = 0;
-
-//	private static int mySensorRadiusSquared = myType.sensorRadiusSquared;
+	private static LauncherState state;
+	private static int numLaunchersRallied;
+	private static boolean rallied;
 	
 	private enum LauncherState {
-		NEW,
 		RALLY,
 		RUSH
 	}
@@ -41,12 +41,15 @@ public class ULauncherHandler extends UnitHandler {
 
 	protected static void init(RobotController rcon) throws GameActionException {
 		initUnit(rcon);
+		state = LauncherState.RALLY;
+		numLaunchersRallied = 0;
+		rallied = false;
 	}
 
 	protected static void execute() throws GameActionException {
 		executeUnit();
 		
-		numberOfLaunchersRallied = Comm.readBlock(Comm.getLauncherId(), 22);
+		numLaunchersRallied = Comm.readBlock(Comm.getLauncherId(), NUM_RALLIED_CHANNEL);
 		
 		minDistance = Integer.MAX_VALUE;
 		if (enemyTowers.length == 0) {
@@ -64,9 +67,6 @@ public class ULauncherHandler extends UnitHandler {
 			attack();
 		}
 		switch (state) {
-			case NEW:
-				newCode();
-				break;
 			case RALLY:
 				rallyCode();
 				break;
@@ -75,14 +75,43 @@ public class ULauncherHandler extends UnitHandler {
 				break;
 		}
 		
-		if (nextLauncherState != null) {
-			state = nextLauncherState;
-			nextLauncherState = null;
-		}
 		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
+	}
+	
+	private static void rallyCode() throws GameActionException {
+		rc.setIndicatorString(1, "Rallying");
+		
+		if (Comm.readBlock(Comm.getLauncherId(), RUSH_CHANNEL) == 1) {
+			state = LauncherState.RUSH;
+			rushCode();
+			return;
+		}
+		
+		MapLocation rallyPoint = Rally.get(LAUNCHER_RALLY_NUM);
+		NavTangentBug.setDest(rallyPoint);
+		NavTangentBug.calculate(2500);
+		if (rc.isCoreReady() && rc.senseNearbyRobots(15, otherTeam).length == 0) {
+			Direction nextMove = NavTangentBug.getNextMove();
+			if (nextMove != Direction.NONE) {
+				NavSimple.walkTowardsDirected(nextMove);
+			} else {
+				rallyPoint = myLoc;
+				Rally.set(LAUNCHER_RALLY_NUM, myLoc);
+			}
+		}
+		
+		if (myLoc.distanceSquaredTo(rallyPoint) <= 8 && !rallied) {
+			rc.setIndicatorString(0, "Incrementing num rallied");
+			rallied = true;
+			Comm.writeBlock(Comm.getLauncherId(), NUM_RALLIED_CHANNEL, ++numLaunchersRallied);
+		}
+		if (numLaunchersRallied >= Constants.LAUNCHER_RUSH_COUNT) {
+			Comm.writeBlock(Comm.getLauncherId(), RUSH_CHANNEL, 1);
+		}
 	}
 
 	private static void rushCode() throws GameActionException {
+		rc.setIndicatorString(1, "Rushing");
 		MapLocation destination = closestLocation.add(myHQ.directionTo(enemyHQ), -4);
 		NavTangentBug.setDest(destination);
 		NavTangentBug.calculate(2500);
@@ -90,35 +119,9 @@ public class ULauncherHandler extends UnitHandler {
 			Direction nextMove = NavTangentBug.getNextMove();
 			if (nextMove != Direction.NONE) {
 				NavSimple.walkTowardsDirected(nextMove);
-				Rally.forceSetTargetPt(myLoc.add(nextMove));
+				Rally.set(UDroneHandler.DRONE_SHIELD_RALLY_NUM, myLoc.add(nextMove));
 			}
 		}
-	}
-
-	private static void rallyCode() throws GameActionException {
-		MapLocation rallyPoint = MapUtils.pointSection(myHQ, enemyHQ, 0.75);
-		NavTangentBug.setDest(rallyPoint);
-		NavTangentBug.calculate(2500);			
-		if (rc.isCoreReady() && rc.senseNearbyRobots(15, otherTeam).length == 0) {
-			Direction nextMove = NavTangentBug.getNextMove();
-			if (nextMove != Direction.NONE) {
-				NavSimple.walkTowardsDirected(nextMove);
-			} else {
-				rallied = true;
-			}
-		}
-		if (myLoc.distanceSquaredTo(rallyPoint) <= 8) {
-			broadcastNearRallyPoint();
-		}
-		if (numberOfLaunchersRallied >= Constants.LAUNCHER_RUSH_COUNT) {
-			broadcastTeamRush();
-		}
-		if (Comm.readBlock(Comm.getLauncherId(), 24) != 0 && rallied) {
-			nextLauncherState = LauncherState.RUSH;
-		}
-	}
-
-	private static void newCode() {
 	}
 
 	public static boolean decideAttack() {
@@ -139,15 +142,6 @@ public class ULauncherHandler extends UnitHandler {
 		if (rc.canLaunch(dir)) {
 			rc.launchMissile(dir);
 		}
-	}
-
-	public static void broadcastNearRallyPoint() throws GameActionException {
-		numberOfLaunchersRallied++;
-		Comm.writeBlock(Comm.getLauncherId(), 22, numberOfLaunchersRallied);
-	}
-	
-	public static void broadcastTeamRush() throws GameActionException {
-		Comm.writeBlock(Comm.getLauncherId(), 24, 1);
 	}
 
 }

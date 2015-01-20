@@ -45,6 +45,9 @@ public class SHQHandler extends StructureHandler {
 			Comm.getMinerfactId(), Comm.getHeliId(), Comm.getAeroId(), Comm.getSupplyId()};
 		
 		initCounts();
+		
+		// For initializing launcher rally position
+		Rally.set(ULauncherHandler.LAUNCHER_RALLY_NUM, MapUtils.pointSection(myHQ, enemyHQ, 0.75));
 
 		Count.setLimit(Comm.getBeaverId(), 1); // Maintain 1 beaver
 	}
@@ -68,7 +71,7 @@ public class SHQHandler extends StructureHandler {
 		}
 		updateBuildStates();
 		
-		Rally.setRallyPoints();
+		checkForGuard();
 		
 		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 		Distribution.spendBytecodesCalculating(7500);
@@ -132,6 +135,34 @@ public class SHQHandler extends StructureHandler {
 		Comm.writeBlock(Comm.getTowerId(), Count.COUNT_BUFFER_START, towers);
 	}
 
+	protected static void checkForGuard() throws GameActionException {
+		// Determining the rally position for the defensive swarm
+		// Position is determined as the weakest tower
+		MapLocation nextGuardSite = null;
+		int maxNumEnemies = 0;
+		MapLocation[] towerLocs = Handler.rc.senseTowerLocations();
+
+		int numNearbyEnemies = Handler.rc.senseNearbyRobots(RobotType.TOWER.sensorRadiusSquared, Handler.otherTeam).length;
+		if (numNearbyEnemies > 0) {
+			nextGuardSite = Handler.myLoc;
+			maxNumEnemies = numNearbyEnemies;
+		}
+
+		for (MapLocation tower: towerLocs) {
+			numNearbyEnemies = Handler.rc.senseNearbyRobots(tower, RobotType.TOWER.sensorRadiusSquared, Handler.otherTeam).length;
+			if (numNearbyEnemies > maxNumEnemies) {
+				nextGuardSite = tower;
+				maxNumEnemies = numNearbyEnemies;
+			}
+		}
+
+		if (nextGuardSite != null) {
+			Rally.set(UDroneHandler.DRONE_GUARD_RALLY_NUM, nextGuardSite);
+		} else {
+			Rally.deactivate(UDroneHandler.DRONE_GUARD_RALLY_NUM);
+		}
+	}
+	
 	protected static void updateOre() throws GameActionException {
 		int spent = rc.readBroadcast(Comm.SPENT_ORE_BUFFER_CHAN);
 		int gained = (int) (rc.getTeamOre() - prevOre + spent);

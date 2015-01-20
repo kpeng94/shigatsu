@@ -10,15 +10,16 @@ public class UTankHandler extends UnitHandler {
     private static MapLocation closestLocation;
     private static TankState state = TankState.NEW;
     private static TankState nextState;
+    private static TankState prevState = TankState.NEW;
     private static int numberOfTanks = 0;
     private static boolean rallied = false;
     private static int numberOfTanksRallied = 0;
     private static MapLocation rallyPoint;
-    private static double health;
     private static int damageIAmTaking;
     private static int alliesDamage;
     private static int[] revDirections = { 4, -3, 3, -2, 2, -1, 1, 0 };
     private static RobotInfo[] alliesTwoAround;
+    private static int wave = 0;
 
     private enum TankState {
         NEW, RALLY, RUSH, SWARM, FIGHTING
@@ -36,7 +37,7 @@ public class UTankHandler extends UnitHandler {
             try {
                 execute();
             } catch (Exception e) {
-                // e.printStackTrace();
+                e.printStackTrace();
                 System.out.println(typ + " Execution Exception");
             }
             rc.yield(); // Yields to save remaining bytecodes
@@ -46,16 +47,38 @@ public class UTankHandler extends UnitHandler {
     protected static void init(RobotController rcon) throws GameActionException {
         initUnit(rcon);
         typ = RobotType.TANK;
+        rallyPoint = MapUtils.pointSection(myHQ, enemyHQ, 0.75);
+        // rallyPoint = getRallyPointBroadcast(1);
     }
+
+//    private static MapLocation getRallyPointBroadcast(int wave)
+//            throws GameActionException {
+//        int offset;
+//        switch (wave) {
+//            case 1:
+//            default:
+//                offset = Comm.TANK_WAVE_ONE_RALLYPOINT_OFFSET;
+//                break;
+//            case 2:
+//                offset = Comm.TANK_WAVE_TWO_RALLYPOINT_OFFSET;
+//                break;
+//            case 3:
+//                offset = Comm.TANK_WAVE_THREE_RALLYPOINT_OFFSET;
+//                break;
+//        }
+//        return MapUtils.decode(Comm.readBlock(Comm.getTankId(), offset));
+//    }
 
     protected static void execute() throws GameActionException {
         executeUnit();
+        Count.incrementBuffer(Comm.getTankId());
         health = rc.getHealth();
         readBroadcasts();
         minDistance = Integer.MAX_VALUE;
         if (enemyTowers.length == 0) {
             closestLocation = enemyHQ;
         }
+        Utils.updateEnemyInfo();
         for (int i = enemyTowers.length; --i >= 0;) {
             int distanceSquared = myHQ.distanceSquaredTo(enemyTowers[i]);
             if (distanceSquared <= minDistance) {
@@ -63,19 +86,6 @@ public class UTankHandler extends UnitHandler {
                 minDistance = distanceSquared;
             }
         }
-
-        // boolean shouldMoveInstead = false;
-        // alliesTwoAround = rc.senseNearbyRobots(myLoc, 2, myTeam);
-        // for (int i = alliesTwoAround.length; --i >= 0;) {
-        // if (alliesTwoAround[i].location.distanceSquaredTo(closestLocation) >
-        // typ.attackRadiusSquared) {
-        // shouldMoveInstead = true;
-        // }
-        // }
-        // if (rc.isCoreReady() && shouldMoveInstead) {
-        //
-        // }
-
         switch (state) {
             case NEW:
                 newCode();
@@ -98,12 +108,13 @@ public class UTankHandler extends UnitHandler {
     }
 
     private static void fightingCode() throws GameActionException {
-        if (rc.isWeaponReady() && decideAttack()) {
+        Utils.updateEnemyInfo();
+        if (rc.isWeaponReady() && Attack.shouldAttack(enemies)) {
             attack();
-        }
-        if (rc.isCoreReady()
+        } else if (rc.isCoreReady()
                 && rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam).length == 0) {
-            tryMoveCloserToEnemy(closestLocation, 1, closestLocation != enemyHQ);
+            tryMoveCloserToEnemy(closestLocation, 1,
+                    closestLocation != enemyHQ, true);
         }
         // nubMicro();
     }
@@ -111,67 +122,32 @@ public class UTankHandler extends UnitHandler {
     private static void nubMicro() throws GameActionException {
         RobotInfo[] enemies = rc.senseNearbyRobots(myType.sensorRadiusSquared,
                 otherTeam);
-        int[] closestEnemyInfo = getClosestEnemy(enemies);
-        MapLocation closestEnemyLoc = new MapLocation(closestEnemyInfo[1],
-                closestEnemyInfo[2]);
-        int closestEnemyDistance = closestEnemyInfo[0];
+        MapLocation closestEnemyLoc = Attack.getClosestEnemy(enemies);
 
-    }
-
-    /**
-     * Requires that attackableEnemies is already set correctly.
-     *
-     * @param enemyLoc
-     * @throws GameActionException
-     */
-    private static void retreatOrFight(MapLocation enemyLoc)
-            throws GameActionException {
-        if (attackableEnemies.length == 1) {
-            for (int i = attackableEnemies.length; --i >= 0;) {
-                if (attackableEnemies[i].health <= typ.attackPower) {
-                    rc.attackLocation(attackableEnemies[i].location);
-                    return;
-                } else {
-                    // consider action delay and stuff here and range
-                }
-            }
-
-        }
-        Direction direction = getRetreatDirection();
-        if (direction != null) {
-            if (attackableEnemies.length > 0) {
-                rc.attackLocation(attackableEnemies[0].location);
-            }
-        } else {
-            NavSimple.walkTowardsDirected(enemyLoc.directionTo(myLoc));
-        }
-    }
-
-    private static Direction getRetreatDirection() {
-        int x = 0;
-        int y = 0;
-        for (int i = visibleEnemies.length; --i >= 0;) {
-            Direction d = visibleEnemies[i].location.directionTo(myLoc);
-            x += d.dx;
-            y += d.dy;
-        }
-
-        int ax = Math.abs(x);
-        int ay = Math.abs(y);
-        Direction retreatDir;
-        if (ax >= 1.5 * ay) {
-            retreatDir = x > 0 ? Direction.EAST : Direction.WEST;
-        } else if (ay >= 1.5 * ax) {
-            retreatDir = y > 0 ? Direction.SOUTH : Direction.NORTH;
-        } else if (x > 0) {
-            retreatDir = y > 0 ? Direction.SOUTH_EAST : Direction.NORTH_EAST;
-        } else {
-            retreatDir = y > 0 ? Direction.SOUTH_WEST : Direction.NORTH_WEST;
-        }
-        return null;
     }
 
     private static void rushCode() throws GameActionException {
+        // This check is for the fact that the unit might be blocking another
+        // unit. Here we are assuming that we are going on the offensive.
+
+        // closestLocation is assumed to be the location that we are targeting
+        // boolean shouldMoveInstead = false;
+        // alliesTwoAround = rc.senseNearbyRobots(myLoc, 2, myTeam);
+        // for (int i = alliesTwoAround.length; --i >= 0;) {
+        // if (alliesTwoAround[i].location.distanceSquaredTo(closestLocation) >
+        // typ.attackRadiusSquared) {
+        // // shouldMoveInstead = true;
+        // boolean b = tryMoveCloserToEnemy(closestLocation, 1,
+        // closestLocation != enemyHQ);
+        // if (b)
+        // return;
+        // }
+        // }
+        if (rc.isWeaponReady() && Attack.shouldAttack(enemies)
+        // && !shouldMoveInstead
+        ) {
+            attack();
+        }
         MapLocation destination = closestLocation;
         if (closestLocation != null) {
             // switch (myHQ.directionTo(closestLocation)) {
@@ -199,7 +175,8 @@ public class UTankHandler extends UnitHandler {
                 && rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam).length == 0) {
             Direction nextMove = NavTangentBug.getNextMove();
             if (myLoc.distanceSquaredTo(closestLocation) <= 35) {
-                nextState = TankState.FIGHTING;
+                tryMoveCloserToEnemy(closestLocation, 1,
+                        closestLocation != enemyHQ, true);
             } else if (nextMove != Direction.NONE) {
                 NavSimple.walkTowardsDirected(nextMove);
             }
@@ -207,8 +184,8 @@ public class UTankHandler extends UnitHandler {
     }
 
     private static void rallyCode() throws GameActionException {
-        if (rallyPoint == null) {
-            rallyPoint = MapUtils.pointSection(myHQ, enemyHQ, 0.75);
+        if (rc.isWeaponReady() && Attack.shouldAttack(enemies)) {
+            attack();
         }
         NavTangentBug.setDest(rallyPoint);
         NavTangentBug.calculate(2500);
@@ -221,8 +198,11 @@ public class UTankHandler extends UnitHandler {
                 rallied = true;
             }
         }
+        rc.setIndicatorString(0, "At clock turn " + Clock.getRoundNum()
+                + ", I am rallying to the rally point at: " + rallyPoint
+                + " and my rallied boolean is: " + rallied);
         // TODO: figure out this heuristic better
-        if (myLoc.distanceSquaredTo(rallyPoint) <= typ.attackRadiusSquared) {
+        if (myLoc.distanceSquaredTo(rallyPoint) <= typ.attackRadiusSquared / 2) {
             broadcastNearRallyPoint();
         }
         if (numberOfTanksRallied >= Constants.TANK_RUSH_COUNT) {
@@ -234,62 +214,11 @@ public class UTankHandler extends UnitHandler {
 
     }
 
+    /**
+     * Decide what to do on spawn.
+     */
     private static void newCode() {
-        // TODO Auto-generated method stub
         nextState = TankState.RALLY;
-
-    }
-
-    /**
-     * TODO breaking ties between units that are equidistant?
-     *
-     * Gets the closest enemy robot or HQ if list of enemies is empty.
-     *
-     * @param enemies
-     *            list of enemies
-     * @return integer array containing: [minimum distance to closest enemy,
-     *         enemy's x location, enemy's y location]
-     * @throws GameActionException
-     */
-    private static int[] getClosestEnemy(RobotInfo[] enemies)
-            throws GameActionException {
-        int minDistance = myLoc.distanceSquaredTo(enemyHQ);
-        MapLocation closestEnemyLoc = enemyHQ;
-
-        for (int i = enemies.length; --i >= 0;) {
-            int distanceToEnemy = myLoc.distanceSquaredTo(enemies[i].location);
-            if (distanceToEnemy < minDistance) {
-                minDistance = distanceToEnemy;
-                closestEnemyLoc = enemies[i].location;
-            }
-        }
-        int[] distanceData = { minDistance, closestEnemyLoc.x,
-                closestEnemyLoc.y };
-        return distanceData;
-    }
-
-    /**
-     *
-     * @param enemies
-     * @return
-     * @throws GameActionException
-     */
-    private static double[] getEnemyWithLeastHealth(RobotInfo[] enemies)
-            throws GameActionException {
-        double leastHealth = 2000;
-        MapLocation leastHealthEnemyLoc = enemyHQ;
-
-        for (int i = enemies.length; --i >= 0;) {
-            double enemyHealth = enemies[i].health;
-            if (enemyHealth < leastHealth) {
-                leastHealth = enemyHealth;
-                leastHealthEnemyLoc = enemies[i].location;
-            }
-        }
-
-        double[] data = { leastHealth, leastHealthEnemyLoc.x,
-                leastHealthEnemyLoc.y };
-        return data;
 
     }
 
@@ -309,25 +238,33 @@ public class UTankHandler extends UnitHandler {
         Comm.writeBlock(Comm.getTankId(), 4, 1);
     }
 
-    public static boolean decideAttack() {
-        enemies = rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam);
-        if (enemies.length > 0) {
-            return true;
-        }
-        return false;
-    }
-
     public static void detectEnemyKiting() throws GameActionException {
 
     }
 
+    /**
+     * Assumes enemies array is nonempty and correctly updated.
+     *
+     * @throws GameActionException
+     */
     public static void attack() throws GameActionException {
-        rc.attackLocation(enemies[0].location);
+        double damageReduction = 0;
+        // int[] closestEnemy = getClosestEnemy(enemies);
+        // MapLocation attackLocation = new MapLocation(closestEnemy[1],
+        // closestEnemy[2]);
+        MapLocation attackLocation = Attack.chooseTargetByDamageReduction();
+        if (attackLocation == null) {
+            attackLocation = enemies[0].location;
+        }
+        rc.attackLocation(attackLocation);
     }
 
+
+
     /**
-     * TODO: think this through better. TODO: sum up damages instead Get number
-     * of units that can hit me
+     * TODO: think this through better.
+     * TODO: sum up damages instead
+     * Get number of units that can hit me
      *
      * @param location
      * @param team
@@ -376,46 +313,4 @@ public class UTankHandler extends UnitHandler {
 
     }
 
-    public static void tryMoveCloserToEnemy(MapLocation location,
-            int maxEnemyExposure, boolean ignoreHQ) throws GameActionException {
-        Direction toEnemy = myLoc.directionTo(location);
-        int distanceSquaredToLoc = myLoc.distanceSquaredTo(location);
-        Direction[] tryDirs = new Direction[] {
-                toEnemy.rotateRight().rotateRight(),
-                toEnemy.rotateLeft().rotateLeft(), toEnemy.rotateRight(),
-                toEnemy.rotateLeft(), toEnemy };
-        String s = "I am trying to move in";
-        for (int i = tryDirs.length; --i >= 0;) {
-            Direction tryDir = tryDirs[i];
-            s += " " + tryDir;
-            if (!rc.canMove(tryDir))
-                continue;
-            int newX = myLoc.x + tryDir.dx;
-            int newY = myLoc.y + tryDir.dy;
-            int deltaX = Math.abs(newX - location.x)
-                    - Math.abs(myLoc.x - location.x);
-            int deltaY = Math.abs(newY - location.y)
-                    - Math.abs(myLoc.y - location.y);
-            MapLocation newLoc = new MapLocation(newX, newY);
-            int changingParams = 0;
-            if (deltaY > 0) {
-                changingParams++;
-            }
-            if (deltaX > 0) {
-                changingParams++;
-            }
-            if (newLoc.distanceSquaredTo(location) >= distanceSquaredToLoc) {
-                changingParams++;
-            }
-            if (changingParams >= 2) {
-                continue;
-            }
-            if (enemyHQAttackCanMe(myLoc) && ignoreHQ)
-                continue;
-            s += " I have success on" + Clock.getRoundNum();
-            rc.setIndicatorString(0, s);
-            rc.move(tryDir);
-            return;
-        }
-    }
 }

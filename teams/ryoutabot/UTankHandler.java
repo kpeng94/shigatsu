@@ -54,7 +54,7 @@ public class UTankHandler extends UnitHandler {
     protected static void execute() throws GameActionException {
         executeUnit();
         Count.incrementBuffer(Comm.getTankId());
-        Debug.checkHealthOfNearbyAllies(2);
+//        Debug.checkHealthOfNearbyAllies(2);
         health = rc.getHealth();
         minDistance = Integer.MAX_VALUE;
         if (enemyTowers.length == 0) {
@@ -106,13 +106,14 @@ public class UTankHandler extends UnitHandler {
          * (if the fight is winning). Otherwise, we check if we can escape fast enough, or if we
          * can kite at all. If so, we try to do that. Lastly, if we have no choice, we simply fight.
          */
+        Debug.clockString(0, "Rush mode aint got nothing else");
 
         /**
          * First, we check if there are any visible enemies. If there are, we should ignore our
          * rush to target and perform special attack micro. Obviously, we need to handle special checks
          * for when the visible enemy is
          */
-        if (visibleEnemies.length > 0 && visibleEnemies[0].location != closestLocation) {
+        if (visibleEnemies.length > 0) {
             doMicro();
             return;
         }
@@ -131,6 +132,8 @@ public class UTankHandler extends UnitHandler {
 //                return;
 //            }
 //        }
+        Debug.clockString(0, "Made it here");
+
         MapLocation destination = closestLocation;
         NavTangentBug.setDest(destination);
         NavTangentBug.calculate(2500);
@@ -141,6 +144,7 @@ public class UTankHandler extends UnitHandler {
                         closestLocation != enemyHQ, true);
             } else if (nextMove != Direction.NONE) {
                 NavSimple.walkTowardsDirected(nextMove);
+                Debug.clockString(2, "Tangent buggin");
             }
         }
     }
@@ -162,8 +166,10 @@ public class UTankHandler extends UnitHandler {
      */
     public static boolean doMicro() throws GameActionException {
         // COMBAT MODE PRIORITY: focus on the people who can attack us first.
+        Debug.clockString(0, "Microing");
         Debug.logEnemyNumberData(1);
         if (numEnemiesAttackingUs >= 1) {
+            Debug.clockString(0, "got some enemies");
             // First we find out how our numbers are
             int maxNumAlliesAttackingEnemy = 0;
             for (int i = numEnemiesAttackingUs; --i >= 0;) {
@@ -174,16 +180,35 @@ public class UTankHandler extends UnitHandler {
                     maxNumAlliesAttackingEnemy = numAlliesAttackingEnemy;
             }
             if (numEnemiesAttackingUs == 1) {
+                Debug.clockString(0, "got some enemies attacking us (1) and " + maxNumAlliesAttackingEnemy + "friends");
                 if (maxNumAlliesAttackingEnemy == 0) {
                     // No one around us can attack the enemy, even me. This means that we're getting
-                    // outranged by this unit, which is largely difficult.
+                    // outranged by this unit, which is largely difficult. By default, we're just
+                    // going to try to run away.
+                    tryToRetreat();
                 } else if (maxNumAlliesAttackingEnemy == 1) {
-                    // This is a 1v1 fight,
-                    RobotInfo enemy = findAnAttackingEnemy(enemiesAttackingUs);
+                    // This is currently a 1v1 fight. It might not be 1v1 between me and the enemy,
+                    // though. The following check will figure that out.
+                    RobotInfo enemy = findAnAttackingEnemy(attackableEnemies);
+                    if (enemy == null) {
+                        // We can't attack the enemy, so the enemy is actually having a 1v1 fight with
+                        // someone else. As a result, since we have the numbers advantage, we should go in.
+                        // Our count here reveals that the enemy can also attack us though, so the next
+                        // line should work.
+                        enemy = enemiesAttackingUs[0];
+                        if (rc.isCoreReady()) {
+                            tryMoveCloserToEnemy(enemy.location, 1, enemy.location != Handler.enemyHQ, true);
+                            Debug.clockString(0, "1v1 move");
+                            return true;
+                        }
+                        return true;
+                    }
+                    // Otherwise, it should be a 1v1.
                     boolean winning1v1 = isWinning1v1(enemy);
+                    rc.setIndicatorString(2, "Am I winning a 1v1" + winning1v1);
                     if (winning1v1) {
+                        // We're winning a 1v1, so we try to fight the enemy
                         if (rc.isWeaponReady()) {
-
                             rc.attackLocation(enemy.location);
                             return true;
                         } else {
@@ -191,22 +216,64 @@ public class UTankHandler extends UnitHandler {
                         }
                     } else {
                         tryToRetreat();
+                        Debug.clockString(0, "running fail");
                     }
                 } else {
                     // We outnumber the enemy. Great victory. Now, we beat it up.
-                    if (rc.isWeaponReady()) {
-                        RobotInfo enemy = findAnAttackingEnemy(enemiesAttackingUs);
-                        rc.attackLocation(enemy.location);
+                    // We try to find the enemy, which may not be in our attack radius.
+                    RobotInfo enemy = findAnAttackingEnemy(attackableEnemies);
+
+                    // The enemy can attack us, but we can't attack them. Since we're winning, we
+                    // should try to move towards them.
+                    if (enemy == null) {
+                        enemy = enemiesAttackingUs[0];
+                        if (rc.isCoreReady()) {
+                            tryMoveCloserToEnemy(enemy.location, 1, enemy.location != Handler.enemyHQ, true);
+                            Debug.clockString(0, "Outnumber move vs 1");
+                            return true;
+                        }
+                        return true;
                     }
+                    // If our weapon is ready, we should attack.
+                    if (rc.isWeaponReady()) {
+                        rc.attackLocation(enemy.location);
+                        return true;
+                    }
+//                    } else {
+//                        // Otherwise we should check if we're already in the range of the enemy.
+//
+//                        RobotInfo closestEnemyUnit = Utils.closestNonConstructingUnit(Handler.visibleEnemies);
+//                        int numAlliesFighting = numAlliesInAttackRange(closestEnemyUnit.location);
+//                        if (closestEnemyUnit != null && rc.isCoreReady()) {
+//                            tryMoveCloserToEnemy(closestEnemyUnit.location,
+//                                    numAlliesFighting + 1, closestEnemyUnit.location != Handler.enemyHQ,
+//                                    false);
+//                            Debug.clockString(0, "moving in to the party");
+//
+//                        } else {
+//                            return true;
+//                        }
+//                    }
+
                 }
-            } else if (numEnemiesAttackingUs > maxNumAlliesAttackingEnemy
-                    && !Attack.guessIfFightIsWinning()) {
+            } else if (numEnemiesAttackingUs > maxNumAlliesAttackingEnemy) {
+//                    && !Attack.guessIfFightIsWinning()) {
                 // We are being outnumbered and we don't think we're going to win.
                 tryToRetreat();
             } else {
+                // We are doing the outnumbering and there is already an enemy attacking me, so I'm
+                // just going to fight.
                 if (rc.isWeaponReady()) {
-                    // TODO: FIX. enemiesAttackingUs doesn't mean we can attack enemies.
-                    RobotInfo enemy = findAnAttackingEnemy(enemiesAttackingUs);
+                    RobotInfo enemy = findAnAttackingEnemy(attackableEnemies);
+                    if (enemy == null) {
+                        enemy = enemiesAttackingUs[0];
+                        if (rc.isCoreReady()) {
+                            tryMoveCloserToEnemy(enemy.location, 1, enemy.location != Handler.enemyHQ, true);
+                            Debug.clockString(0, "Outnumber move");
+                            return true;
+                        }
+                        return true;
+                    }
                     rc.attackLocation(enemy.location);
                 }
             }
@@ -217,6 +284,7 @@ public class UTankHandler extends UnitHandler {
 //                    RobotInfo enemy = findAnEnemy(attackableEnemies);
                     rc.attackLocation(attackableEnemies[0].location);
                 }
+                return true;
 
         } else {
             rc.setIndicatorString(0, "I have nothing to do on turn " + Clock.getRoundNum());
@@ -233,13 +301,17 @@ public class UTankHandler extends UnitHandler {
                 int numAlliesFighting = numAlliesInAttackRange(closestEnemyUnit.location);
                 rc.setIndicatorString(0, "I have nothing to do, but I have detected that there are some allies fighting: " + numAlliesFighting + " on turn "  + Clock.getRoundNum());
                 if (numAlliesFighting > 0) {
-                    tryMoveCloserToEnemy(closestEnemyUnit.location,
-                            numAlliesFighting + 1, closestEnemyUnit.location != Handler.enemyHQ,
-                            true);
+                    if (rc.isCoreReady()) {
+                        tryMoveCloserToEnemy(closestEnemyUnit.location,
+                                numAlliesFighting + 1, closestEnemyUnit.location != Handler.enemyHQ,
+                                true);
+                        Debug.clockString(0, "Helping buddy move");
+                    }
+                    return true;
                 }
             }
         }
-        return false;
+        return true;
     }
 
 
@@ -265,20 +337,31 @@ public class UTankHandler extends UnitHandler {
         if (canHitEnemyDownThisTurn || !enemyCanHitUs) {
             if (rc.isWeaponReady()) {
 
-            RobotInfo enemy = findAnAttackingEnemy(enemiesAttackingUs);
-            rc.attackLocation(enemy.location);
-            return;
+            RobotInfo enemy = findAnAttackingEnemy(attackableEnemies);
+            if (enemy != null) {
+                rc.attackLocation(enemy.location);
+                return;
+            }
             }
         }
         Direction dir = chooseRetreatDirection();
+        Debug.clockString(1, "mad danger ranger");
         if (dir == null) {
             if (rc.isWeaponReady()) {
-            RobotInfo enemy = findAnAttackingEnemy(enemiesAttackingUs);
-            rc.attackLocation(enemy.location);
+                RobotInfo enemy = findAnAttackingEnemy(attackableEnemies);
+                if (enemy != null) {
+                    rc.attackLocation(enemy.location);
+                } else {
+                    if (rc.isCoreReady()) {
+                        rc.move(myLoc.directionTo(enemiesAttackingUs[0].location));
+                        Debug.clockString(0, "tried to retreat but i be moving ");
+                    }
+                }
             }
         } else {
             if (rc.isCoreReady()) {
                 rc.move(dir);
+                Debug.clockString(0, "tried to retreat in dir" + dir);
             }
         }
 

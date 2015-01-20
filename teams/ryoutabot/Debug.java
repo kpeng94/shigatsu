@@ -21,4 +21,8 @@ public class Debug {
                 Handler.numVisibleEnemyAttackers);
 
     }
+
+    public static void clockString(int ind, String string) {
+        Handler.rc.setIndicatorString(ind, "On clock round: " + Clock.getRoundNum() + string);
+    }
 }

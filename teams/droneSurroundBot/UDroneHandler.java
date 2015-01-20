@@ -4,6 +4,7 @@ import battlecode.common.*;
 
 public class UDroneHandler extends UnitHandler {
 	private static boolean attackState = false;
+	private static boolean isSupplier;
 
 	public static void loop(RobotController rcon) {
 		try {
@@ -26,10 +27,22 @@ public class UDroneHandler extends UnitHandler {
 
 	protected static void init(RobotController rcon) throws GameActionException {
 		initUnit(rcon);
+		if (Supply.supplierNeeded()) {
+			Supply.initSupplier();
+			isSupplier = true;
+		} else {
+			isSupplier = false;
+		}
 	}
 
 	protected static void execute() throws GameActionException {
 		executeUnit();
+		
+		if (isSupplier) {
+			Supply.execSupplier();
+			return;
+		}
+		
 		if (Comm.readBlock(Comm.getDroneId(), 1) > 50 || Clock.getRoundNum() > 1750) {
 			attackState = true;
 		}

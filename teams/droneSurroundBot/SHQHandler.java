@@ -68,7 +68,9 @@ public class SHQHandler extends StructureHandler {
 		}
 		updateBuildStates();
 
-		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
+		Supply.incExpiration();
+		Supply.distributeHQSupply();
+		Supply.dumpSupplyTo(rc.senseTowerLocations()[0], RobotType.TOWER);
 		Distribution.spendBytecodesCalculating(7500);
 	}
 

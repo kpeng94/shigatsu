@@ -100,9 +100,9 @@ public class Supply {
 		
 		if (Handler.rc.isCoreReady()) {
 			if (mySupply < 2000 || dumpLoc == null || dumpTarget == null) {
-				Handler.rc.move(NavSafeBug.dirToBugIn(Handler.myHQ));
+				Handler.rc.move(NavSuperSafeBug.dirToBugIn(Handler.myHQ));
 			} else {
-				Handler.rc.move(NavSafeBug.dirToBugIn(dumpLoc));
+				Handler.rc.move(NavSuperSafeBug.dirToBugIn(dumpLoc));
 			}
 		}
 		

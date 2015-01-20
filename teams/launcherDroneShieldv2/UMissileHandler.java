@@ -19,7 +19,7 @@ public class UMissileHandler extends UnitHandler {
 			try {
 				execute();
 			} catch (Exception e) {
-				// e.printStackTrace();
+				 e.printStackTrace();
 				System.out.println(typ + " Execution Exception");
 			}
 			rc.yield(); // Yields to save remaining bytecodes
@@ -28,14 +28,13 @@ public class UMissileHandler extends UnitHandler {
 
 	protected static void init(RobotController rcon) throws GameActionException {
 		rc = rcon;
-		otherTeam = rc.getTeam().opponent();
 	}
 
 	protected static void execute() throws GameActionException {
 		myLoc = rc.getLocation();
 		
 		if (destination == null) {
-			enemies = rc.senseNearbyRobots(24, otherTeam);
+			enemies = rc.senseNearbyRobots(24, rc.getTeam().opponent());
 			if (enemies.length > 0) {
 				destination = enemies[0].location;
 			}
@@ -43,7 +42,7 @@ public class UMissileHandler extends UnitHandler {
 		if (destination != null) {
 			if (destination.distanceSquaredTo(myLoc) <= 2) {
 				rc.explode();
-			} else {
+			} else if (rc.isCoreReady()) {
 				NavSimple.walkTowards(myLoc.directionTo(destination));
 			}
 		}

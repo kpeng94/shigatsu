@@ -115,7 +115,11 @@ public class ULauncherHandler extends UnitHandler {
 			Direction nextMove = NavTangentBug.getNextMove();
 			if (nextMove != Direction.NONE) {
 				NavSimple.walkTowardsDirected(nextMove);
-				Rally.set(UDroneHandler.DRONE_SHIELD_RALLY_NUM, myLoc.add(nextMove));
+				
+				// update the drone shield center based on proximity
+				MapLocation prevLoc = Rally.get(UDroneHandler.DRONE_SHIELD_RALLY_NUM);
+				if (prevLoc == null || myLoc.distanceSquaredTo(closestLocation) < prevLoc.distanceSquaredTo(closestLocation))
+					Rally.set(UDroneHandler.DRONE_SHIELD_RALLY_NUM, myLoc.add(nextMove));
 			}
 		}
 	}

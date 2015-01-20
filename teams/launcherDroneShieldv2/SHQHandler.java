@@ -183,6 +183,7 @@ public class SHQHandler extends StructureHandler {
 			Count.setLimit(Comm.getMinerId(), 0);
 			Count.setLimit(Comm.getHeliId(), 5);
 			Count.setLimit(Comm.getDroneId(), 999);
+			Count.setLimit(Comm.getLauncherId(), 999);
 			Count.setLimit(Comm.getSupplyId(), 30);
 		} else if (Count.getCount(Comm.getAeroId()) > 0) {
 			Count.setLimit(Comm.getMinerfactId(), 0);

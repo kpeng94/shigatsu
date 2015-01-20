@@ -36,17 +36,14 @@ public class UDroneHandler extends UnitHandler {
 			Attack.tryAttackClosestButKillIfPossible();
 		}
 		if (rc.isCoreReady()) {
-			if (Count.getCount(Comm.getLauncherId()) < 1) {
+			MapLocation targetPt = Rally.get(DRONE_SHIELD_RALLY_NUM);
+			if (Count.getCount(Comm.getLauncherId()) < 1 || targetPt == null) {
+				Rally.deactivate(DRONE_SHIELD_RALLY_NUM);
 				tryGuard();
 			} else {
-				MapLocation targetPt = Rally.get(DRONE_SHIELD_RALLY_NUM);
-				if (targetPt != null) {
-					Direction dir = Orbit.orbit(targetPt, RobotType.TOWER.attackRadiusSquared);
-					if (dir != Direction.NONE) {
-						rc.move(dir);
-					}
-				} else {
-					tryGuard();
+				Direction dir = Orbit.orbit(targetPt, RobotType.TOWER.attackRadiusSquared);
+				if (dir != Direction.NONE) {
+					rc.move(dir);
 				}
 			}
 		}

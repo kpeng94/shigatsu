@@ -46,14 +46,14 @@ public class ULauncherHandler extends UnitHandler {
 		initUnit(rcon);
 		typ = RobotType.LAUNCHER;
 		rallyPoint = MapUtils.pointSection(myHQ, enemyHQ, 0.75);
-		myWaveNumber = Comm.readBlock(Comm.getTankId(), Comm.WAVENUM_OFFSET);
+		myWaveNumber = Comm.readBlock(Comm.getLauncherId(), Comm.WAVENUM_OFFSET);
 	}
 
 	protected static void execute() throws GameActionException {
 		executeUnit();
-		Count.incrementBuffer(Comm.getTankId());
+		Count.incrementBuffer(Comm.getLauncherId());
 		minDistance = Integer.MAX_VALUE;
-		
+
 		if (enemyTowers.length == 0) {
 			closestLocation = enemyHQ;
 		}
@@ -82,14 +82,14 @@ public class ULauncherHandler extends UnitHandler {
 				rushCode();
 				break;
 			default:
-				break;	
-			}			
+				break;
+			}
 		}
 
 		if (nextState != null) {
 			state = nextState;
 			nextState = null;
-		}		
+		}
 		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 	}
 
@@ -169,7 +169,7 @@ public class ULauncherHandler extends UnitHandler {
 		if (closestEnemy != null && rc.isCoreReady()) {
 			if (closestEnemy.location.distanceSquaredTo(myLoc) <= 15) {
 				NavSimple.walkTowardsSafe(closestEnemy.location.directionTo(myLoc));
-			}			
+			}
 		}
 	}
 

@@ -4,9 +4,6 @@ import battlecode.common.*;
 
 public class STankFactoryHandler extends StructureHandler {
 
-	private static double oreAmount = 0.0;
-	private static int lastReset = 0;
-
 	public static void loop(RobotController rcon) {
 		try {
 			init(rcon);
@@ -31,26 +28,17 @@ public class STankFactoryHandler extends StructureHandler {
 	}
 
 	protected static void execute() throws GameActionException {
-		oreAmount = rc.getTeamOre();
-		executeStructure();
-		readBroadcasts();
-		if (lastReset != Clock.getRoundNum()) {
-			writeBroadcasts();
-		}
-		if (rc.isCoreReady() && rc.getTeamOre() >= RobotType.TANK.oreCost) {
-			Spawner.trySpawn(myHQToEnemyHQ, RobotType.TANK, oreAmount);
-		}
-		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
-		
+	    executeStructure();
+	    Count.incrementBuffer(Comm.getTankfactId());
+	    if (rc.isCoreReady()) { // Try to spawn
+	        trySpawn();
+	    }
+        Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 	}
 
-	public static void readBroadcasts() throws GameActionException {
-		lastReset = Comm.readBlock(Comm.getTankId(), Comm.RESET_ROUND);
-	}	
-	
-	public static void writeBroadcasts() throws GameActionException {
-		Comm.writeBlock(Comm.getTankId(), Comm.COUNT_NEARRALLYPOINT_OFFSET, 0);
-		Comm.writeBlock(Comm.getTankId(), Comm.RESET_ROUND, Clock.getRoundNum());
+	protected static void trySpawn() throws GameActionException {
+	    if (Count.getCount(Comm.getTankId()) < Count.getLimit(Comm.getTankId())) {
+	        Spawner.trySpawn(myLoc.directionTo(enemyHQ), RobotType.TANK, Comm.getTankId());
+	    }
 	}
-
 }

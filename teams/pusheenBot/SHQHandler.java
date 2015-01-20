@@ -151,16 +151,16 @@ public class SHQHandler extends StructureHandler {
 	}
 
 	protected static void updateBuildStates() throws GameActionException {
-		if (Count.getCount(Comm.getLauncherId()) >= 10) {
-			Count.setLimit(Comm.getSupplyId(), 30);
-		} else if (Count.getCount(Comm.getSoldierId()) >= 10 && Count.getLimit(Comm.getAeroId()) == 0) {
-			Count.setLimit(Comm.getAeroId(), 1);
-			Count.setLimit(Comm.getHeliId(), 1);
+		if (Count.getCount(Comm.getLauncherId()) >= 1) {
+			Count.setLimit(Comm.getSupplyId(), 10 * Count.getLimit(Comm.getAeroId()));
+		} else if (Count.getCount(Comm.getSoldierId()) >= 10) {
 			Count.setLimit(Comm.getLauncherId(), 999);
-			Count.setLimit(Comm.getSupplyId(), 10);
-		} else if (Count.getCount(Comm.getMinerId()) >= 5) { // 10 miners
-			Count.setLimit(Comm.getMinerId(), 40);
 			Count.setLimit(Comm.getSoldierId(), 100);
+		} else if (Count.getCount(Comm.getMinerId()) >= 5) { // 5 miners
+			Count.setLimit(Comm.getHeliId(), 1);
+			Count.setLimit(Comm.getAeroId(), 1);
+			Count.setLimit(Comm.getMinerId(), 40);
+			Count.setLimit(Comm.getSoldierId(), 20);
 		} else if (Count.getCount(Comm.getMinerfactId()) == 1) { // 1 mining fact
 			Count.setLimit(Comm.getBeaverId(), 2);
 			Count.setLimit(Comm.getBarrackId(), 1);

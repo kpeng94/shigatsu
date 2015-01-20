@@ -4,9 +4,9 @@ import battlecode.common.*;
 
 public class ULauncherHandler extends UnitHandler {
 	public static final int LAUNCHER_RUSH_COUNT = 3;
+	public static final int PROXIMITY_DIST = 52;
 
 	private static RobotInfo[] enemies;
-	private static int minDistance = 999999;
 	private static MapLocation closestLocation;
 	private static LauncherState state = LauncherState.RALLY;
 	private static LauncherState nextState;
@@ -52,25 +52,36 @@ public class ULauncherHandler extends UnitHandler {
 	protected static void execute() throws GameActionException {
 		executeUnit();
 		Count.incrementBuffer(Comm.getLauncherId());
-		minDistance = Integer.MAX_VALUE;
-
-		if (enemyTowers.length == 0) {
+		int minDistance = Integer.MAX_VALUE;
+		
+		int numMyTowers = rc.senseTowerLocations().length;
+		
+		if (Clock.getRoundNum() >= 1500) {
+			state = LauncherState.RUSH;
+		}
+		
+		if (enemyTowers.length == 0 || (Clock.getRoundNum() >= 1750 && numMyTowers < enemyTowers.length)) {
 			closestLocation = enemyHQ;
 		}
-		for (int i = enemyTowers.length; --i >= 0;) {
-			int distanceSquared = myHQ.distanceSquaredTo(enemyTowers[i]);
-			if (distanceSquared <= minDistance) {
-				closestLocation = enemyTowers[i];
-				minDistance = distanceSquared;
+		if (Clock.getRoundNum() < 1750 || numMyTowers >= enemyTowers.length) {
+			for (int i = enemyTowers.length; --i >= 0;) {
+				int distFromMe = myLoc.distanceSquaredTo(enemyTowers[i]);
+				int distanceFromHQ = myHQ.distanceSquaredTo(enemyTowers[i]);
+				if (distFromMe <= PROXIMITY_DIST && distFromMe < minDistance) {
+					closestLocation = enemyTowers[i];
+					minDistance = distFromMe;
+				} else if (distanceFromHQ < minDistance) {
+					closestLocation = enemyTowers[i];
+					minDistance = distanceFromHQ;
+				}
 			}
 		}
+		
 		if (decideAttack()) {
 			if (rc.getMissileCount() > 0) {
 				attackAndMove();
-//				Debug.clockString(1, "I attacked");
 			}
 		} else {
-//			Debug.clockString(2, "I am doing some other stuff");
 			switch (state) {
 			case NEW:
 				newCode();
@@ -100,10 +111,10 @@ public class ULauncherHandler extends UnitHandler {
 		if (rc.isCoreReady()
 				&& rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam).length == 0) {
 			Direction nextMove = NavTangentBug.getNextMove();
-			if (myLoc.distanceSquaredTo(closestLocation) <= 35) {
+			if (myLoc.distanceSquaredTo(closestLocation) <= 52) {
 				NavSimple.walkTowardsSafe(myLoc.directionTo(closestLocation));
 			} else if (nextMove != Direction.NONE) {
-				NavSimple.walkTowardsDirected(nextMove);
+				NavSimple.walkTowards(nextMove);
 			}
 		}
 	}
@@ -117,7 +128,7 @@ public class ULauncherHandler extends UnitHandler {
 			if (rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam).length == 0) {
 				Direction nextMove = NavTangentBug.getNextMove();
 				if (nextMove != Direction.NONE) {
-					NavSimple.walkTowardsDirected(nextMove);
+					NavSimple.walkTowards(nextMove);
 				} else {
 					rallied = true;
 				}
@@ -166,6 +177,13 @@ public class ULauncherHandler extends UnitHandler {
 		if (rc.canLaunch(dir)) {
 			rc.launchMissile(dir);
 		}
+		if (rc.canLaunch(dir.rotateLeft())) {
+			rc.launchMissile(dir.rotateLeft());
+		}
+		if (rc.canLaunch(dir.rotateRight())) {
+			rc.launchMissile(dir.rotateRight());
+		}
+		
 		if (closestEnemy != null && rc.isCoreReady()) {
 			if (closestEnemy.location.distanceSquaredTo(myLoc) <= 15) {
 				NavSimple.walkTowardsSafe(closestEnemy.location.directionTo(myLoc));

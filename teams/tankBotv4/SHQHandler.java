@@ -35,6 +35,8 @@ public class SHQHandler extends StructureHandler {
 
     private static int[] countChans;
 
+    private static int currentTankWave = 1;
+
     public static void loop(RobotController rcon) {
         try {
             init(rcon);
@@ -63,6 +65,8 @@ public class SHQHandler extends StructureHandler {
 
         initCounts();
         Count.setLimit(Comm.getBeaverId(), Constants.NUM_OF_BEAVERS);
+        // Broadcast tank wave
+        Comm.writeBlock(Comm.getTankId(), Comm.WAVENUM_OFFSET, currentTankWave);
     }
 
     protected static void execute() throws GameActionException {
@@ -75,6 +79,12 @@ public class SHQHandler extends StructureHandler {
         for (int i = countChans.length; --i >= 0;) {
             Count.resetBuffer(countChans[i]);
         }
+
+        // Reset counts for tank waves
+        for (int i = currentTankWave; --i >= 0;) {
+            Count.resetBufferForGroup(Comm.getTankId(), i + 1);
+        }
+
         Utils.updateOre();
 
         broadcastRallyPoint(1);
@@ -119,8 +129,6 @@ public class SHQHandler extends StructureHandler {
      * @throws GameActionException
      */
     protected static void trySpawn() throws GameActionException {
-//        System.out.println(Count.getLimit(countChans[0]));
-        System.out.println(oreAmount);
         if (Count.getCount(countChans[0]) < Count.getLimit(countChans[0])) {
             Spawner.trySpawn(myLoc.directionTo(enemyHQ).opposite(), RobotType.BEAVER, countChans[0]);
         }
@@ -251,109 +259,19 @@ public class SHQHandler extends StructureHandler {
             Count.setLimit(Comm.getMinerId(), 10);
         }
 
+        // If there are enough tanks at the rally point, increment the wave count
+        // The tanks should detect this by themselves and move
+        if (Count.getCountAtRallyPoint(Comm.getTankId(), currentTankWave) >= Constants.TANK_RUSH_COUNT) {
+            System.out.println("This tank wave has enough");
+            currentTankWave++;
+            Count.incrementWaveNum(Comm.getTankId());
+        }
     }
-
-//    protected static void updateUnitCounts() throws GameActionException {
-//        int mlx = 0;
-//        int mly = 0;
-//        myRobots = rc.senseNearbyRobots(999999, myTeam);
-//        numSoldiers = numCommanders = numTechInstitutes = numTankFactories = numBashers = numDrones = numComputers = numTrainingFields = numBarracks = numAerospaceLabs = numBeavers = numLaunchers = numMiners = numMinerFactories = numTanks = numSupplyDepots = numHelipads = 0;
-//        for (RobotInfo r : myRobots) {
-//            RobotType type = r.type;
-//            switch (type) {
-//                case BEAVER:
-//                    numBeavers++;
-//                    break;
-//                case LAUNCHER:
-//                    numLaunchers++;
-//                    break;
-//                case MINER:
-//                    mlx += r.location.x;
-//                    mly += r.location.y;
-//                    numMiners++;
-//                    break;
-//                case MINERFACTORY:
-//                    numMinerFactories++;
-//                    break;
-//                case TANK:
-//                    numTanks++;
-//                    break;
-//                case SUPPLYDEPOT:
-//                    numSupplyDepots++;
-//                    break;
-//                case HELIPAD:
-//                    numHelipads++;
-//                    break;
-//                case AEROSPACELAB:
-//                    numAerospaceLabs++;
-//                    break;
-//                case BARRACKS:
-//                    numBarracks++;
-//                    break;
-//                case TANKFACTORY:
-//                    numTankFactories++;
-//                    break;
-//                case TECHNOLOGYINSTITUTE:
-//                    numTechInstitutes++;
-//                    break;
-//                case TRAININGFIELD:
-//                    numTrainingFields++;
-//                    break;
-//                case COMMANDER:
-//                    numCommanders++;
-//                    break;
-//                case SOLDIER:
-//                    numSoldiers++;
-//                    break;
-//                case BASHER:
-//                    numBashers++;
-//                    break;
-//                case DRONE:
-//                    numDrones++;
-//                    break;
-//                case COMPUTER:
-//                    numComputers++;
-//                    break;
-//            }
-//        }
-//        if (numMiners != 0) {
-//            mlx /= numMiners;
-//            mly /= numMiners;
-//            mlx = (mlx - myHQ.x + 256) % 256;
-//            mly = (mly - myHQ.y + 256) % 256;
-//            int averagePosOfMiners = mlx * 256 + mly;
-//            Comm.writeBlock(Comm.getMinerId(), 2, averagePosOfMiners);
-//        }
-//
-//        // Still Missing some I think
-//        Comm.writeBlock(Comm.getHeliId(), Comm.COUNT_OFFSET, numHelipads);
-//        Comm.writeBlock(Comm.getBeaverId(), Comm.COUNT_OFFSET, numBeavers);
-//        Comm.writeBlock(Comm.getLauncherId(), Comm.COUNT_OFFSET, numLaunchers);
-//        Comm.writeBlock(Comm.getMinerId(), Comm.COUNT_OFFSET, numMiners);
-//        Comm.writeBlock(Comm.getTankId(), Comm.COUNT_OFFSET, numTanks);
-//        Comm.writeBlock(Comm.getMinerfactId(), Comm.COUNT_OFFSET,
-//                numMinerFactories);
-//        Comm.writeBlock(Comm.getSupplyId(), Comm.COUNT_OFFSET, numSupplyDepots);
-//        Comm.writeBlock(Comm.getAeroId(), Comm.COUNT_OFFSET, numAerospaceLabs);
-//        Comm.writeBlock(Comm.getBarrackId(), Comm.COUNT_OFFSET, numBarracks);
-//        Comm.writeBlock(Comm.getTankfactId(), Comm.COUNT_OFFSET,
-//                numTankFactories);
-//        Comm.writeBlock(Comm.getCommanderId(), Comm.COUNT_OFFSET, numCommanders);
-//        Comm.writeBlock(Comm.getComputerId(), Comm.COUNT_OFFSET, numComputers);
-//        Comm.writeBlock(Comm.getDroneId(), Comm.COUNT_OFFSET, numDrones);
-//        Comm.writeBlock(Comm.getTrainingId(), Comm.COUNT_OFFSET,
-//                numTrainingFields);
-//        Comm.writeBlock(Comm.getTechId(), Comm.COUNT_OFFSET, numTechInstitutes);
-//    }
 
     private static void broadcastRallyPoint(int wave)
             throws GameActionException {
         Comm.writeBlock(Comm.getTankId(), Comm.TANK_WAVE_ONE_RALLYPOINT_OFFSET,
                 MapUtils.encode(closestTowerToEnemy));
-
-    }
-
-    private static void broadcastRallyPoint(int[] types, int wave) {
 
     }
 }

@@ -283,62 +283,62 @@ public class Attack {
      * @return
      * @throws GameActionException
      */
-    public static boolean inCombatMicro() throws GameActionException {
-        // First thing we check is if we are in combat.
-        if (Handler.numEnemiesAttackingUs >= 1) {
-            int maxAlliesAttackingEnemy = 0;
-            for (int i = Handler.enemiesAttackingUs.length; --i >= 0;) {
-                // int numAlliesAttackingEnemy = 1 +
-                // numOtherAlliedSoldiersInAttackRange(attackableEnemies[i].location);
-                // we deliberately include buildings in this count to encourage
-                // our
-                // soldiers to defend buildings:
-                int numAlliesAttackingEnemy = 1 + numOtherAlliedSoldiersAndBuildingsInAttackRange(Handler.enemiesAttackingUs[i].location);
-                if (numAlliesAttackingEnemy > maxAlliesAttackingEnemy)
-                    maxAlliesAttackingEnemy = numAlliesAttackingEnemy;
-            }
-            if (Handler.numEnemiesAttackingUs == 1) {
-                if (maxAlliesAttackingEnemy == 1) {
-                    // 1v1 case
-                    RobotInfo enemy = Handler.findAnAttackingEnemy(Handler.enemiesAttackingUs);
-                    // Bad heurstic, fix (TODO)
-                    boolean weAreWinning1v1 = Handler.health >= enemy.health;
-                    if (weAreWinning1v1) {
-                        Handler.rc.attackLocation(enemy.location);
-                    } else {
-                        retreat();
-                    }
-                } else {
-                    // We have more units
-                    RobotInfo enemy = findAnAttackingEnemy(Handler.enemiesAttackingUs);
-                    Handler.rc.attackLocation(enemy.location);
-                }
-            } else if (Handler.numEnemiesAttackingUs > maxAlliesAttackingEnemy
-                    && !guessIfFightIsWinning()) {
-                retreat();
-            } else {
-                attackEnemy();
-            }
-            return true;
-        } else {
-            // No enemies detected combating against us, so we are currently not
-            // in combat. In this case, we should help allies being attacked if
-            // we can win the fight or run away if we can't. The last thing we
-            // should do is take advantage of useless buildings that are not
-            // doing anything.
-            MapLocation closestEnemyUnit = closestNonConstructingUnit(
-                    Handler.visibleEnemies, Handler.myLoc);
-            if (closestEnemyUnit != null) {
-                int numAlliesFighting = numOtherAlliedSoldiersAndBuildingsInAttackRange(closestEnemyUnit);
-                if (numAlliesFighting > 0) {
-                    tryMoveCloserToEnemy(closestEnemyUnit,
-                            numAlliesFighting + 1, closestEnemyUnit != Handler.enemyHQ,
-                            true);
-                }
-            }
-            return false;
-        }
-    }
+//    public static boolean inCombatMicro() throws GameActionException {
+//        // First thing we check is if we are in combat.
+//        if (Handler.numEnemiesAttackingUs >= 1) {
+//            int maxAlliesAttackingEnemy = 0;
+//            for (int i = Handler.enemiesAttackingUs.length; --i >= 0;) {
+//                // int numAlliesAttackingEnemy = 1 +
+//                // numOtherAlliedSoldiersInAttackRange(attackableEnemies[i].location);
+//                // we deliberately include buildings in this count to encourage
+//                // our
+//                // soldiers to defend buildings:
+//                int numAlliesAttackingEnemy = 1 + numOtherAlliedSoldiersAndBuildingsInAttackRange(Handler.enemiesAttackingUs[i].location);
+//                if (numAlliesAttackingEnemy > maxAlliesAttackingEnemy)
+//                    maxAlliesAttackingEnemy = numAlliesAttackingEnemy;
+//            }
+//            if (Handler.numEnemiesAttackingUs == 1) {
+//                if (maxAlliesAttackingEnemy == 1) {
+//                    // 1v1 case
+//                    RobotInfo enemy = Handler.findAnAttackingEnemy(Handler.enemiesAttackingUs);
+//                    // Bad heurstic, fix (TODO)
+//                    boolean weAreWinning1v1 = Handler.health >= enemy.health;
+//                    if (weAreWinning1v1) {
+//                        Handler.rc.attackLocation(enemy.location);
+//                    } else {
+//                        retreat();
+//                    }
+//                } else {
+//                    // We have more units
+//                    RobotInfo enemy = findAnAttackingEnemy(Handler.enemiesAttackingUs);
+//                    Handler.rc.attackLocation(enemy.location);
+//                }
+//            } else if (Handler.numEnemiesAttackingUs > maxAlliesAttackingEnemy
+//                    && !guessIfFightIsWinning()) {
+//                retreat();
+//            } else {
+//                attackEnemy();
+//            }
+//            return true;
+//        } else {
+//            // No enemies detected combating against us, so we are currently not
+//            // in combat. In this case, we should help allies being attacked if
+//            // we can win the fight or run away if we can't. The last thing we
+//            // should do is take advantage of useless buildings that are not
+//            // doing anything.
+//            MapLocation closestEnemyUnit = closestNonConstructingUnit(
+//                    Handler.visibleEnemies, Handler.myLoc);
+//            if (closestEnemyUnit != null) {
+//                int numAlliesFighting = numOtherAlliedSoldiersAndBuildingsInAttackRange(closestEnemyUnit);
+//                if (numAlliesFighting > 0) {
+//                    tryMoveCloserToEnemy(closestEnemyUnit,
+//                            numAlliesFighting + 1, closestEnemyUnit != Handler.enemyHQ,
+//                            true);
+//                }
+//            }
+//            return false;
+//        }
+//    }
 
 
 

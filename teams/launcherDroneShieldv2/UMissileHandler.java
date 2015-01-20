@@ -1,8 +1,11 @@
-package launcherDroneShield;
+package launcherDroneShieldv2;
 
 import battlecode.common.*;
 
-public class SHeliHandler extends StructureHandler {
+public class UMissileHandler extends UnitHandler {
+	
+	private static RobotInfo[] enemies;
+	private static MapLocation destination = null;
 
 	public static void loop(RobotController rcon) {
 		try {
@@ -24,18 +27,26 @@ public class SHeliHandler extends StructureHandler {
 	}
 
 	protected static void init(RobotController rcon) throws GameActionException {
-		initStructure(rcon);
+		rc = rcon;
+		otherTeam = rc.getTeam().opponent();
 	}
 
 	protected static void execute() throws GameActionException {
-		executeStructure();
-		if (rc.isCoreReady()) { // Try to spawn
-			if (Count.getCount(Comm.getDroneId()) < Count.getLimit(Comm.getDroneId())) {
-				rc.setIndicatorString(1, "Limit permits");
-				Spawner.trySpawn(myLoc.directionTo(enemyHQ).opposite(), RobotType.DRONE, Comm.getDroneId());
+		myLoc = rc.getLocation();
+		
+		if (destination == null) {
+			enemies = rc.senseNearbyRobots(24, otherTeam);
+			if (enemies.length > 0) {
+				destination = enemies[0].location;
+			}
+		}
+		if (destination != null) {
+			if (destination.distanceSquaredTo(myLoc) <= 2) {
+				rc.explode();
 			} else {
-				rc.setIndicatorString(1, "Limit doesn't permit");
+				NavSimple.walkTowards(myLoc.directionTo(destination));
 			}
 		}
 	}
+	
 }

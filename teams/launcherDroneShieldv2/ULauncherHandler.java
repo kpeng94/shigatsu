@@ -1,4 +1,4 @@
-package launcherDroneShield;
+package launcherDroneShieldv2;
 
 import battlecode.common.*;
 

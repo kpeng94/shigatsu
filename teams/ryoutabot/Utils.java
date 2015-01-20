@@ -197,7 +197,7 @@ public class Utils {
         RobotInfo closestUnit = null;
         int minDist = 999999;
         for (int i = robots.length; --i >= 0;) {
-            if (robots[i].type.canAttack() || robots[i].buildingLocation == null)
+            if (!robots[i].type.canAttack() || robots[i].buildingLocation != null)
                 continue;
             int distSq = robots[i].location.distanceSquaredTo(Handler.myLoc);
             if (distSq < minDist) {

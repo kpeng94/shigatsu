@@ -162,7 +162,7 @@ public class UTankHandler extends UnitHandler {
      */
     public static boolean doMicro() throws GameActionException {
         // COMBAT MODE PRIORITY: focus on the people who can attack us first.
-        Debug.logEnemyNumberData(0);
+        Debug.logEnemyNumberData(1);
         if (numEnemiesAttackingUs >= 1) {
             // First we find out how our numbers are
             int maxNumAlliesAttackingEnemy = 0;
@@ -173,7 +173,6 @@ public class UTankHandler extends UnitHandler {
                 if (numAlliesAttackingEnemy > maxNumAlliesAttackingEnemy)
                     maxNumAlliesAttackingEnemy = numAlliesAttackingEnemy;
             }
-            rc.setIndicatorString(1, "" + maxNumAlliesAttackingEnemy);
             if (numEnemiesAttackingUs == 1) {
                 if (maxNumAlliesAttackingEnemy == 0) {
                     // No one around us can attack the enemy, even me. This means that we're getting
@@ -212,17 +211,15 @@ public class UTankHandler extends UnitHandler {
                 }
             }
             return true;
-        } else if (numEnemiesAttackingUs == 0) {
-            if (numAttackableEnemies > 0) {
+        } else if (numAttackableEnemies > 0) {
                 // We actually outrange the enemy, so let's take advantage of it and attack them.
                 if (rc.isWeaponReady()) {
 //                    RobotInfo enemy = findAnEnemy(attackableEnemies);
                     rc.attackLocation(attackableEnemies[0].location);
                 }
 
-            }
         } else {
-
+            rc.setIndicatorString(0, "I have nothing to do on turn " + Clock.getRoundNum());
             // NON-COMBAT MODE
 
             // TODO (kpeng94): handle HQ range
@@ -234,6 +231,7 @@ public class UTankHandler extends UnitHandler {
             if (closestEnemyUnit != null) {
                 // TODO: figure out what is actually going on here
                 int numAlliesFighting = numAlliesInAttackRange(closestEnemyUnit.location);
+                rc.setIndicatorString(0, "I have nothing to do, but I have detected that there are some allies fighting: " + numAlliesFighting + " on turn "  + Clock.getRoundNum());
                 if (numAlliesFighting > 0) {
                     tryMoveCloserToEnemy(closestEnemyUnit.location,
                             numAlliesFighting + 1, closestEnemyUnit.location != Handler.enemyHQ,

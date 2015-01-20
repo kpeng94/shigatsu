@@ -31,26 +31,18 @@ public class SAeroHandler extends StructureHandler {
 	}
 
 	protected static void execute() throws GameActionException {
-		oreAmount = rc.getTeamOre();
 		executeStructure();
-		readBroadcasts();
-		if (lastReset != Clock.getRoundNum()) {
-			writeBroadcasts();
-		}
-		if (rc.isCoreReady()) {
-//			Spawner.trySpawn(myHQToEnemyHQ, RobotType.LAUNCHER);
-		}
+	    Count.incrementBuffer(Comm.getAeroId());
+	    if (rc.isCoreReady()) { // Try to spawn
+	        trySpawn();
+	    }
 		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 	}
-
-	public static void readBroadcasts() throws GameActionException {
-//		numberOfLiveMiners  = Comm.readBlock(Comm.getMinerId(), 1);
-		lastReset = Comm.readBlock(Comm.getLauncherId(), Comm.RESET_ROUND);
-	}
-
-	public static void writeBroadcasts() throws GameActionException {
-		Comm.writeBlock(Comm.getLauncherId(), Comm.COUNT_NEARRALLYPOINT_OFFSET, 0);
-		Comm.writeBlock(Comm.getLauncherId(), Comm.RESET_ROUND, Clock.getRoundNum());
+	
+	protected static void trySpawn() throws GameActionException {
+	    if (Count.getCount(Comm.getLauncherId()) < Count.getLimit(Comm.getLauncherId())) {
+	        Spawner.trySpawn(myLoc.directionTo(enemyHQ), RobotType.LAUNCHER, Comm.getLauncherId());
+	    }
 	}
 
 

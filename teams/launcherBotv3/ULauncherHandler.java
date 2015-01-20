@@ -9,12 +9,13 @@ public class ULauncherHandler extends UnitHandler {
 	private static int minDistance = 999999;
 	private static MapLocation closestLocation;
 	private static LauncherState state = LauncherState.RALLY;
-	private static LauncherState nextLauncherState;
+	private static LauncherState nextState;
 	private static int numberOfLaunchers = 0;
 	private static boolean rallied = false;
 	private static int numberOfLaunchersRallied = 0;
-
-//	private static int mySensorRadiusSquared = myType.sensorRadiusSquared;
+    private static int myWaveNumber = 1;
+    private static MapLocation rallyPoint;
+    
 	
 	private enum LauncherState {
 		NEW,
@@ -44,11 +45,13 @@ public class ULauncherHandler extends UnitHandler {
 
 	protected static void init(RobotController rcon) throws GameActionException {
 		initUnit(rcon);
+		typ = RobotType.LAUNCHER;
+        rallyPoint = MapUtils.pointSection(myHQ, enemyHQ, 0.75);
+        myWaveNumber = Comm.readBlock(Comm.getTankId(), Comm.WAVENUM_OFFSET);
 	}
 
 	protected static void execute() throws GameActionException {
 		executeUnit();
-		readBroadcasts();
 		minDistance = Integer.MAX_VALUE;
 		if (enemyTowers.length == 0) {
 			closestLocation = enemyHQ;
@@ -60,10 +63,14 @@ public class ULauncherHandler extends UnitHandler {
 				minDistance = distanceSquared;
 			}
 		}		
-		if (rc.isWeaponReady() && decideAttack()) {
-			attack();
-		}
-		switch (state) {
+		if (decideAttack()) {
+			if (rc.isWeaponReady()) {
+				attackAndMove();
+				Debug.clockString(1, "I attacked");				
+			}
+		} else {
+			Debug.clockString(2, "I am doing some other stuff");
+			switch (state) {
 			case NEW:
 				newCode();
 				break;
@@ -72,68 +79,63 @@ public class ULauncherHandler extends UnitHandler {
 				break;
 			case RUSH:
 				rushCode();
-				break;
-				
+				break;	
+			}			
 		}
+
 		
-		if (nextLauncherState != null) {
-			state = nextLauncherState;
-			nextLauncherState = null;
+		if (nextState != null) {
+			state = nextState;
+			nextState = null;
 		}		
 		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 	}
 
 	private static void rushCode() throws GameActionException {
-		MapLocation destination = closestLocation.add(myHQToEnemyHQ, -4);
-		if (closestLocation != null) {
-			switch (myHQ.directionTo(closestLocation)) {
-			case NORTH_EAST:
-			case NORTH_WEST:
-			case SOUTH_EAST:
-			case SOUTH_WEST:
-				destination = closestLocation.add(myHQToEnemyHQ.rotateRight(), -4).add(myHQToEnemyHQ.rotateLeft(), -3);
-				break;
-			case NORTH:
-			case EAST:
-			case SOUTH:
-			case WEST:
-				destination = closestLocation.add(myHQToEnemyHQ, -4).add(myHQToEnemyHQ.rotateRight().rotateRight(), -3);
-				break;
-			default:
-				break;
-			}
-		}
-		NavTangentBug.setDest(destination);
-		NavTangentBug.calculate(2500);
-		if (rc.isCoreReady() && rc.senseNearbyRobots(15, otherTeam).length == 0) {
-			Direction nextMove = NavTangentBug.getNextMove();
-			if (nextMove != Direction.NONE) {
-				NavSimple.walkTowardsDirected(nextMove);
-			}
-		}
+        MapLocation destination = closestLocation;
+        NavTangentBug.setDest(destination);
+        NavTangentBug.calculate(2500);
+        if (rc.isCoreReady()
+                && rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam).length == 0) {
+            Direction nextMove = NavTangentBug.getNextMove();
+            if (myLoc.distanceSquaredTo(closestLocation) <= 35) {
+                tryMoveCloserToEnemy(closestLocation, 1,
+                        closestLocation != enemyHQ, true);
+            } else if (nextMove != Direction.NONE) {
+                NavSimple.walkTowardsDirected(nextMove);
+            }
+        }
 	}
 
 	private static void rallyCode() throws GameActionException {
-		MapLocation rallyPoint = MapUtils.pointSection(myHQ, enemyHQ, 0.75);
-		NavTangentBug.setDest(rallyPoint);
-		NavTangentBug.calculate(2500);
-		if (rc.isCoreReady() && rc.senseNearbyRobots(15, otherTeam).length == 0) {
-			Direction nextMove = NavTangentBug.getNextMove();
-			if (nextMove != Direction.NONE) {
-				NavSimple.walkTowardsDirected(nextMove);
-			} else {
-				rallied = true;
-			}
-		}
-		if (myLoc.distanceSquaredTo(rallyPoint) <= 8) {
-			broadcastNearRallyPoint();
-		}
-		if (numberOfLaunchersRallied >= Constants.LAUNCHER_RUSH_COUNT) {
-			broadcastTeamRush();
-		}
-		if (Comm.readBlock(Comm.getLauncherId(), 4) != 0 && rallied) {
-			nextLauncherState = LauncherState.RUSH;
-		}
+        NavTangentBug.setDest(rallyPoint);
+        NavTangentBug.calculate(2500);
+        // TODO (kpeng94): maybe change this so that when you're in a really close region, bug
+        // around instead
+        if (rc.isCoreReady()) {
+            if (rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam).length == 0) {
+                Direction nextMove = NavTangentBug.getNextMove();
+                if (nextMove != Direction.NONE) {
+                    NavSimple.walkTowardsDirected(nextMove);
+                } else {
+                    rallied = true;
+                }
+            }
+        }
+        numberOfLaunchersRallied = Count.getCountAtRallyPoint(Comm.getLauncherId(), myWaveNumber);
+//        rc.setIndicatorString(1, "My wave number is: " + myWaveNumber + ". The number of tanks that rallied is given by: " + numberOfTanksRallied);
+//        rc.setIndicatorString(2, "My loc is " + myLoc + "my dist is " + );
+        // TODO: figure out this heuristic better
+
+        if (myLoc.distanceSquaredTo(rallyPoint) <= typ.sensorRadiusSquared) {
+//            rc.setIndicatorString(0, "At clock turn " + Clock.getRoundNum()
+//                    + ", I am rallying to the rally point at: " + rallyPoint
+//                    + " and my rallied boolean is: " + rallied);
+            Count.incrementAtRallyPoint(Comm.getLauncherId(), myWaveNumber);
+        }
+        if (numberOfLaunchersRallied >= Constants.LAUNCHER_RUSH_COUNT) {
+            nextState = LauncherState.RUSH;
+        }
 	}
 
 	private static void newCode() {
@@ -151,15 +153,22 @@ public class ULauncherHandler extends UnitHandler {
 		
 	}
 	
-	public static void attack() throws GameActionException {
+	public static void attackAndMove() throws GameActionException {
 		Direction dir;
+		RobotInfo closestEnemy = null;
 		if (enemies.length > 0) {
-			dir = myLoc.directionTo(enemies[0].location);			
+			closestEnemy = Utils.getClosestEnemy(enemies);
+			dir = myLoc.directionTo(closestEnemy.location);
 		} else {
 			dir = myLoc.directionTo(closestLocation);
 		}
 		if (rc.canLaunch(dir)) {
 			rc.launchMissile(dir);
+		}
+		if (closestEnemy != null && rc.isCoreReady()) {
+			if (closestEnemy.location.distanceSquaredTo(myLoc) <= closestEnemy.type.attackRadiusSquared) {
+				tryMove(closestEnemy.location.directionTo(myLoc));
+			}			
 		}
 	}
 	
@@ -177,18 +186,6 @@ public class ULauncherHandler extends UnitHandler {
 		return bestLocation; // will return null if there were no positive score enemy targets
 	}
 	
-	public static void readBroadcasts() throws GameActionException {
-		numberOfLaunchers = Comm.readBlock(Comm.getLauncherId(), 1);
-		numberOfLaunchersRallied = Comm.readBlock(Comm.getLauncherId(), 2);
-	}
 
-	public static void broadcastNearRallyPoint() throws GameActionException {
-		numberOfLaunchersRallied++;
-		Comm.writeBlock(Comm.getLauncherId(), Comm.COUNT_NEARRALLYPOINT_OFFSET, numberOfLaunchersRallied);
-	}
-	
-	public static void broadcastTeamRush() throws GameActionException {
-		Comm.writeBlock(Comm.getLauncherId(), 4, 1);
-	}
 
 }

@@ -3,7 +3,7 @@ package launcherBotv3;
 import battlecode.common.*;
 
 public class UBeaverHandler extends UnitHandler {
-    private static RobotType[] buildTyps = {RobotType.MINERFACTORY, RobotType.BARRACKS, RobotType.TANKFACTORY, RobotType.SUPPLYDEPOT};
+    private static RobotType[] buildTyps = {RobotType.MINERFACTORY, RobotType.HELIPAD, RobotType.AEROSPACELAB, RobotType.SUPPLYDEPOT, RobotType.TECHNOLOGYINSTITUTE, RobotType.TRAININGFIELD};
     private static BeaverState state = BeaverState.NEW;
     private static BeaverState nextBeaverState;
     private static int[] buildChans;
@@ -20,7 +20,9 @@ public class UBeaverHandler extends UnitHandler {
 
     private enum BeaverState {
         /** Constructing Mining Factories at the beginning **/
-        NEW, BUILDING_BARRACKS, BUILDING_MININGFACTORIES, BUILDING_TANKFACTORIES, BUILDING_HELIPADS, BUILDING_AEROSPACELABORATORIES, BUILDING_SUPPLYDEPOTS, COMPUTING, MINING, FIGHTING
+        NEW, BUILDING_BARRACKS, BUILDING_MININGFACTORIES, 
+        BUILDING_TANKFACTORIES, BUILDING_HELIPADS, 
+        BUILDING_TECHINST, BUILDING_TRAININGFIELD, BUILDING_AEROSPACELABORATORIES, BUILDING_SUPPLYDEPOTS, COMPUTING, MINING, FIGHTING
     }
 
     public static void loop(RobotController rcon) {
@@ -47,12 +49,13 @@ public class UBeaverHandler extends UnitHandler {
         Spawner.HQxMod = myHQ.x % 2;
         Spawner.HQyMod = myHQ.y % 2;
 //        NavTangentBug.setDest(enemyHQ);
-        buildChans = new int[]{Comm.getMinerfactId(), Comm.getBarrackId(), Comm.getTankfactId(), Comm.getSupplyId()};
+        buildChans = new int[]{Comm.getMinerfactId(), Comm.getHeliId(), Comm.getAeroId(), Comm.getSupplyId()};
     }
 
     protected static void execute() throws GameActionException {
         executeUnit();
         Count.incrementBuffer(Comm.getBeaverId());
+        Debug.clockString(0, "My state is: " + state);
         if (rc.isBuildingSomething()) {
             Count.incrementBuffer(curBuildingChan);
         } else {
@@ -80,6 +83,12 @@ public class UBeaverHandler extends UnitHandler {
             case BUILDING_SUPPLYDEPOTS:
                 buildingSupplyDepotsCode();
                 break;
+            case BUILDING_TECHINST:
+            	buildingTechInstCode();
+            	break;
+            case BUILDING_TRAININGFIELD:
+            	buildingTrainingFieldCode();
+            	break;
             case COMPUTING:
                 computingCode();
                 break;
@@ -102,7 +111,16 @@ public class UBeaverHandler extends UnitHandler {
         Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
     }
 
-    private static void fightingCode() {
+    private static void buildingTrainingFieldCode() throws GameActionException {
+		numberOfTrainingFields = Count.getCount(Comm.getTrainingId());		
+		
+	}
+
+	private static void buildingTechInstCode() throws GameActionException {
+		numberOfTechInstitutes = Count.getCount(Comm.getTechId());		
+	}
+
+	private static void fightingCode() {
         // TODO Auto-generated method stub
 
     }
@@ -120,17 +138,58 @@ public class UBeaverHandler extends UnitHandler {
     private static void buildingAerospaceLaboratoriesCode()
             throws GameActionException {
         numberOfAerospaceLabs = Count.getCount(Comm.getAeroId());
-
+        if (numberOfAerospaceLabs >= Count.getLimit(Comm.getAeroId())) {
+        	nextBeaverState = BeaverState.BUILDING_SUPPLYDEPOTS;
+        	buildingSupplyDepotsCode();
+        } else {
+            if (rc.isCoreReady()) {
+                if (!tryBuild(RobotType.AEROSPACELAB)) {
+                    if (myLoc.distanceSquaredTo(myHQ) > 15) {
+                        NavSimple.walkTowards(myLoc.directionTo(myHQ));
+                    } else {
+                        NavSimple.walkRandom();
+                    }
+                } 
+            }        	
+        }
 
     }
 
     private static void buildingHelipadsCode() throws GameActionException {
         numberOfHelipads = Count.getCount(Comm.getHeliId());
+        if (numberOfHelipads >= Count.getLimit(Comm.getHeliId())) {
+        	nextBeaverState = BeaverState.BUILDING_AEROSPACELABORATORIES;
+        	buildingAerospaceLaboratoriesCode();
+        } else {
+            if (rc.isCoreReady()) {
+                if (!tryBuild(RobotType.HELIPAD)) {
+                    if (myLoc.distanceSquaredTo(myHQ) > 15) {
+                        NavSimple.walkTowards(myLoc.directionTo(myHQ));
+                    } else {
+                        NavSimple.walkRandom();
+                    }
+                } 
+            }        	
+        }        
     }
 
     private static void buildingSupplyDepotsCode() throws GameActionException {
+    	Debug.clockString(2, "" + Count.getLimit(Comm.getAeroId()));
         numberOfSupplyDepots = Count.getCount(Comm.getSupplyId());
-
+        if (numberOfSupplyDepots < Count.getLimit(Comm.getSupplyId())) {
+	        if (rc.isCoreReady()) {
+	            if (!tryBuild(RobotType.SUPPLYDEPOT)) {
+	                if (myLoc.distanceSquaredTo(myHQ) > 15) {
+	                    NavSimple.walkTowards(myLoc.directionTo(myHQ));
+	                } else {
+	                    NavSimple.walkRandom();
+	                }
+	            } 
+	        }
+        } else if (numberOfAerospaceLabs < Count.getLimit(Comm.getAeroId())) {
+        	nextBeaverState = BeaverState.BUILDING_AEROSPACELABORATORIES;
+        	buildingAerospaceLaboratoriesCode();       	
+        }
     }
 
     private static void buildingBarracksCode() throws GameActionException {
@@ -185,7 +244,8 @@ public class UBeaverHandler extends UnitHandler {
         dirFromHQ = myHQ.directionTo(myLoc);
         numberOfMiningFactories = Count.getCount(Comm.getMinerfactId());
         if (numberOfMiningFactories >= Count.getLimit(Comm.getMinerfactId())) {
-            nextBeaverState = BeaverState.BUILDING_BARRACKS;
+            nextBeaverState = BeaverState.BUILDING_HELIPADS;
+            buildingHelipadsCode();
         } else {
             if (rc.isCoreReady()) {
                 if (!tryBuild(RobotType.MINERFACTORY)) {
@@ -201,24 +261,26 @@ public class UBeaverHandler extends UnitHandler {
     }
 
     private static void newCode() throws GameActionException {
-        if (numberOfMiningFactories < Constants.NUM_OF_MININGFACTORIES) {
+        numberOfMiningFactories = Count.getCount(Comm.getMinerfactId());
+//        numberOfBarracks = Count.getCount(Comm.getBarrackId());
+//        numberOfTankFactories = Count.getCount(Comm.getTankfactId());
+        numberOfHelipads = Count.getCount(Comm.getHeliId());
+        numberOfAerospaceLabs = Count.getCount(Comm.getAeroId());
+        numberOfSupplyDepots = Count.getCount(Comm.getSupplyId());
+
+        if (numberOfMiningFactories < Count.getLimit(Comm.getMinerfactId())) {
             nextBeaverState = BeaverState.BUILDING_MININGFACTORIES;
             buildingMiningFactoriesCode();
-        } else if (numberOfBarracks < Constants.NUM_OF_INITIAL_BARRACKS) {
-            nextBeaverState = BeaverState.BUILDING_BARRACKS;
-        } else if (numberOfTankFactories < Constants.NUM_OF_TANKFACTORIES) {
-            nextBeaverState = BeaverState.BUILDING_TANKFACTORIES;
-            buildingTankFactoriesCode();
+        } else if (numberOfHelipads < Count.getLimit(Comm.getHeliId())) {
+        	nextBeaverState = BeaverState.BUILDING_HELIPADS;
+        	buildingHelipadsCode();
+        } else if (numberOfAerospaceLabs < Count.getLimit(Comm.getAeroId())) {
+            nextBeaverState = BeaverState.BUILDING_AEROSPACELABORATORIES;
+            buildingAerospaceLaboratoriesCode();
+        } else {
+            nextBeaverState = BeaverState.BUILDING_SUPPLYDEPOTS;
+            buildingSupplyDepotsCode();
         }
-        // if (numberOfMiningFactories < 2) {
-        // nextBeaverState = BeaverState.BUILDING_MININGFACTORIES;
-        // buildingMiningFactoriesCode();
-        // } else if (numberOfHelipads >= 1 && numberOfAerospaceLabs <=
-        // Constants.NUM_OF_AEROSPACELABS) {
-        // nextBeaverState = BeaverState.BUILDING_AEROSPACELABORATORIES;
-        // } else if (numberOfHelipads < 1) {
-        // nextBeaverState = BeaverState.BUILDING_HELIPADS;
-        // }
     }
 
     protected static boolean tryBuild(RobotType type) throws GameActionException {

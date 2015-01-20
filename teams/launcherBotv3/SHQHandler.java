@@ -35,7 +35,7 @@ public class SHQHandler extends StructureHandler {
 
     private static int[] countChans;
 
-    private static int currentTankWave = 1;
+    private static int currentLauncherWave = 1;
 
     public static void loop(RobotController rcon) {
         try {
@@ -60,13 +60,13 @@ public class SHQHandler extends StructureHandler {
         initStructure(rcon);
         typ = RobotType.HQ;
         rc.broadcast(Comm.HQ_MAP_CHAN, NavBFS.newBFSTask(myHQ));
-        countChans = new int[]{Comm.getBeaverId(), Comm.getMinerId(), Comm.getTankId(),
-                Comm.getMinerfactId(), Comm.getBarrackId(), Comm.getTankfactId(), Comm.getSupplyId()};
+        countChans = new int[]{Comm.getBeaverId(), Comm.getMinerId(), Comm.getLauncherId(),
+                Comm.getMinerfactId(), Comm.getHeliId(), Comm.getDroneId(), Comm.getAeroId(), Comm.getSupplyId()};
 
         initCounts();
         Count.setLimit(Comm.getBeaverId(), Constants.NUM_OF_BEAVERS);
         // Broadcast tank wave
-        Comm.writeBlock(Comm.getTankId(), Comm.WAVENUM_OFFSET, currentTankWave);
+        Comm.writeBlock(Comm.getLauncherId(), Comm.WAVENUM_OFFSET, currentLauncherWave);
     }
 
     protected static void execute() throws GameActionException {
@@ -81,8 +81,8 @@ public class SHQHandler extends StructureHandler {
         }
 
         // Reset counts for tank waves
-        for (int i = currentTankWave; --i >= 0;) {
-            Count.resetBufferForGroup(Comm.getTankId(), i + 1);
+        for (int i = currentLauncherWave; --i >= 0;) {
+            Count.resetBufferForGroup(Comm.getLauncherId(), i + 1);
         }
 
         Utils.updateOre();
@@ -141,15 +141,15 @@ public class SHQHandler extends StructureHandler {
     }
 
     protected static void updateWaveCount() throws GameActionException {
-        int waveOneCount = Comm.readBlock(Comm.getTankId(),
-                Comm.TANK_WAVE_ONE_ACTION_OFFSET);
-        Comm.writeBlock(Comm.getTankId(), Comm.TANK_WAVE_ONE_ACTION_OFFSET, 0);
-        int waveTwoCount = Comm.readBlock(Comm.getTankId(),
-                Comm.TANK_WAVE_TWO_ACTION_OFFSET);
-        Comm.writeBlock(Comm.getTankId(), Comm.TANK_WAVE_TWO_ACTION_OFFSET, 0);
-        int waveThreeCount = Comm.readBlock(Comm.getTankId(),
-                Comm.TANK_WAVE_THREE_ACTION_OFFSET);
-        Comm.writeBlock(Comm.getTankId(), Comm.TANK_WAVE_THREE_ACTION_OFFSET, 0);
+        int waveOneCount = Comm.readBlock(Comm.getLauncherId(),
+                Comm.WAVE_ONE_ACTION_OFFSET);
+        Comm.writeBlock(Comm.getLauncherId(), Comm.WAVE_ONE_ACTION_OFFSET, 0);
+        int waveTwoCount = Comm.readBlock(Comm.getLauncherId(),
+                Comm.WAVE_TWO_ACTION_OFFSET);
+        Comm.writeBlock(Comm.getLauncherId(), Comm.WAVE_TWO_ACTION_OFFSET, 0);
+        int waveThreeCount = Comm.readBlock(Comm.getLauncherId(),
+                Comm.WAVE_THREE_ACTION_OFFSET);
+        Comm.writeBlock(Comm.getLauncherId(), Comm.WAVE_THREE_ACTION_OFFSET, 0);
     }
 
     protected static void calculateAttackable() {
@@ -234,34 +234,34 @@ public class SHQHandler extends StructureHandler {
     }
 
     protected static void updateBuildStates() throws GameActionException {
-        if (Count.getCount(Comm.getTankId()) >= 25) { // Tanks >= 25
+        if (Count.getCount(Comm.getLauncherId()) >= 25) { // Tanks >= 25
             Count.setLimit(Comm.getSupplyId(), 30);
         }
         if (Count.getCount(Comm.getMinerId()) >= 15) { // Miners >= 25
             Count.setLimit(Comm.getMinerfactId(), 1);
             Count.setLimit(Comm.getMinerId(), 20);
-            Count.setLimit(Comm.getTankfactId(), 5);
+            Count.setLimit(Comm.getAeroId(), 5);
             Count.setLimit(Comm.getSupplyId(), 10);
-            Count.setLimit(Comm.getTankId(), 999);
-        } else if (Count.getCount(Comm.getTankfactId()) == 1) { // Tank factory
+            Count.setLimit(Comm.getLauncherId(), 999);
+        } else if (Count.getCount(Comm.getAeroId()) == 1) { // Tank factory
             Count.setLimit(Comm.getMinerId(), 15);
-            Count.setLimit(Comm.getTankfactId(), 3);
+            Count.setLimit(Comm.getAeroId(), 5);
             Count.setLimit(Comm.getSupplyId(), 2);
-            Count.setLimit(Comm.getTankId(), 999);
+            Count.setLimit(Comm.getLauncherId(), 999);
         } else if (Count.getCount(Comm.getTrainingId()) == 1) {
             Count.setLimit(Comm.getCommanderId(), 1);
-            Count.setLimit(Comm.getTankId(), 999);
-            Count.setLimit(Comm.getTankfactId(), 1);
+            Count.setLimit(Comm.getLauncherId(), 999);
+            Count.setLimit(Comm.getAeroId(), 2);
         } else if (Count.getCount(Comm.getTechId()) == 1) {
             Count.setLimit(Comm.getTrainingId(), 1);
-        } else if (Count.getCount(Comm.getBarrackId()) == 1) {
-            Count.setLimit(Comm.getSoldierId(), 1);
-            Count.setLimit(Comm.getTankfactId(), 1);
+        } else if (Count.getCount(Comm.getHeliId()) == 1) {
+            Count.setLimit(Comm.getDroneId(), 1);
+            Count.setLimit(Comm.getAeroId(), 2);
         } else if (Count.getCount(Comm.getMinerfactId()) == 1) {
             // When we have a mining factory, prioritize building a technology institute
             Count.setLimit(Comm.getTechId(), 1);
             Count.setLimit(Comm.getBeaverId(), 2);
-            Count.setLimit(Comm.getBarrackId(), 1);
+            Count.setLimit(Comm.getHeliId(), 1);
         } else if (Count.getCount(Comm.getBeaverId()) == 1) {
             // When we have only one beaver (this is early game most likely), prioritize building
             // a mining factory and miners, so we can gather some resources.
@@ -276,15 +276,15 @@ public class SHQHandler extends StructureHandler {
 
         // If there are enough tanks at the rally point, increment the wave count
         // The tanks should detect this by themselves and move
-        if (Count.getCountAtRallyPoint(Comm.getTankId(), currentTankWave) >= Constants.TANK_RUSH_COUNT) {
-            currentTankWave++;
-            Count.incrementWaveNum(Comm.getTankId());
+        if (Count.getCountAtRallyPoint(Comm.getLauncherId(), currentLauncherWave) >= Constants.LAUNCHER_RUSH_COUNT) {
+            currentLauncherWave++;
+            Count.incrementWaveNum(Comm.getLauncherId());
         }
     }
 
     private static void broadcastRallyPoint(int wave)
             throws GameActionException {
-        Comm.writeBlock(Comm.getTankId(), Comm.TANK_WAVE_ONE_RALLYPOINT_OFFSET,
+        Comm.writeBlock(Comm.getLauncherId(), Comm.WAVE_ONE_RALLYPOINT_OFFSET,
                 MapUtils.encode(closestTowerToEnemy));
 
     }

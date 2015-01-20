@@ -27,8 +27,9 @@ public class UDroneHandler extends UnitHandler {
 		initUnit(rcon);
 	}
 
-	protected static void execute() {
+	protected static void execute() throws GameActionException {
 		executeUnit();
+        Count.incrementBuffer(Comm.getDroneId());
 	}
 	
 }

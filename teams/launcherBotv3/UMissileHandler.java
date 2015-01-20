@@ -35,21 +35,41 @@ public class UMissileHandler extends UnitHandler {
 	// Currently completely ineffective against kiting.
 	protected static void execute() throws GameActionException {
 		myLoc = rc.getLocation();
-		
+		// Get information about enemies
 		if (destination == null) {
 			enemies = rc.senseNearbyRobots(24, otherTeam);
 			if (enemies.length > 0) {
 				destination = enemies[0].location;
 			}
 		}
+		// About 270 bytecodes left here.
 		if (destination != null) {
 			if (destination.distanceSquaredTo(myLoc) <= 2) {
 				rc.explode();
 			} else {
-				tryMove(myLoc.directionTo(destination));
+				if (rc.isCoreReady()) {
+					Direction d = myLoc.directionTo(destination);
+					if (rc.canMove(d)) {
+						rc.move(d);
+					} else if (rc.canMove(d.rotateRight())) {
+						rc.move(d.rotateRight());
+					} else if (rc.canMove(d.rotateLeft())) {
+						rc.move(d.rotateLeft());						
+					} else if (rc.canMove(d.rotateRight().rotateRight())) {
+						rc.move(d.rotateRight().rotateRight());
+					} else if (rc.canMove(d.rotateLeft().rotateLeft())) {
+						rc.move(d.rotateLeft().rotateLeft());
+					}
+				}
+				if (destination.distanceSquaredTo(myLoc) <= 2) {
+					rc.explode();
+				}
 			}
+		} else {
+			// TODO: Can't find enemies, move away from my teammates.
 		}
 	}
+
 
 	
 	public static void readBroadcasts() throws GameActionException {

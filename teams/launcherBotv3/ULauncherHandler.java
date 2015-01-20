@@ -3,7 +3,7 @@ package launcherBotv3;
 import battlecode.common.*;
 
 public class ULauncherHandler extends UnitHandler {
-	
+
 	private static RobotType myType = RobotType.LAUNCHER;
 	private static RobotInfo[] enemies;
 	private static int minDistance = 999999;
@@ -15,15 +15,15 @@ public class ULauncherHandler extends UnitHandler {
 	private static int numberOfLaunchersRallied = 0;
     private static int myWaveNumber = 1;
     private static MapLocation rallyPoint;
-    
-	
+
+
 	private enum LauncherState {
 		NEW,
 		RALLY,
 		RUSH,
 		SWARM
 	}
-	
+
 	public static void loop(RobotController rcon) {
 		try {
 			init(rcon);
@@ -62,14 +62,13 @@ public class ULauncherHandler extends UnitHandler {
 				closestLocation = enemyTowers[i];
 				minDistance = distanceSquared;
 			}
-		}		
+		}
 		if (decideAttack()) {
-			if (rc.isWeaponReady()) {
+			if (rc.getMissileCount() > 0) {
+
 				attackAndMove();
-				Debug.clockString(1, "I attacked");				
 			}
 		} else {
-			Debug.clockString(2, "I am doing some other stuff");
 			switch (state) {
 			case NEW:
 				newCode();
@@ -79,15 +78,15 @@ public class ULauncherHandler extends UnitHandler {
 				break;
 			case RUSH:
 				rushCode();
-				break;	
-			}			
+				break;
+			}
 		}
 
-		
+
 		if (nextState != null) {
 			state = nextState;
 			nextState = null;
-		}		
+		}
 		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 	}
 
@@ -148,11 +147,11 @@ public class ULauncherHandler extends UnitHandler {
 		}
 		return false;
 	}
-	
+
 	public static void detectEnemyKiting() throws GameActionException {
-		
+
 	}
-	
+
 	public static void attackAndMove() throws GameActionException {
 		Direction dir;
 		RobotInfo closestEnemy = null;
@@ -168,10 +167,10 @@ public class ULauncherHandler extends UnitHandler {
 		if (closestEnemy != null && rc.isCoreReady()) {
 			if (closestEnemy.location.distanceSquaredTo(myLoc) <= closestEnemy.type.attackRadiusSquared) {
 				tryMove(closestEnemy.location.directionTo(myLoc));
-			}			
+			}
 		}
 	}
-	
+
 	/**
 	 * Calculates the best target square among the potential targets
 	 * @param potentialTargets
@@ -181,11 +180,11 @@ public class ULauncherHandler extends UnitHandler {
 	public MapLocation calculateBestTarget(RobotInfo[] robot) throws GameActionException {
 		RobotInfo[] myTeamRobots = rc.senseNearbyRobots(myType.sensorRadiusSquared, myTeam);
 		RobotInfo[] otherTeamRobots = rc.senseNearbyRobots(myType.sensorRadiusSquared, otherTeam);
-		
+
 		MapLocation bestLocation = null;
 		return bestLocation; // will return null if there were no positive score enemy targets
 	}
-	
+
 
 
 }

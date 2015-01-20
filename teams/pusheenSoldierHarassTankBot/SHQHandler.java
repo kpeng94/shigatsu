@@ -192,7 +192,7 @@ public class SHQHandler extends StructureHandler {
 	protected static void updateLimits() throws GameActionException {
         if (turnCooldown >= TURN_COUNTER && rc.getTeamOre() > ORE_THRESHOLD && getOreChangeInLastFewTurns() >= 0) {
             int barrackCount = Count.getCount(Comm.getBarrackId());
-            if (barrackCount >= 1 && barrackCount >= Count.getLimit(Comm.getBarrackId()) && barrackCount < 3) {
+            if (barrackCount >= 1 && barrackCount >= Count.getLimit(Comm.getBarrackId()) && barrackCount < 2) {
                 Count.setLimit(Comm.getBarrackId(), barrackCount + 1);
                 turnCooldown = 0;
             }

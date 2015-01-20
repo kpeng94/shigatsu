@@ -60,5 +60,12 @@ public class MapUtils {
 	public static Direction[] dirsTowardsRev(Direction dir) {
 		return new Direction[]{dir.rotateLeft(), dir.rotateRight(), dir};
 	}
+	
+	public static Direction[] dirsSemiCircle(Direction dir) {
+		return new Direction[]{dir, dir.rotateRight(), dir.rotateLeft(), dir.rotateRight().rotateRight(), dir.rotateLeft().rotateLeft()};
+	}
+	public static Direction[] dirsSemiCircleRev(Direction dir) {
+		return new Direction[]{dir.rotateLeft().rotateLeft(), dir.rotateRight().rotateRight(), dir.rotateLeft(), dir.rotateRight(), dir};
+	}
 
 }

@@ -41,7 +41,7 @@ public class SHQHandler extends StructureHandler {
 		
 		prevOre = GameConstants.ORE_INITIAL_AMOUNT;
 		
-		countChans = new int[]{Comm.getBeaverId(), Comm.getMinerId(), Comm.getTankId(),
+		countChans = new int[]{Comm.getBeaverId(), Comm.getMinerId(), Comm.getTankId(), Comm.getSoldierId(),
 			Comm.getMinerfactId(), Comm.getBarrackId(), Comm.getTankfactId(), Comm.getSupplyId()};
 		
 		initCounts();
@@ -67,6 +67,8 @@ public class SHQHandler extends StructureHandler {
 			trySpawn();
 		}
 		updateBuildStates();
+		updateLimits();
+		updateOreCounts();
 
 		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 		Distribution.spendBytecodesCalculating(7500);
@@ -141,31 +143,65 @@ public class SHQHandler extends StructureHandler {
 	}
 
 	protected static void updateBuildStates() throws GameActionException {
-		if (Count.getCount(Comm.getTankId()) >= 25) { // Tanks >= 25
-			Count.setLimit(Comm.getSupplyId(), 30);
-		}
-		if (Count.getCount(Comm.getMinerId()) >= 25) { // Miners >= 25
-			Count.setLimit(Comm.getMinerfactId(), 1);
-			Count.setLimit(Comm.getMinerId(), 40);
-			Count.setLimit(Comm.getBeaverId(), 2);
-			Count.setLimit(Comm.getBarrackId(), 1);
-			Count.setLimit(Comm.getTankfactId(), 4);
-			Count.setLimit(Comm.getTankId(), 999);
-			Count.setLimit(Comm.getSupplyId(), 10);
-		} else if (Count.getCount(Comm.getTankfactId()) == 1) { // Tank factory
-			Count.setLimit(Comm.getMinerId(), 25);
-		} else if (Count.getCount(Comm.getMinerId()) >= 10) { // 10 miners
+		if (Count.getCount(Comm.getTankId()) >= 25) {
+			Count.setLimit(Comm.getSupplyId(), 25);
+		} else if (Count.getCount(Comm.getSoldierId()) >= 10 && Count.getLimit(Comm.getTankfactId()) == 0) {
 			Count.setLimit(Comm.getTankfactId(), 1);
 			Count.setLimit(Comm.getTankId(), 999);
+			Count.setLimit(Comm.getSupplyId(), 10);
+		} else if (Count.getCount(Comm.getMinerId()) >= 5) { // 10 miners
+			Count.setLimit(Comm.getMinerId(), 40);
+			Count.setLimit(Comm.getSoldierId(), 100);
 		} else if (Count.getCount(Comm.getMinerfactId()) == 1) { // 1 mining fact
 			Count.setLimit(Comm.getBeaverId(), 2);
 			Count.setLimit(Comm.getBarrackId(), 1);
-			Count.setLimit(Comm.getSoldierId(), 1); // random soldier scout guy
+			Count.setLimit(Comm.getSoldierId(), 5);
 		} else if (Count.getCount(Comm.getBeaverId()) == 1) { // 1 beaver
 			Count.setLimit(Comm.getMinerfactId(), 1);
 			Count.setLimit(Comm.getMinerId(), 10);
 		}
 		
 	}
+	
+    private static final int TURN_COUNTER = 150;
+    private static double[] oreCounts = new double[TURN_COUNTER];
+    private static final int ORE_THRESHOLD = 1500;
+    private static int turnCooldown = 0;
+	
+    /**
+     * Returns the ore delta since TURN_COUNTER turns ago. Returns -999999 if
+     * the ore TURN_COUNTER turns ago was 0 (or not enough turns have passed).
+     * 
+     * @return
+     */
+    private static double getOreChangeInLastFewTurns() {
+        int oreCountIndex = Clock.getRoundNum() % TURN_COUNTER;
+        double prevOre = oreCounts[oreCountIndex];
+        if (oreCounts[oreCountIndex] != 0) {
+            return rc.getTeamOre() - prevOre;
+        }
+        return -999999;
+    }
+    
+    private static void updateOreCounts() {
+        turnCooldown++;
+        int index = Clock.getRoundNum() % TURN_COUNTER;
+        oreCounts[index] = rc.getTeamOre();
+    }
+    
+	protected static void updateLimits() throws GameActionException {
+        if (turnCooldown >= TURN_COUNTER && rc.getTeamOre() > ORE_THRESHOLD && getOreChangeInLastFewTurns() >= 0) {
+            int barrackCount = Count.getCount(Comm.getBarrackId());
+            if (barrackCount >= 1 && barrackCount >= Count.getLimit(Comm.getBarrackId()) && barrackCount < 2) {
+                Count.setLimit(Comm.getBarrackId(), barrackCount + 1);
+                turnCooldown = 0;
+            }
+            int tankFactCount = Count.getCount(Comm.getTankfactId());
+            if (tankFactCount >= 1 && tankFactCount >= Count.getLimit(Comm.getTankfactId())) {
+            	Count.setLimit(Comm.getTankfactId(), tankFactCount + 1);
+            	turnCooldown = 0;
+            }
+        }
+    }
 
 }

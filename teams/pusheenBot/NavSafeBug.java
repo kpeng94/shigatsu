@@ -27,7 +27,11 @@ public class NavSafeBug {
 			} else { // start tracing
 				if (tracing == traceDir.NONE) {
 					if (prevTrace == traceDir.NONE) {
-						tracing = traceDir.LEFT;
+						if (Handler.rand.nextAnd(1) == 0) {
+							tracing = traceDir.LEFT;
+						} else {
+							tracing = traceDir.RIGHT;
+						}
 					} else {
 						tracing = prevTrace;
 					}

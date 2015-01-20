@@ -9,5 +9,5 @@ public class Constants {
 	public static int NUM_OF_SUPPLYDEPOTS = 20;
 	public static int NUM_OF_MININGFACTORIES = 2;
 	public static int MINER_ORE_THRESHOLD = 4;
-	public static int LAUNCHER_RUSH_COUNT = 6;
+	public static int LAUNCHER_RUSH_COUNT = 8;
 }

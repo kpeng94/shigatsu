@@ -3,6 +3,9 @@ package launcherDroneShield;
 import battlecode.common.*;
 
 public class UDroneHandler extends UnitHandler {
+	
+	public static final int DRONE_GUARD_RALLY_NUM = 10;
+	public static final int DRONE_SHIELD_RALLY_NUM = 11;
 
 	public static void loop(RobotController rcon) {
 		try {
@@ -34,7 +37,7 @@ public class UDroneHandler extends UnitHandler {
 		}
 		if (rc.isCoreReady()) {
 			if (Count.getCount(Comm.getLauncherId()) < 1) {
-				MapLocation guardPt = Rally.getGuardPt();
+				MapLocation guardPt = Rally.get(DRONE_GUARD_RALLY_NUM);
 				if (guardPt != null) {
 					Direction dir = Orbit.orbit(guardPt, RobotType.TOWER.attackRadiusSquared);
 					if (dir != Direction.NONE) {
@@ -47,7 +50,7 @@ public class UDroneHandler extends UnitHandler {
 					}
 				}
 			} else {
-				MapLocation targetPt = Rally.getTargetPt();
+				MapLocation targetPt = Rally.get(DRONE_SHIELD_RALLY_NUM);
 				if (targetPt != null) {
 					Direction dir = Orbit.orbit(targetPt, RobotType.TOWER.attackRadiusSquared);
 					if (dir != Direction.NONE) {

@@ -29,7 +29,7 @@ public class Mining {
 				currentLocation = currentLocation.add(currentDirection);
 				int distance = currentLocation.distanceSquaredTo(Handler.myHQ);
 				ore = Handler.rc.senseOre(currentLocation);
-				if (occupied[MapUtils.encode(currentLocation)]) {
+				if (!occupied[MapUtils.encode(currentLocation)]) {
 					totalOre += ore;
 					tilesSeen++;
 				}
@@ -50,7 +50,7 @@ public class Mining {
 			for (int i = step; --i >= 0;) {
 				currentLocation = currentLocation.add(currentDirection);
 				ore = Handler.rc.senseOre(currentLocation);
-				if (occupied[MapUtils.encode(currentLocation)]) {
+				if (!occupied[MapUtils.encode(currentLocation)]) {
 					totalOre += ore;
 					tilesSeen++;
 				}

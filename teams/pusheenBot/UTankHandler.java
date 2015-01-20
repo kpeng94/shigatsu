@@ -4,7 +4,7 @@ import battlecode.common.*;
 
 public class UTankHandler extends UnitHandler {
 	public static final int ATTACK_THRESHOLD = 10;
-	public static MapLocation rallyPoint;
+	public static MapLocation rallyPoint = null;
 	
 	private static boolean isAttacking;
 	private static boolean newRallyFound;
@@ -13,7 +13,7 @@ public class UTankHandler extends UnitHandler {
 		try {
 			init(rcon);
 		} catch (Exception e) {
-			// e.printStackTrace();
+			e.printStackTrace();
 			System.out.println(typ + " Initialization Exception");
 		}
 
@@ -30,7 +30,24 @@ public class UTankHandler extends UnitHandler {
 
 	protected static void init(RobotController rcon) throws GameActionException {
 		initUnit(rcon);
-		rallyPoint = MapUtils.pointSection(myHQ, enemyHQ, 0.5);
+		myLoc = rc.getLocation();
+		
+		MapLocation[] towers = rc.senseTowerLocations();
+		Direction toEnemyHQ = myLoc.directionTo(enemyHQ);
+		int maxDist = 0;
+		
+		for (int i = towers.length; --i >= 0;) {
+			int dist = myLoc.distanceSquaredTo(towers[i]);
+			if (myLoc.directionTo(towers[i]).equals(toEnemyHQ) && dist > maxDist) { // tower towards enemy
+				rallyPoint = towers[i];
+				maxDist = dist;
+			}
+		}
+		
+		if (rallyPoint == null) {
+			rallyPoint = MapUtils.pointSection(myHQ, enemyHQ, 0.75);
+		}
+		
 		isAttacking = false;
 		newRallyFound = false;
 	}
@@ -38,6 +55,8 @@ public class UTankHandler extends UnitHandler {
 	protected static void execute() throws GameActionException {
 		executeUnit();
 		Count.incrementBuffer(Comm.getTankId());
+		
+		rc.setIndicatorString(0, "" + rallyPoint);
 		
 		if (Clock.getRoundNum() >= 1800) {
 			isAttacking = true;
@@ -70,7 +89,7 @@ public class UTankHandler extends UnitHandler {
 			}
 			if (rc.isCoreReady() && enemies.length == 0) {
 				if (enemyTowers.length > 0) {
-					MapLocation towerDest = getClosestTower();
+					MapLocation towerDest = Attack.getClosestTower();
 					NavTangentBug.setDest(towerDest);
 					NavTangentBug.calculate(2500);
 					Direction dir = NavTangentBug.getNextMove();
@@ -88,10 +107,15 @@ public class UTankHandler extends UnitHandler {
 			}
 		} else {
 			if (!newRallyFound) {
-				int dest = rc.readBroadcast(Comm.RALLY_DEST_CHAN);
+				int dest = rc.readBroadcast(Comm.TANK_RALLY_DEST_CHAN);
 				if (dest > 0) { // new rally destination
 					rallyPoint = MapUtils.decode(dest);
 					newRallyFound = true;
+				} else if (myLoc.distanceSquaredTo(rallyPoint) <= 8) {
+					rallyPoint = myLoc;
+					newRallyFound = true;
+					rc.broadcast(Comm.TANK_RALLY_MAP_CHAN, NavBFS.newBFSTask(myLoc));
+					rc.broadcast(Comm.TANK_RALLY_DEST_CHAN, MapUtils.encode(myLoc));
 				}
 			}
 			if (rc.isWeaponReady()) {
@@ -99,7 +123,7 @@ public class UTankHandler extends UnitHandler {
 			}
 			if (rc.isCoreReady() && enemies.length == 0) {
 				if (newRallyFound) {
-					int curPosInfo = NavBFS.readMapDataUncached(rc.readBroadcast(Comm.RALLY_MAP_CHAN), MapUtils.encode(myLoc));
+					int curPosInfo = NavBFS.readMapDataUncached(rc.readBroadcast(Comm.TANK_RALLY_MAP_CHAN), MapUtils.encode(myLoc));
 					if (curPosInfo == 0) {
 						NavTangentBug.setDest(rallyPoint);
 						NavTangentBug.calculate(2500);
@@ -122,20 +146,6 @@ public class UTankHandler extends UnitHandler {
 		}
 
 		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
-	}
-	
-	private static MapLocation getClosestTower() {
-		int minDist = 999999;
-		MapLocation minTower = null;
-		for (int i = enemyTowers.length; --i >= 0;) {
-			MapLocation tower = enemyTowers[i];
-			int towerDist = myLoc.distanceSquaredTo(tower);
-			if (towerDist < minDist) {
-				minDist = towerDist;
-				minTower = tower;
-			}
-		}
-		return minTower;
 	}
 	
 }

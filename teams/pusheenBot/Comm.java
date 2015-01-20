@@ -26,8 +26,10 @@ public class Comm {
 	
 	// Maps
 	public static final int HQ_MAP_CHAN = 20;
-	public static final int RALLY_MAP_CHAN = 21;
-	public static final int RALLY_DEST_CHAN = 22;
+	public static final int SURROUND_RALLY_MAP_CHAN = 21;
+	public static final int SURROUND_RALLY_DEST_CHAN = 22;
+	public static final int TANK_RALLY_MAP_CHAN = 23;
+	public static final int TANK_RALLY_DEST_CHAN = 24;
 	
 	// Ore Info
 	public static final int SPENT_ORE_BUFFER_CHAN = 30;

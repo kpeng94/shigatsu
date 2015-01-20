@@ -8,8 +8,19 @@ public class NavSimple {
 		walkPriority(MapUtils.dirsAround(dir));
 	}
 	
-	public static void walkTowardsDirected(Direction dir)throws GameActionException {
+	public static void walkTowardsDirected(Direction dir) throws GameActionException {
 		walkPriority(MapUtils.dirsTowards(dir));
+	}
+	
+	public static void walkTowardsSafe(Direction dir) throws GameActionException {
+		Direction[] dirs = MapUtils.dirsSemiCircleRev(dir);
+		for (int i = dirs.length; --i >= 0;) {
+			Direction d = dirs[i];
+			if (Handler.rc.canMove(d) && NavSafeBug.safeTile(Handler.myLoc.add(d))) {
+				Handler.rc.move(d);
+				return;
+			}
+		}
 	}
 	
 	public static void walkRandom() throws GameActionException {

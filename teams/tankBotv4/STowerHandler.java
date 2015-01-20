@@ -24,36 +24,16 @@ public class STowerHandler extends StructureHandler {
 		}
 	}
 
-	protected static void init(RobotController rcon) throws GameActionException {
-		initStructure(rcon);
-	}
+    protected static void init(RobotController rcon) throws GameActionException {
+        initStructure(rcon);
+    }
 
-	protected static void execute() throws GameActionException {
-		executeStructure();
-		if (rc.isWeaponReady()) {
-			inRangeEnemies = rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam);
-			tryAttack();
-		}
-		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
-//		Distribution.spendBytecodesCalculating(1000);
-	}
-	
-	protected static void tryAttack() throws GameActionException {
-		if (inRangeEnemies.length > 0) {
-			MapLocation minLoc = inRangeEnemies[0].location;
-			int minRange = myLoc.distanceSquaredTo(minLoc);
-			for (int i = inRangeEnemies.length; --i >= 0;) { // Get minimum in array
-				RobotInfo enemy = inRangeEnemies[i];
-				MapLocation enemyLoc = enemy.location;
-				int enemyRange = myLoc.distanceSquaredTo(enemyLoc);
-				if (enemyRange < minRange) {
-					minRange = enemyRange;
-					minLoc = enemyLoc;
-				}
-			}
-			
-			rc.attackLocation(minLoc);
-		}
-	}
+    protected static void execute() throws GameActionException {
+        executeStructure();
+        Count.incrementBuffer(Comm.getTowerId());
+        if (rc.isWeaponReady()) {
+            Attack.tryAttackClosestButKillIfPossible(rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam));
+        }
+    }
 	
 }

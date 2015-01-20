@@ -29,7 +29,9 @@ public class SHeliHandler extends StructureHandler {
 	}
 
 	protected static void execute() throws GameActionException {
-		executeStructure();
+	    executeStructure();
+	    Count.incrementBuffer(Comm.getHeliId());
+
 	}
-	
+
 }

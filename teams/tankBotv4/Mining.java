@@ -1,11 +1,11 @@
-package pusheenBot;
+package tankBotv4;
 
 import battlecode.common.*;
 
 public class Mining {
 	public static final int FRONTIER_OFFSET = 100;
 	public static final int FRONTIER_RND_NUM = 101;
-	
+
 	public static final int ADJ_THRESHOLD = 2;
 	public static final int ORE_THRESHOLD = 2;
 
@@ -70,7 +70,7 @@ public class Mining {
 			updateFrontier(Handler.myLoc, totalOre / tilesSeen);
 		return null;
 	}
-	
+
 	public static boolean[] getOccupiedTiles(int range) {
         RobotInfo[] robots = Handler.rc.senseNearbyRobots(range, Handler.myTeam);
         boolean[] occupied = new boolean[1 << 16];
@@ -80,7 +80,7 @@ public class Mining {
         }
         return occupied;
     }
-	
+
 	public static void updateFrontier(MapLocation location, double heuristic) throws GameActionException {
 		if(heuristic <= ORE_THRESHOLD){
 			return;

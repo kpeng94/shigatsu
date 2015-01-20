@@ -10,11 +10,11 @@ public class Supply {
 		int numBots = 1;
 		double minSupply = totalSupply;
 		MapLocation minLocation = Handler.myLoc;
-		
+
 		RobotInfo[] nearbyRobots = Handler.rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED, Handler.myTeam);
 		for (int i = nearbyRobots.length; --i >= 0;) {
 			RobotInfo robot = nearbyRobots[i];
-			if (robot.type == RobotType.MISSILE) continue;
+			if (robot.type == RobotType.MISSILE || robot.type.isBuilding) continue;
 			totalSupply += robot.supplyLevel;
 			numBots++;
 			if (robot.supplyLevel < minSupply) {
@@ -22,7 +22,7 @@ public class Supply {
 				minLocation = robot.location;
 			}
 		}
-		
+
 		double avgSupply = totalSupply / numBots;
 		if (Handler.rc.getSupplyLevel() > avgSupply) { // Should transfer supply
 			double over = Handler.rc.getSupplyLevel() - avgSupply;
@@ -34,5 +34,5 @@ public class Supply {
 			}
 		}
 	}
-	
+
 }

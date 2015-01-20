@@ -45,8 +45,17 @@ public class ULauncherHandler extends UnitHandler {
 	protected static void init(RobotController rcon) throws GameActionException {
 		initUnit(rcon);
 		typ = RobotType.LAUNCHER;
-		rallyPoint = MapUtils.pointSection(myHQ, enemyHQ, 0.75);
+		myLoc = rc.getLocation();
 		myWaveNumber = Comm.readBlock(Comm.getLauncherId(), Comm.WAVENUM_OFFSET);
+		if (myWaveNumber % 3 == 1) {
+	        closestLocation = MapUtils.decode(Comm.readBlock(Comm.getLauncherId(), Comm.WAVE_ONE_RALLYPOINT_OFFSET));
+		} else if (myWaveNumber % 3 == 0) {
+            closestLocation = MapUtils.decode(Comm.readBlock(Comm.getLauncherId(), Comm.WAVE_THREE_RALLYPOINT_OFFSET));
+        } else if (myWaveNumber % 3 == 2) {
+            closestLocation = MapUtils.decode(Comm.readBlock(Comm.getLauncherId(), Comm.WAVE_TWO_RALLYPOINT_OFFSET));
+        }
+		rallyPoint = MapUtils.pointSection(myLoc, closestLocation, 0.75);
+//		minDistance = myLoc.distanceSquaredTo(closestLocation);
 	}
 
 	protected static void execute() throws GameActionException {
@@ -54,23 +63,29 @@ public class ULauncherHandler extends UnitHandler {
 		Count.incrementBuffer(Comm.getLauncherId());
 		minDistance = Integer.MAX_VALUE;
 
-		if (enemyTowers.length == 0) {
-			closestLocation = enemyHQ;
-		}
+		boolean targetStillAlive = false;
 		for (int i = enemyTowers.length; --i >= 0;) {
-			int distanceSquared = myHQ.distanceSquaredTo(enemyTowers[i]);
-			if (distanceSquared <= minDistance) {
-				closestLocation = enemyTowers[i];
-				minDistance = distanceSquared;
-			}
+		    if (closestLocation == enemyTowers[i]) {
+		        targetStillAlive = true;
+		    }
+		}
+		if (!targetStillAlive) {
+	        if (enemyTowers.length == 0) {
+	            closestLocation = enemyHQ;
+	        }
+	        for (int i = enemyTowers.length; --i >= 0;) {
+	            int distanceSquared = myLoc.distanceSquaredTo(enemyTowers[i]);
+	            if (distanceSquared <= minDistance) {
+	                closestLocation = enemyTowers[i];
+	                minDistance = distanceSquared;
+	            }
+	        }
 		}
 		if (decideAttack()) {
 			if (rc.getMissileCount() > 0) {
 				attackAndMove();
-//				Debug.clockString(1, "I attacked");
 			}
 		} else {
-//			Debug.clockString(2, "I am doing some other stuff");
 			switch (state) {
 			case NEW:
 				newCode();

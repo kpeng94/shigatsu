@@ -6,6 +6,7 @@ public class SHQHandler extends StructureHandler {
 	public static final int SPLASH_RANGE = 52;
 
 	public static MapLocation[] towerLocs;
+	public static MapLocation[] sortedEnemyTowerLocs;
 	public static int towerNum;
 
 	public static int range;
@@ -50,6 +51,8 @@ public class SHQHandler extends StructureHandler {
 
 		Count.setLimit(Comm.getBeaverId(), 1); // Maintain 1 beaver
 		Comm.writeBlock(Comm.getLauncherId(), Comm.WAVENUM_OFFSET, currentLauncherWave);
+		sortedEnemyTowerLocs = calculateSortedEnemyTowers();
+        Comm.writeBlock(Comm.getLauncherId(), Comm.WAVE_ONE_RALLYPOINT_OFFSET, MapUtils.encode(sortedEnemyTowerLocs[1 % sortedEnemyTowerLocs.length]));
 	}
 
 	protected static void execute() throws GameActionException {
@@ -62,7 +65,7 @@ public class SHQHandler extends StructureHandler {
         for (int i = currentLauncherWave; --i >= 0;) {
             Count.resetBufferForGroup(Comm.getLauncherId(), i + 1);
         }
-		
+
 		updateOre();
 		Count.incrementBuffer(Comm.getHqId());
 
@@ -78,7 +81,9 @@ public class SHQHandler extends StructureHandler {
 		updateLimits();
 		updateOreCounts();
 
-		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
+        Supply.incExpiration();
+        Supply.distributeHQSupply();
+//        Supply.dumpSupplyTo(rc.senseTowerLocations()[0], RobotType.TOWER);
 		Distribution.spendBytecodesCalculating(7500);
 	}
 
@@ -172,6 +177,13 @@ public class SHQHandler extends StructureHandler {
 
 		if (Count.getCountAtRallyPoint(Comm.getLauncherId(), currentLauncherWave) >= ULauncherHandler.LAUNCHER_RUSH_COUNT) {
 			currentLauncherWave++;
+            if (currentLauncherWave % 3 == 1) {
+                Comm.writeBlock(Comm.getLauncherId(), Comm.WAVE_ONE_RALLYPOINT_OFFSET, MapUtils.encode(sortedEnemyTowerLocs[(currentLauncherWave % 3) % sortedEnemyTowerLocs.length]));
+            } else if (currentLauncherWave % 3 == 2) {
+                Comm.writeBlock(Comm.getLauncherId(), Comm.WAVE_TWO_RALLYPOINT_OFFSET, MapUtils.encode(sortedEnemyTowerLocs[(currentLauncherWave % 3) % sortedEnemyTowerLocs.length]));
+            } else if (currentLauncherWave % 3 == 0) {
+                Comm.writeBlock(Comm.getLauncherId(), Comm.WAVE_THREE_RALLYPOINT_OFFSET, MapUtils.encode(sortedEnemyTowerLocs[(currentLauncherWave % 3) % sortedEnemyTowerLocs.length]));
+            }
 			Count.incrementWaveNum(Comm.getLauncherId());
 		}
 	}
@@ -184,7 +196,7 @@ public class SHQHandler extends StructureHandler {
 	/**
 	 * Returns the ore delta since TURN_COUNTER turns ago. Returns -999999 if
 	 * the ore TURN_COUNTER turns ago was 0 (or not enough turns have passed).
-	 * 
+	 *
 	 * @return
 	 */
 	private static double getOreChangeInLastFewTurns() {
@@ -217,4 +229,29 @@ public class SHQHandler extends StructureHandler {
 		}
 	}
 
+	 public static MapLocation[] calculateSortedEnemyTowers() {
+	       MapLocation[] towers = rc.senseEnemyTowerLocations();
+           int[] distances = new int[towers.length];
+
+           for (int i = towers.length; --i >= 0;) {
+               distances[i] = myHQ.distanceSquaredTo(towers[i]);
+           }
+           for (int i = towers.length; --i >= 0;) {
+               int maxIndex = i;
+               for (int j = i; --j >= 0;) {
+                   if (distances[j] > distances[maxIndex]) {
+                       maxIndex = j;
+                   }
+               }
+               if (i != maxIndex) {
+                   MapLocation tempLoc = towers[i];
+                   towers[i] = towers[maxIndex];
+                   towers[maxIndex] = tempLoc;
+                   int temp = distances[i];
+                   distances[i] = distances[maxIndex];
+                   distances[maxIndex] = temp;
+               }
+           }
+           return towers;
+	   }
 }

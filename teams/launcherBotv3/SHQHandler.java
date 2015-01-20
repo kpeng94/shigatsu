@@ -97,13 +97,6 @@ public class SHQHandler extends StructureHandler {
         }
         updateBuildStates();
 
-        RobotInfo[] nearbyUnits = rc.senseNearbyRobots(
-                GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED, myTeam);
-        for (int i = nearbyUnits.length; --i >= 0;) {
-            if (nearbyUnits[i].supplyLevel == 0) {
-                rc.transferSupplies(2000, nearbyUnits[i].location);
-            }
-        }
         Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
         Distribution.spendBytecodesCalculating(7500);
     }

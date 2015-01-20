@@ -38,6 +38,8 @@ public class UDroneHandler extends UnitHandler {
 		if (rc.isCoreReady()) {
 			MapLocation targetPt = Rally.get(DRONE_SHIELD_RALLY_NUM);
 			if (Count.getCount(Comm.getLauncherId()) < 1 || targetPt == null) {
+				if (Count.getCount(Comm.getLauncherId()) < 1)
+					Comm.writeBlock(Comm.getLauncherId(), ULauncherHandler.NUM_RALLIED_CHANNEL, 0);
 				Rally.deactivate(DRONE_SHIELD_RALLY_NUM);
 				tryGuard();
 			} else {
@@ -53,9 +55,14 @@ public class UDroneHandler extends UnitHandler {
 	private static void tryGuard() throws GameActionException {
 		MapLocation guardPt = Rally.get(DRONE_GUARD_RALLY_NUM);
 		if (guardPt != null) {
-			Direction dir = Orbit.orbit(guardPt, RobotType.TOWER.attackRadiusSquared);
-			if (dir != Direction.NONE) {
-				rc.move(dir);
+			RobotInfo[] enemies = rc.senseNearbyRobots(guardPt, 52, otherTeam);
+			if (enemies.length > 0)
+				NavSimple.walkTowards(myLoc.directionTo(enemies[0].location));
+			else {
+				Direction dir = Orbit.orbit(guardPt, RobotType.TOWER.attackRadiusSquared);
+				if (dir != Direction.NONE) {
+					rc.move(dir);
+				}
 			}
 		} else {
 			MapLocation[] towers = rc.senseTowerLocations();

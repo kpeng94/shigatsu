@@ -124,7 +124,7 @@ public class Mining {
         int roundNum = Clock.getRoundNum();
         if (frontierBlock != 0) {
             MapLocation previousFrontier = MapUtils.decode(frontierBlock & 0xFFFF);
-            if (Handler.myHQ.distanceSquaredTo(previousFrontier) < Handler.myHQ.distanceSquaredTo(location)) {
+            if (Handler.myHQ.distanceSquaredTo(previousFrontier) > Handler.myHQ.distanceSquaredTo(location)) {
                 Comm.writeBlock(minerBlockId, FRONTIER_OFFSET, encodedInfo);
                 Comm.writeBlock(minerBlockId, FRONTIER_RND_NUM, roundNum);
             }

@@ -47,25 +47,32 @@ public class UMinerHandler extends UnitHandler {
         if (rc.isCoreReady()) {
             // Moving to frontier
             miningOverride: if (movingToFrontier) {
+                // If there is ore along the way to the frontier, stop and mine it.
                 if (rc.senseOre(myLoc) >= Mining.ORE_THRESHOLD && rc.canMine()) {
                     movingToFrontier = false;
                     rc.mine();
                     break miningOverride;
                 }
+                // Otherwise, if we're using BFS to get there, continue doing so.
                 if (usingBFS) {
                     while (pathIndex < path.length - 1 && myLoc.distanceSquaredTo(path[pathIndex]) <= 2) {
                         pathIndex++;
                     }
+                    // We have arrived at the frontier
                     if (pathIndex == path.length - 1) {
                         movingToFrontier = false;
                         MapLocation frontier = Mining.getFrontierLocation();
+                        // If the frontier now is the same as when we started our path, reset the frontier.
+                        // This likely indicates that the miners no longer have any idea of where the ore is on the map,
+                        // otherwise the frontier *should* have been updated in the meanwhile.
                         if (frontier == null || frontier.equals(path[pathIndex])) {
-                            System.out.println("Resetting frontier");
                             Mining.resetFrontier();
                         }
                     }
                     NavSimple.walkTowardsDirected(myLoc.directionTo(path[pathIndex]));
-                } else {
+                } 
+                // Or if we're using Tangent Bug to get there, continue doing so.
+                else {
                     if (myLoc.distanceSquaredTo(lastTangentStart) < Clock.getRoundNum() - lastTangentReset - 5) {
                         int frontier = Comm.readBlock(Comm.getMinerId(), Mining.FRONTIER_OFFSET);
                         lastTangentReset = Clock.getRoundNum();
@@ -77,17 +84,20 @@ public class UMinerHandler extends UnitHandler {
                     if (nextMove != Direction.NONE) {
                         NavSimple.walkTowards(nextMove);
                     }
+                    // We have arrived at the frontier
                     if (myLoc.distanceSquaredTo(NavTangentBug.dest) <= 2) {
                         movingToFrontier = false;
                         MapLocation frontier = Mining.getFrontierLocation();
+                        // If the frontier now is the same as when we started our path, reset the frontier.
+                        // This likely indicates that the miners no longer have any idea of where the ore is on the map,
+                        // otherwise the frontier *should* have been updated in the meanwhile.
                         if (frontier == null || frontier.equals(NavTangentBug.dest)) {
-                            System.out.println("Resetting frontier");
                             Mining.resetFrontier();
                         }
                     }
                 }
             } else {
-                // Check ore tiles around you
+                // We're not moving to a frontier, so check ore tiles around you
                 MapLocation ml;
                 ml = Mining.findClosestMinableOreWithRespectToHQ(Mining.ORE_THRESHOLD, 6);
                 RobotInfo[] nearbyRobots = rc.senseNearbyRobots(myLoc, 1, myTeam);
@@ -101,27 +111,33 @@ public class UMinerHandler extends UnitHandler {
                         NavSimple.walkTowards(myLoc.directionTo(ml));
                     }
                 } else if (rc.senseOre(myLoc) >= Mining.ORE_THRESHOLD && rc.canMine()) {
-                    // System.out.println("Still mining");
                     rc.mine();
-                } else {
+                } 
+               else {
                     if (ml != null) {
                         NavSimple.walkTowards(myLoc.directionTo(ml));
                     } else {
+                        // No ore near us, so we'll need to start moving to the frontier (if it exists...)
                         int frontier = Comm.readBlock(Comm.getMinerId(), Mining.FRONTIER_OFFSET);
                         if (frontier != 0) {
                             movingToFrontier = true;
                             int hqMapBaseBlock = rc.readBroadcast(Comm.HQ_MAP_CHAN);
+                            // If we're close enough to the HQ, walk to the frontier using BFS
                             if (myLoc.distanceSquaredTo(myHQ) < 8 && !(NavBFS.readMapDataUncached(hqMapBaseBlock, frontier & 0xFFFF) == 0)) {
                                 usingBFS = true;
                                 path = NavBFS.backtrace(hqMapBaseBlock, MapUtils.decode(frontier & 0xFFFF));
                                 pathIndex = 0;
-                            } else {
+                            } 
+                            // If we're not close enough to the HQ, walk to the frontier using Tangent Bug
+                            else {
                                 usingBFS = false;
                                 lastTangentReset = Clock.getRoundNum();
                                 lastTangentStart = myLoc;
                                 NavTangentBug.setDest(MapUtils.decode(frontier & 0xFFFF));
                             }
-                        } else {
+                        } 
+                        // Uh oh, no frontier. Better walk randomly.
+                        else {
                             if (rc.canMove(checkDir)) {
                                 rc.move(checkDir);
                             } else {

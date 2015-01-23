@@ -77,6 +77,7 @@ public class SHQHandler extends StructureHandler {
 		updateBuildStates();
 		updateLimits();
 		updateOreCounts();
+		checkMinerFrontier();
 
 		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 		Distribution.spendBytecodesCalculating(7500);
@@ -133,6 +134,15 @@ public class SHQHandler extends StructureHandler {
 		towerLocs = rc.senseTowerLocations();
 		towerNum = towerLocs.length;
 	}
+	
+    protected static void checkMinerFrontier() throws GameActionException {
+        int frontier = Comm.readBlock(Comm.getMinerId(), Mining.FRONTIER_OFFSET);
+        if (frontier != 0) {
+            int priority = (frontier >>> 16) & 0x7FFF;
+            MapLocation loc = MapUtils.decode(frontier & 0xFFFF);
+            System.out.println(Clock.getRoundNum() + ": Frontier at " + loc + " with priority " + (priority / 32.0) + ", is tower: " + Mining.isFrontierTower(frontier));
+        }
+    }
 
 	protected static void initCounts() throws GameActionException {
 		int towers = rc.senseTowerLocations().length;

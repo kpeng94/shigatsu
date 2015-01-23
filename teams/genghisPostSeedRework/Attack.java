@@ -94,18 +94,4 @@ public class Attack {
         return closestEnemy;
     }
 
-    /**
-     * Returns true if location is in an enemy tower's attack range. 
-     * Naive implementation.
-     * @param loc
-     * @return
-     */
-    public static boolean isInEnemyTowerRange(MapLocation loc) {
-        for (int i = Handler.enemyTowers.length; --i >= 0;) {
-            if(loc.distanceSquaredTo(Handler.enemyTowers[i]) <= 24)
-                return true;
-        }
-        return false;
-    }
-
 }

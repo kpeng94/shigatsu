@@ -85,11 +85,16 @@ public class STowerHandler extends StructureHandler {
 
         // No frontier
         int frontier = Comm.readBlock(commMinerId, Mining.FRONTIER_OFFSET);
-        if (frontier != 0 && !Mining.isFrontierTower(frontier)) {
+        if (frontier != 0) {
             // Frontier has been updated recently
             int roundNum = Comm.readBlock(commMinerId, Mining.FRONTIER_RND_NUM);
-            if (roundNum > Clock.getRoundNum() - ORE_UPDATE) {
+            
+            if (Mining.isFrontierTower(frontier) && roundNum != Clock.getRoundNum()) {
                 return;
+            } else if(!Mining.isFrontierTower(frontier)){
+                if (roundNum > Clock.getRoundNum() - ORE_UPDATE) {
+                    return;
+                }
             }
         }
 
@@ -98,7 +103,7 @@ public class STowerHandler extends StructureHandler {
             MapLocation spotToCheck = oreLocations[oreLocationIndex];
             if (!spotToCheck.equals(Handler.myLoc) && rc.senseOre(spotToCheck) > Mining.ORE_THRESHOLD) {
                 System.out.println("Trying to update frontier with " + spotToCheck + ", " + oreAmount + " ore");
-                Mining.updateFrontier(spotToCheck, oreAmount);
+                Mining.updateFrontierTowerToggle(spotToCheck, oreAmount);
                 break;
             } else {
                 oreLocationIndex--;
@@ -122,11 +127,16 @@ public class STowerHandler extends StructureHandler {
 
         // No frontier
         int frontier = Comm.readBlock(commMinerId, Mining.FRONTIER_OFFSET);
-        if (frontier != 0 && !Mining.isFrontierTower(frontier)) {
+        if (frontier != 0) {
             // Frontier has been updated recently
             int roundNum = Comm.readBlock(commMinerId, Mining.FRONTIER_RND_NUM);
-            if (roundNum > Clock.getRoundNum() - ORE_UPDATE) {
+            
+            if (Mining.isFrontierTower(frontier) && roundNum != Clock.getRoundNum()) {
                 return;
+            } else if(!Mining.isFrontierTower(frontier)){
+                if (roundNum > Clock.getRoundNum() - ORE_UPDATE) {
+                    return;
+                }
             }
         }
 
@@ -134,9 +144,9 @@ public class STowerHandler extends StructureHandler {
             double oreAmount = rc.senseOre(oreLocations[oreLocationIndex]);
             MapLocation spotToCheck = oreLocations[oreLocationIndex];
             if (rc.senseOre(spotToCheck) > Mining.ORE_THRESHOLD && !spotToCheck.equals(Handler.myLoc) && !isTower(spotToCheck)
-                    && !Attack.isInEnemyTowerRange(spotToCheck)) {
+                    && NavSafeBug.safeTile(spotToCheck)) {
                 System.out.println("Trying to update frontier with " + spotToCheck + ", " + oreAmount + " ore");
-                Mining.updateFrontier(spotToCheck, oreAmount);
+                Mining.updateFrontierTowerToggle(spotToCheck, oreAmount);
                 break;
             } else {
                 oreLocationIndex++;
@@ -145,8 +155,8 @@ public class STowerHandler extends StructureHandler {
     }
 
     /**
-     * Prunes the allied tower list to only include towers that are within your sight range. This 
-     * also does not include the tower itself.
+     * Prunes the allied tower list to only include towers that are within your
+     * sight range. This also does not include the tower itself.
      */
     private static void pruneTowerList() {
         int count = 0;
@@ -162,11 +172,11 @@ public class STowerHandler extends StructureHandler {
             newTowerList[i] = nearbyTowers[indices[i]];
         }
         nearbyTowers = newTowerList;
-        System.out.println(Utils.printArray(nearbyTowers));
     }
 
     /**
      * Is the location an allied tower within my sight range?
+     * 
      * @param loc
      * @return
      */

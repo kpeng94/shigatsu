@@ -51,11 +51,18 @@ public class Supply {
 	
 	/* The following functions should be called by HQ */
 	
+	/**
+	 * Increments the time since the supplier last checked in
+	 */
 	public static void incExpiration() throws GameActionException {
 		int age = Comm.readBlock(getSupplierId(), LAST_UPDATED_OFF);
 		Comm.writeBlock(getSupplierId(), LAST_UPDATED_OFF, age + 1);
 	}
 
+	/**
+	 * Averages supply with nearby units
+	 * Dump all supply onto supplier unit if in range
+	 */
 	public static void distributeHQSupply() throws GameActionException {
 		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 		Handler.rc.setIndicatorString(0, "Supplier x: " + Comm.readBlock(getSupplierId(), LOC_X_OFF));
@@ -72,6 +79,9 @@ public class Supply {
 	
 	/* This function can be called by anyone */
 	
+	/**
+	 * Writes the dump criteria (location and type of robot to receive supply)
+	 */
 	public static void dumpSupplyTo(MapLocation loc, RobotType unit) throws GameActionException {
 		Comm.writeBlock(getSupplierId(), TAR_ACTIVE, 1);
 		Comm.writeBlock(getSupplierId(), TAR_X_OFF, loc.x);
@@ -79,20 +89,36 @@ public class Supply {
 		Comm.writeBlock(getSupplierId(), TAR_TYPE_OFF, unit.ordinal());
 	}
 	
+	/**
+	 * Disable the previous dumpSupplyTo call 
+	 * The supplier unit will remain close to HQ
+	 */
 	public static void deactivateDump() throws GameActionException {
 		Comm.writeBlock(getSupplierId(), TAR_ACTIVE, 0);
 	}
 	
 	/* The remaining functions should be called by drones */
 	
+	/**
+	 * Returns true if there are no suppliers or 
+	 * it's been a while since the supplier checked in
+	 */
 	public static boolean supplierNeeded() throws GameActionException {
 		return Comm.readBlock(getSupplierId(), NUM_SUPPLIER_OFF) < 1 || Comm.readBlock(getSupplierId(), LAST_UPDATED_OFF) > 5;
 	}
 	
+	/**
+	 * Initialize variables associated with the supplier
+	 */
 	public static void initSupplier() throws GameActionException {
 		Comm.writeBlock(getSupplierId(), NUM_SUPPLIER_OFF, 1);
 	}
 	
+	/**
+	 * Execute code for the supplier
+	 * If there's dump criteria, and supply is above a threshold, move to the target location
+	 * Otherwise, move back to the HQ
+	 */
 	public static void execSupplier() throws GameActionException {
 		int mySupply = (int) Handler.rc.getSupplyLevel();
 		
@@ -110,6 +136,7 @@ public class Supply {
 		update();
 	}
 	
+	/** Reads the dump target criteria for the supplier */
 	private static void checkDumpDetails() throws GameActionException {
 		if (Comm.readBlock(getSupplierId(), TAR_ACTIVE) == 1) {
 			dumpLoc = new MapLocation(
@@ -122,6 +149,9 @@ public class Supply {
 		}
 	}
 	
+	/**
+	 * Supplier dumps on any unit nearby that satisfies the dump target criteria
+	 */
 	private static void dumpIfPossible(int supplyLevel) throws GameActionException {
 		if (dumpLoc != null && dumpTarget != null && Handler.myLoc.distanceSquaredTo(dumpLoc) < GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED) {
 			RobotInfo[] allies = Handler.rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED, Handler.myTeam);
@@ -134,6 +164,7 @@ public class Supply {
 		}
 	}
 	
+	/** Supplier checks in */
 	private static void update() throws GameActionException {
 		Comm.writeBlock(getSupplierId(), LAST_UPDATED_OFF, 0);
 		Comm.writeBlock(getSupplierId(), LOC_X_OFF, Handler.myLoc.x);

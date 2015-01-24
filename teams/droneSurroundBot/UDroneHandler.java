@@ -27,21 +27,21 @@ public class UDroneHandler extends UnitHandler {
 
 	protected static void init(RobotController rcon) throws GameActionException {
 		initUnit(rcon);
-		if (Supply.supplierNeeded()) {
-			Supply.initSupplier();
-			isSupplier = true;
-		} else {
-			isSupplier = false;
-		}
+//		if (Supply.supplierNeeded()) {
+//			Supply.initSupplier();
+//			isSupplier = true;
+//		} else {
+//			isSupplier = false;
+//		}
 	}
 
 	protected static void execute() throws GameActionException {
 		executeUnit();
 		
-		if (isSupplier) {
-			Supply.execSupplier();
-			return;
-		}
+//		if (isSupplier) {
+//			Supply.execSupplier();
+//			return;
+//		}
 		
 		if (Comm.readBlock(Comm.getDroneId(), 1) > 50 || Clock.getRoundNum() > 1750) {
 			attackState = true;
@@ -54,7 +54,7 @@ public class UDroneHandler extends UnitHandler {
 			if (rc.isCoreReady()) {
 				if (enemyTowers.length > 0) {
 					if (myLoc.distanceSquaredTo(enemyTowers[0]) > 35) {
-						Direction dir = NavSafeBug.dirToBugIn(enemyTowers[0]);
+						Direction dir = NavSuperSafeBug.dirToBugIn(enemyTowers[0]);
 						if (dir != Direction.NONE) {
 							rc.move(dir);
 						}
@@ -63,7 +63,7 @@ public class UDroneHandler extends UnitHandler {
 					}
 				} else {
 					if (myLoc.distanceSquaredTo(enemyHQ) > 52) {
-						Direction dir = NavSafeBug.dirToBugIn(enemyHQ);
+						Direction dir = NavSuperSafeBug.dirToBugIn(enemyHQ);
 						if (dir != Direction.NONE) {
 							rc.move(dir);
 						}
@@ -77,7 +77,7 @@ public class UDroneHandler extends UnitHandler {
 				tryAttackNormal();
 			}
 			if (rc.isCoreReady()) {
-				Direction dir = NavSafeBug.dirToBugIn(enemyHQ);
+				Direction dir = NavSuperSafeBug.dirToBugIn(enemyHQ);
 				if (dir != Direction.NONE) {
 					rc.move(dir);
 				}

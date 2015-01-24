@@ -77,43 +77,43 @@ public class UCommanderHandler extends UnitHandler {
 	}
 	
 	// Micro for commander
+	// Attacks and moves because of no CD and LD
 	protected static void commanderMicro() {
-		
+		if (rc.isWeaponReady()) {
+			
+		}
+		if (rc.isCoreReady()) {
+			
+		}
 	}
 	
 	// Navigation for commander, tries to get to rally point
 	// Tries to tangent bug to rally point until it is no longer safe
 	// Then it safe bugs around until it is far away from danger
 	// Then it resumes tangent bugging
+	// Assumes no enemies are nearby
 	protected static void commanderNav() throws GameActionException {
 		MapLocation closestTower = Attack.getClosestTower();
 		int HQ_threshold = enemyTowers.length >= 5 ? HQ_SPLASH_THRESHOLD : (enemyTowers.length >= 2 ? HQ_LARGE_THRESHOLD : HQ_SMALL_THRESHOLD);
-		if (!prevNavTangent && myLoc.distanceSquaredTo(closestTower) > TOWER_THRESHOLD && myLoc.distanceSquaredTo(enemyHQ) > HQ_threshold) { // Was safenaving, and now can walk forward safely
-			prevNavTangent = true;
-			NavSafeBug.resetDir();
-			NavTangentBug.setDestForced(rallyPoint);
-		}
-		if (prevNavTangent) { // Try to continue to tangent bug
+		if (myLoc.distanceSquaredTo(closestTower) > TOWER_THRESHOLD && myLoc.distanceSquaredTo(enemyHQ) > HQ_threshold) { // Out of range, resume tangent bugging
+			if (!prevNavTangent) {
+				NavTangentBug.setDestForced(rallyPoint);
+			}
 			NavTangentBug.calculate(2500);
 			Direction nextMove = NavTangentBug.getNextMove();
 			if (nextMove != Direction.NONE) {
-				if (NavSafeBug.safeTile(myLoc.add(nextMove))) {
-					Direction saferDir = NavSimple.dirTowardsSafe(nextMove);
-					if (saferDir == Direction.NONE) { // It is not safe
-						prevNavTangent = false;
-					} else {
-						rc.move(saferDir);
-					}
-				} else {
-					prevNavTangent = false;
-				}
+				NavSimple.walkTowardsDirected(nextMove);
 			}
-		}
-		if (!prevNavTangent) { // Safe nav instead
+			prevNavTangent = true;
+		} else { // in danger range, safe bug around
+			if (prevNavTangent) {
+				NavSafeBug.resetDir();
+			}
 			Direction dir = NavSafeBug.dirToBugIn(rallyPoint);
 			if (dir != Direction.NONE) {
 				rc.move(dir);
 			}
+			prevNavTangent = false;
 		}
 	}
 	

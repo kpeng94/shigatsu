@@ -1,12 +1,8 @@
-package droneSurroundBot;
+package droneSuperSafeSurroundBot;
 
 import battlecode.common.*;
 
-/**
- * NavSuperSafeBug is a version of NavSafeBug that also attempts to avoid enemies 
- * in sensor range
- */
-public class NavSuperSafeBug {
+public class NavSafeBug {
 	private static enum traceDir {
 		LEFT,
 		RIGHT,
@@ -20,14 +16,10 @@ public class NavSuperSafeBug {
 	public static MapLocation startingDest;
 	public static traceDir prevTrace = traceDir.NONE;
 	
-	public static RobotInfo[] enemies; // enemies within sensor range
-	
 	public static Direction dirToBugIn(MapLocation dest) {
 		if (Handler.myLoc.equals(dest)) return Direction.NONE;
 		Direction forwardDir = Handler.myLoc.directionTo(dest);
 		MapLocation forwardLoc = Handler.myLoc.add(forwardDir);
-		
-		enemies = Handler.rc.senseNearbyRobots(Handler.typ.sensorRadiusSquared, Handler.otherTeam);
 
 		if (tracing == traceDir.NONE || (tracing != traceDir.NONE && !dest.equals(startingDest))) {
 			if (Handler.rc.canMove(forwardDir) && safeTile(forwardLoc)) { // can move forward
@@ -169,15 +161,7 @@ public class NavSuperSafeBug {
 			}
 		}
 		
-		// Check if we're wandering into enemy range
-		if (enemies != null) {
-			for (RobotInfo enemy: enemies) {
-				if (loc.distanceSquaredTo(enemy.location) <= enemy.type.attackRadiusSquared) {
-					return false;
-				}
-			}
-		}
-		
 		return true;
 	}
+	
 }

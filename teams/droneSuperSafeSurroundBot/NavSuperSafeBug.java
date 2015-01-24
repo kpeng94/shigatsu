@@ -1,4 +1,4 @@
-package droneSurroundBot;
+package droneSuperSafeSurroundBot;
 
 import battlecode.common.*;
 

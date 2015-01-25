@@ -1,0 +1,17 @@
+package smartMissilev2;
+
+import battlecode.common.*;
+
+public abstract class UnitHandler extends Handler {
+
+    protected static void initUnit(RobotController rcon) throws GameActionException {
+        initGeneral(rcon);
+    }
+
+    protected static void executeUnit() {
+        executeGeneral();
+
+        myLoc = rc.getLocation();
+    }
+
+}

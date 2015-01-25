@@ -1,4 +1,4 @@
-package smartMissile;
+package smartMissilev2;
 
 import battlecode.common.*;
 
@@ -9,6 +9,7 @@ public class UMissileHandler extends UnitHandler {
 	private static MapLocation destination = null;
 	private static MapLocation nearbyStructure = null;
 	private static MapLocation nearbyUnit = null;
+	private static MapLocation nearbyTower = null;
 	private static Direction nextDir = null;
 	private static int timeSinceSpawned;
 
@@ -45,11 +46,13 @@ public class UMissileHandler extends UnitHandler {
 		
 		enemies = rc.senseNearbyRobots((5 - timeSinceSpawned) * (5 - timeSinceSpawned), otherTeam);
 		for (int i = 0; i < enemies.length && i < 5; i++) {
-			if (enemies[i].type.isBuilding) {
+			if (enemies[i].type == RobotType.TOWER) {
 				nearbyStructure = enemies[i].location;
 				break;
 			} else if (enemies[i].type != RobotType.MISSILE) {
 				nearbyUnit = enemies[i].location;
+			} else if (enemies[i].type.isBuilding) {
+				nearbyStructure = enemies[i].location;
 			}
 		}
 		
@@ -69,10 +72,12 @@ public class UMissileHandler extends UnitHandler {
 //			}
 //		}
 		
-		if (nearbyStructure != null) {
-			destination = nearbyStructure;
+		if (nearbyTower != null) {
+			destination = nearbyTower;
 		} else if (nearbyUnit != null) {
 			destination = nearbyUnit;
+		} else if (nearbyStructure != null) {
+			destination = nearbyStructure;
 		} else {
 			destination = enemyHQ;
 		}
@@ -100,6 +105,7 @@ public class UMissileHandler extends UnitHandler {
 		destination = null;
 		nearbyStructure = null;
 		nearbyUnit = null;
+		nearbyTower = null;
 		timeSinceSpawned++;
 	}
 }

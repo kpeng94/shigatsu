@@ -99,9 +99,10 @@ public class STowerHandler extends StructureHandler {
         }
 
         while (oreLocationIndex > -1 && Clock.getBytecodesLeft() >= 500) {
-            double oreAmount = rc.senseOre(oreLocations[oreLocationIndex]);
             MapLocation spotToCheck = oreLocations[oreLocationIndex];
-            if (!spotToCheck.equals(Handler.myLoc) && rc.senseOre(spotToCheck) > Mining.ORE_THRESHOLD) {
+            double oreAmount = rc.senseOre(spotToCheck);
+            if (oreAmount > Mining.ORE_THRESHOLD && !spotToCheck.equals(Handler.myLoc) && !isTower(spotToCheck)
+                    && NavSafeBug.safeTile(spotToCheck)) {
                 Mining.updateFrontierTowerToggle(spotToCheck, oreAmount);
                 break;
             } else {
@@ -140,9 +141,9 @@ public class STowerHandler extends StructureHandler {
         }
 
         while (oreLocationIndex < oreLocations.length && Clock.getBytecodesLeft() >= 500) {
-            double oreAmount = rc.senseOre(oreLocations[oreLocationIndex]);
             MapLocation spotToCheck = oreLocations[oreLocationIndex];
-            if (rc.senseOre(spotToCheck) > Mining.ORE_THRESHOLD && !spotToCheck.equals(Handler.myLoc) && !isTower(spotToCheck)
+            double oreAmount = rc.senseOre(spotToCheck);
+            if (oreAmount > Mining.ORE_THRESHOLD && !spotToCheck.equals(Handler.myLoc) && !isTower(spotToCheck)
                     && NavSafeBug.safeTile(spotToCheck)) {
                 Mining.updateFrontierTowerToggle(spotToCheck, oreAmount);
                 break;

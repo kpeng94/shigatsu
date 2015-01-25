@@ -77,7 +77,8 @@ public class SHQHandler extends StructureHandler {
 		updateBuildStates();
 		updateLimits();
 		updateOreCounts();
-
+		// checkMinerFrontier();
+		
 		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 		Distribution.spendBytecodesCalculating(7500);
 	}

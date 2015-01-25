@@ -18,6 +18,7 @@ public class UCommanderHandler extends UnitHandler {
 	public static RobotInfo[] nearbyAllies; // allies within ALLY_RADIUS
 	
 	public static boolean prevNavTangent; // Whether the previous navigation was tangent bug or not
+	public static boolean justFlashed;
 	
 	public static void loop(RobotController rcon) {
 		try {
@@ -43,6 +44,7 @@ public class UCommanderHandler extends UnitHandler {
 		prevRally = 0;
 		rallyPoint = enemyHQ;
 		prevNavTangent = true;
+		justFlashed = false;
 	}
 
 	protected static void execute() throws GameActionException {
@@ -96,13 +98,19 @@ public class UCommanderHandler extends UnitHandler {
 		MapLocation closestTower = Attack.getClosestTower();
 		int HQ_threshold = enemyTowers.length >= 5 ? HQ_SPLASH_THRESHOLD : (enemyTowers.length >= 2 ? HQ_LARGE_THRESHOLD : HQ_SMALL_THRESHOLD);
 		if (myLoc.distanceSquaredTo(closestTower) > TOWER_THRESHOLD && myLoc.distanceSquaredTo(enemyHQ) > HQ_threshold) { // Out of range, resume tangent bugging
-			if (!prevNavTangent) {
-				NavTangentBug.setDestForced(rallyPoint);
-			}
-			NavTangentBug.calculate(2500);
-			Direction nextMove = NavTangentBug.getNextMove();
-			if (nextMove != Direction.NONE) {
-				NavSimple.walkTowardsDirected(nextMove);
+			Direction towardsRally = myLoc.directionTo(rallyPoint);
+			if (rc.getFlashCooldown() == 0 && flashTowardsDirSafe(towardsRally)) { // Successfully flashed in forward
+				justFlashed = true;
+			} else {
+				if (!prevNavTangent || justFlashed) {
+					NavTangentBug.setDestForced(rallyPoint);
+					justFlashed = false;
+				}
+				NavTangentBug.calculate(2500);
+				Direction nextMove = NavTangentBug.getNextMove();
+				if (nextMove != Direction.NONE) {
+					NavSimple.walkTowardsDirected(nextMove);
+				}
 			}
 			prevNavTangent = true;
 		} else { // in danger range, safe bug around
@@ -115,6 +123,82 @@ public class UCommanderHandler extends UnitHandler {
 			}
 			prevNavTangent = false;
 		}
+	}
+	
+	
+	/**** Flash Helpers ****/
+	// Never try to flash to an adjacent square (it is a waste)
+	// Does not check flash cooldown for you, will throw exception if flash is on cooldown
+	
+	// Tries to flash in a direction as far as it can
+	// Returns if flash was succesful or not
+	protected static boolean flashTowardsDir(Direction dir) throws GameActionException {
+		MapLocation center = myLoc.add(dir).add(dir);
+		if (!dir.isDiagonal()) {
+			center = center.add(dir);
+		}
+		return flashToFarther(center);
+	}
+	
+	// Same as flashTowardsDir except avoids towers and HQ
+	protected static boolean flashTowardsDirSafe(Direction dir) throws GameActionException {
+		MapLocation center = myLoc.add(dir).add(dir);
+		if (!dir.isDiagonal()) {
+			center = center.add(dir);
+		}
+		return flashToFartherSafe(center);
+	}
+	
+	// Tries to flash to a destination
+	// If fail, check all squares around, prioritizing farther squares
+	protected static boolean flashToFarther(MapLocation dest) throws GameActionException {
+		Direction[] aroundDirs = MapUtils.dirsAround(myLoc.directionTo(dest));
+		MapLocation[] checks = new MapLocation[9];
+		checks[0] = dest;
+		for (int i = 0; i < aroundDirs.length; i++) {
+			checks[i + 1] = dest.add(aroundDirs[i]);
+		}
+		return flashToPriority(checks);
+	}
+	
+	// Same as flashToFarther except avoids towers and HQ
+	protected static boolean flashToFartherSafe(MapLocation dest) throws GameActionException {
+		Direction[] aroundDirs = MapUtils.dirsAround(myLoc.directionTo(dest));
+		MapLocation[] checks = new MapLocation[9];
+		checks[0] = dest;
+		for (int i = 0; i < aroundDirs.length; i++) {
+			checks[i + 1] = dest.add(aroundDirs[i]);
+		}
+		return flashToPrioritySafe(checks);
+	}
+	
+	// Tries to flash to a priority sorted list of locations
+	// Returns if flash succeeds or not
+	// Ignores destinations that are adjacent to the commander
+	protected static boolean flashToPriority(MapLocation[] dests) throws GameActionException {
+		if (rc.getFlashCooldown() > 0) return false;
+		for (int i = 0; i < dests.length; i++) {
+			MapLocation dest = dests[i];
+			int dist = myLoc.distanceSquaredTo(dest);
+			if (dist > 10 || dist <= 2 || rc.senseTerrainTile(dest) != TerrainTile.NORMAL ||
+				rc.senseRobotAtLocation(dest) != null) continue;
+			rc.castFlash(dest);
+			return true;
+		}
+		return false;
+	}
+	
+	// Same as flashToPriority except it also makes sure the location you flash to is safe from towers and enemy HQ
+	protected static boolean flashToPrioritySafe(MapLocation[] dests) throws GameActionException {
+		for (int i = 0; i < dests.length; i++) {
+			MapLocation dest = dests[i];
+			int dist = myLoc.distanceSquaredTo(dest);
+			if (dist > 10 || dist <= 2 || rc.senseTerrainTile(dest) != TerrainTile.NORMAL ||
+				rc.senseRobotAtLocation(dest) != null || !NavSafeBug.safeTile(dest)) continue;
+			rc.castFlash(dest);
+			return true;
+		}
+		return false;
 	}
 	
 }

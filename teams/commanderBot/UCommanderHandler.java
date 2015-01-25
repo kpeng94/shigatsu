@@ -9,6 +9,7 @@ public class UCommanderHandler extends UnitHandler {
 	public static final int HQ_LARGE_THRESHOLD = 55;
 	public static final int HQ_SPLASH_THRESHOLD = 75;
 	public static final int ALLY_RADIUS = 15;
+	public static final int AGGRO_FLASH_THRESHOLD = 50;
 	
 	public static int prevRally; // Previously rally point value (to determine when to update)
 	public static MapLocation rallyPoint; // Commander rally point
@@ -19,6 +20,8 @@ public class UCommanderHandler extends UnitHandler {
 	
 	public static boolean prevNavTangent; // Whether the previous navigation was tangent bug or not
 	public static boolean justFlashed;
+	
+	public static int safeTurns; // Number of safe turns in a row
 	
 	public static void loop(RobotController rcon) {
 		try {
@@ -45,6 +48,7 @@ public class UCommanderHandler extends UnitHandler {
 		rallyPoint = enemyHQ;
 		prevNavTangent = true;
 		justFlashed = false;
+		safeTurns = 0;
 	}
 
 	protected static void execute() throws GameActionException {
@@ -64,9 +68,29 @@ public class UCommanderHandler extends UnitHandler {
 		sensedEnemies = rc.senseNearbyRobots(typ.sensorRadiusSquared, otherTeam);
 		nearbyAllies = rc.senseNearbyRobots(ALLY_RADIUS, myTeam);
 
-		if (Clock.getRoundNum() >= rc.readBroadcast(Comm.FINAL_PUSH_ROUND_CHAN)) { // FINAL PUSH!!! (ignore micro for most part)
-			
-		} else {
+//		if (Clock.getRoundNum() >= rc.readBroadcast(Comm.FINAL_PUSH_ROUND_CHAN)) { // FINAL PUSH!!! (ignore micro for most part)
+//			if (rc.isWeaponReady()) {
+//				Attack.tryAttackPrioritizeTowers();
+//			}
+//			if (rc.isCoreReady() && attackableEnemies.length == 0) {
+//				if (enemyTowers.length > 0) {
+//					MapLocation towerDest = Attack.getClosestTower();
+//					NavTangentBug.setDest(towerDest);
+//					NavTangentBug.calculate(2500);
+//					Direction dir = NavTangentBug.getNextMove();
+//					if (dir != Direction.NONE) {
+//						NavSimple.walkTowards(dir);
+//					}
+//				} else {
+//					NavTangentBug.setDest(enemyHQ);
+//					NavTangentBug.calculate(2500);
+//					Direction dir = NavTangentBug.getNextMove();
+//					if (dir != Direction.NONE) {
+//						NavSimple.walkTowards(dir);
+//					}
+//				}
+//			}
+//		} else {
 			if (sensedEnemies.length > 0) { // Gotta micro
 				commanderMicro();
 			} else { // No enemies in sight, just nav
@@ -74,18 +98,149 @@ public class UCommanderHandler extends UnitHandler {
 					commanderNav();
 				}
 			}
-		}
+//		}
 
 	}
 	
 	// Micro for commander
-	// Attacks and moves because of no CD and LD
-	protected static void commanderMicro() {
+	// Attacks and moves on the same turn if possible because of no CD and LD
+	protected static void commanderMicro() throws GameActionException {
+		safeTurns = 0;
 		if (rc.isWeaponReady()) {
-			
+			attackMicro();
 		}
 		if (rc.isCoreReady()) {
+			moveMicro();
+		}
+	}
+	
+	protected static void attackMicro() throws GameActionException {
+		Attack.tryAttackClosestButKillIfPossible(attackableEnemies);
+	}
+	
+	protected static void moveMicro() throws GameActionException {
+		int dangerx = 0;
+		int dangery = 0;
+		int dangernum = 0;
+		
+		RobotInfo target = null;
+		int targetDanger = 0; // 0 default, 3 immediate danger, 2 soon danger, 1 other
+		
+		int immediateDamage = 0;
+		int soonDamage = 0;
+		
+		int missileSeen = 0;
+		int missileClose = 0;
+		
+		double afterMoveDelay = rc.getCoreDelay() + typ.movementDelay;
+		int turnsUntilNextMove = Attack.numTurnsUntilAction(afterMoveDelay);
+		
+		for (int i = sensedEnemies.length; --i >= 0;) { // Iterate over all enemies
+			RobotInfo enemy = sensedEnemies[i];
+			int dist = myLoc.distanceSquaredTo(enemy.location);
+			if (enemy.type == RobotType.LAUNCHER) {
+				int numMissiles = enemy.missileCount;
+				if (numMissiles > 0) { // has missiles to shoot
+					if (dist <= 18) {
+						dangerx += 3 * enemy.location.x;
+						dangery += 3 * enemy.location.y;
+						dangernum += 3;
+					}
+					if (dist <= 10) { // Can get hit by 3 missiles next turn
+						int num = numMissiles >= 3 ? 3 : numMissiles;
+						immediateDamage += num * RobotType.MISSILE.attackPower;
+						soonDamage += num * RobotType.MISSILE.attackPower;
+					} else if (dist <= 15) { // Can get hit by 2 missiles next turn
+						int num = numMissiles >= 2 ? 2 : numMissiles;
+						immediateDamage += num * RobotType.MISSILE.attackPower;
+						soonDamage += num * RobotType.MISSILE.attackPower;
+					} else if (dist <= 18) {
+						immediateDamage += RobotType.MISSILE.attackPower;
+						soonDamage += RobotType.MISSILE.attackPower;
+					}
+				}
+				if (targetDanger < 1 && numMissiles == 0) {
+					target = enemy;
+					targetDanger = 1;
+				}
+				continue;
+			}
+			if (enemy.type == RobotType.MISSILE) {
+				missileSeen += 1;
+				if (dist <= 2) { // TODO: change constant?
+					missileClose += 1;
+					dangerx += 10 * enemy.location.x;
+					dangery += 10 * enemy.location.y;
+					dangernum += 10;
+				} else {
+					dangerx += 5 * enemy.location.x;
+					dangery += 5 * enemy.location.y;
+					dangernum += 5;
+				}
+			}
 			
+			int turnsUntilDanger = Attack.canBeAttackedInTurns(enemy);
+			
+			if (turnsUntilDanger <= 1) { // In immediate danger
+				immediateDamage += enemy.type.attackPower;
+				soonDamage += enemy.type.attackPower;
+				dangerx += 3 * enemy.location.x;
+				dangery += 3 * enemy.location.y;
+				dangernum += 3;
+				if (targetDanger < 3 && enemy.type != RobotType.MISSILE) {
+					target = enemy;
+					targetDanger = 3;
+				}
+				continue;
+			}
+			
+			if (turnsUntilDanger <= turnsUntilNextMove + 2) { // TODO: change constant?
+				soonDamage += enemy.type.attackPower;
+				dangerx += 2 * enemy.location.x;
+				dangery += 2 * enemy.location.y;
+				dangernum += 2;
+				if (targetDanger < 2) {
+					target = enemy;
+					targetDanger = 2;
+				}
+				continue;
+			}
+			
+			if (enemy.type.attackRadiusSquared >= dist || enemy.type.attackRadiusSquared > typ.attackRadiusSquared) { // in range of enemy or enemy outranges us
+				dangerx += enemy.location.x;
+				dangery += enemy.location.y;
+				dangernum++;
+			}
+			if (targetDanger < 1) {
+				target = enemy;
+				targetDanger = 1;
+			}
+		}
+		
+		rc.setIndicatorString(1, Clock.getRoundNum() + " " + immediateDamage + " " + soonDamage);
+		// Run if in too much immediate danger
+		boolean flashSuccess = false;
+		if (rc.getFlashCooldown() == 0 && (missileClose > 0 || missileSeen >= 3 || immediateDamage >= rc.getHealth() / 5)) {
+			MapLocation dangerLoc = new MapLocation(dangerx / dangernum, dangery / dangernum);
+			Direction runDir = dangerLoc.directionTo(myLoc);
+			flashSuccess = flashTowardsDirSafe(runDir);
+		}
+		if (!flashSuccess) { // did not flash
+			if (missileClose > 0 || missileSeen >= 3 || immediateDamage >= rc.getHealth() / 20) { // TODO: change constant?
+				MapLocation dangerLoc = new MapLocation(dangerx / dangernum, dangery / dangernum);
+				Direction runDir = dangerLoc.directionTo(myLoc);
+				NavSimple.walkTowardsSafe(runDir);
+			} else if (missileSeen == 0 && soonDamage < rc.getHealth() / 5 &&
+					((rc.getSupplyLevel() > 150 && rc.getHealth() > 50) || (rc.getSupplyLevel() <= 150 && rc.getHealth() > 100))) { // Safe for a while, try to move closer
+				if (target == null || attackableEnemies.length >= 2 || sensedEnemies.length >= 5) return;
+				if (rc.getSupplyLevel() <= 50 && rc.getCoreDelay() > 0) return;
+				rc.setIndicatorString(2, Clock.getRoundNum() + " walking forward");
+//				if (rand.nextAnd(31) == 0) NavSafeBug.resetDir(); // Randomly reset dir just in case we are stuck
+				Direction towardsDir = NavSafeBug.dirToBugIn(target.location);
+				if (towardsDir != Direction.NONE) {
+					rc.move(towardsDir);
+				}
+			}
 		}
 	}
 	
@@ -95,14 +250,15 @@ public class UCommanderHandler extends UnitHandler {
 	// Then it resumes tangent bugging
 	// Assumes no enemies are nearby
 	protected static void commanderNav() throws GameActionException {
+		safeTurns++;
 		MapLocation closestTower = Attack.getClosestTower();
 		int HQ_threshold = enemyTowers.length >= 5 ? HQ_SPLASH_THRESHOLD : (enemyTowers.length >= 2 ? HQ_LARGE_THRESHOLD : HQ_SMALL_THRESHOLD);
-		if (myLoc.distanceSquaredTo(closestTower) > TOWER_THRESHOLD && myLoc.distanceSquaredTo(enemyHQ) > HQ_threshold) { // Out of range, resume tangent bugging
+		if ((closestTower == null || myLoc.distanceSquaredTo(closestTower) > TOWER_THRESHOLD) && myLoc.distanceSquaredTo(enemyHQ) > HQ_threshold) { // Out of range, resume tangent bugging
 			Direction towardsRally = myLoc.directionTo(rallyPoint);
-			if (rc.getFlashCooldown() == 0 && flashTowardsDirSafe(towardsRally)) { // Successfully flashed in forward
+			if (safeTurns >= AGGRO_FLASH_THRESHOLD && rc.getFlashCooldown() == 0 && flashTowardsDirSafe(towardsRally)) { // Successfully flashed in forward
 				justFlashed = true;
 			} else {
-				if (!prevNavTangent || justFlashed) {
+				if (!prevNavTangent || justFlashed || safeTurns <= 1) {
 					NavTangentBug.setDestForced(rallyPoint);
 					justFlashed = false;
 				}

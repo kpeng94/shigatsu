@@ -29,14 +29,13 @@ public class Mining {
                 currentLocation = currentLocation.add(currentDirection);
                 int distance = currentLocation.distanceSquaredTo(Handler.myHQ);
                 ore = Handler.rc.senseOre(currentLocation);
-                if (!occupied[MapUtils.encode(currentLocation)]) {
+                if (!occupied[MapUtils.encode(currentLocation)] && NavSafeBug.safeTile(currentLocation)) {
                     totalOre += ore;
                     tilesSeen++;
-                }
-                if (ore > threshold && Handler.rc.canMove(Handler.myLoc.directionTo(currentLocation)) && distance < bestDistance
-                        && !occupied[MapUtils.encode(currentLocation)]) {
-                    bestLocation = currentLocation;
-                    bestDistance = distance;
+                    if (ore > threshold && Handler.rc.canMove(Handler.myLoc.directionTo(currentLocation)) && distance < bestDistance) {
+                        bestLocation = currentLocation;
+                        bestDistance = distance;
+                    }
                 }
             }
 
@@ -50,15 +49,15 @@ public class Mining {
             for (int i = step; --i >= 0;) {
                 currentLocation = currentLocation.add(currentDirection);
                 ore = Handler.rc.senseOre(currentLocation);
-                if (!occupied[MapUtils.encode(currentLocation)]) {
+                if (!occupied[MapUtils.encode(currentLocation)] && NavSafeBug.safeTile(currentLocation)) {
                     totalOre += ore;
                     tilesSeen++;
-                }
-                int distance = currentLocation.distanceSquaredTo(Handler.myHQ);
-                if (Handler.rc.senseOre(currentLocation) > threshold && Handler.rc.canMove(Handler.myLoc.directionTo(currentLocation))
-                        && distance < bestDistance && !occupied[MapUtils.encode(currentLocation)]) {
-                    bestLocation = currentLocation;
-                    bestDistance = distance;
+                    int distance = currentLocation.distanceSquaredTo(Handler.myHQ);
+                    if (ore > threshold && Handler.rc.canMove(Handler.myLoc.directionTo(currentLocation))
+                            && distance < bestDistance) {
+                        bestLocation = currentLocation;
+                        bestDistance = distance;
+                    }
                 }
             }
             currentDirection = currentDirection.rotateLeft();

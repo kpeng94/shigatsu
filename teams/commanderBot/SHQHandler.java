@@ -88,7 +88,19 @@ public class SHQHandler extends StructureHandler {
 
 		rc.broadcast(Comm.COMMANDER_RALLY_DEST_CHAN, MapUtils.encode(enemyHQ));
 		
-		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
+		RobotInfo[] nearbyRobots = Handler.rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED, Handler.myTeam);
+		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD, nearbyRobots);
+
+		for (int i = nearbyRobots.length; --i >= 0;) {
+			RobotInfo robot = nearbyRobots[i];
+			if (robot.type == RobotType.COMMANDER) {
+				int neededSupply = (int) (20 * (rc.getRoundLimit() - Clock.getRoundNum()) - robot.supplyLevel);
+				if (neededSupply > 0) {
+					rc.transferSupplies((int) (rc.getSupplyLevel() > neededSupply ? neededSupply : rc.getSupplyLevel()), robot.location);
+				}
+			}
+		}
+		
 		Distribution.spendBytecodesCalculating(7500);
 	}
 

@@ -113,13 +113,37 @@ public class Attack {
 		return (int) (Handler.rc.getSupplyLevel() / Handler.typ.supplyUpkeep);
 	}
 	
+	// Number of turns for an enemy's delay to reduce down to <= 1
+	public static int numTurnsUntilAction(RobotInfo enemy, double delay) {
+		if (delay <= 1.0) return 0;
+		delay -= 1.0;
+		int supplyTurns = numberOfTurnsOfSupply(enemy);
+		if (delay > supplyTurns) {
+			return supplyTurns + MAGICI - (int) (MAGICD - (delay - supplyTurns) / 0.5);
+		} else {
+			return MAGICI - (int) (MAGICD - delay); // Ceiling of delay
+		}
+	}
+	
+	// Calculates the number of turns it takes for the delay to reduce down to <= 1
+	public static int numTurnsUntilAction(double delay) {
+		if (delay <= 1.0) return 0;
+		delay -= 1.0;
+		int supplyTurns = numberOfTurnsOfSupply();
+		if (delay > supplyTurns) {
+			return supplyTurns + MAGICI - (int) (MAGICD - (delay - supplyTurns) / 0.5);
+		} else {
+			return MAGICI - (int) (MAGICD - delay); // Ceiling of delay
+		}
+	}
+	
 	// Two magic constants used for fast ceil
 	public static final double MAGICD = 32768.;
 	public static final int MAGICI = 32768;
 	
-	// Returns true if you can be hit within the turnLimit (<=)
+	// Calculates the minimum number of turns until the enemy can hit you in
 	// Only use when close to enemy (too many bytecodes otherwise)
-	public static boolean canBeAttackedInTurns(RobotInfo enemy, int turnLimit) {
+	public static int canBeAttackedInTurns(RobotInfo enemy) {
 		int supplyTurns = numberOfTurnsOfSupply(enemy);
 		int turns = 0;
 		int dist = Handler.myLoc.distanceSquaredTo(enemy.location);
@@ -127,7 +151,6 @@ public class Attack {
 		double lastCoreChange = 0;
 		MapLocation check = enemy.location;
 		while (dist > enemy.type.attackRadiusSquared) { // enemy has to move into range before attacking
-			if (maxCore - 1 > turnLimit) return false; // Cannot be hit
 			Direction dir = check.directionTo(Handler.myLoc);
 			if (dir.isDiagonal()) {
 				lastCoreChange = 1.4 * enemy.type.movementDelay;
@@ -154,19 +177,17 @@ public class Attack {
 			}
 		}
 
-		if (turns > turnLimit) return false;
-		
 		double remainingDelay = enemy.weaponDelay - delayPassed;
 		double weaponDelay = remainingDelay > enemy.type.loadingDelay ? remainingDelay : enemy.type.loadingDelay;
 		
 		if (weaponDelay > 1.0) {
 			weaponDelay -= 1.0;
 			if (weaponDelay > supplyTurns) {
-				turns += supplyTurns + MAGICI - (int) (MAGICD - (weaponDelay - supplyTurns) / 0.5);
+				return turns + supplyTurns + MAGICI - (int) (MAGICD - (weaponDelay - supplyTurns) / 0.5);
 			} else {
-				turns += MAGICI - (int) (MAGICD - weaponDelay);
+				return turns + MAGICI - (int) (MAGICD - weaponDelay);
 			}
 		}
-		return turns <= turnLimit;
+		return turns;
 	}
 }

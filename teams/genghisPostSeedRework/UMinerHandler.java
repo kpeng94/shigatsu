@@ -50,11 +50,11 @@ public class UMinerHandler extends UnitHandler {
     protected static void execute() throws GameActionException {
         executeUnit();
         Count.incrementBuffer(Comm.getMinerId());
+        RobotInfo[] enemies = rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam);
         if (rc.isWeaponReady()) {
-            Attack.tryAttackClosestButKillIfPossible(rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam));
+            Attack.tryAttackClosestButKillIfPossible(enemies);
         }
-
-        if (rc.isCoreReady()) {
+        if (rc.isCoreReady() && enemies.length == 0) {
             // Moving to frontier
             if (movingToFrontier) {
                 minerNav();

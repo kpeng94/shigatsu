@@ -52,34 +52,34 @@ public class SHQHandler extends StructureHandler {
         
         MapLocation[] enemyLoc = rc.senseEnemyTowerLocations();
         if (enemyLoc.length >= 1) {
-            LauncherWave.setWave(0, MapUtils.encode(enemyLoc[0]));
+            LauncherSquadrons.setWave(0, MapUtils.encode(enemyLoc[0]));
         } else {
-            LauncherWave.setWave(0, MapUtils.encode(enemyHQ));
+            LauncherSquadrons.setWave(0, MapUtils.encode(enemyHQ));
         }
         if (enemyLoc.length >= 2) {
-            LauncherWave.setWave(1, MapUtils.encode(enemyLoc[1]));
+            LauncherSquadrons.setWave(1, MapUtils.encode(enemyLoc[1]));
         } else {
-            LauncherWave.setWave(1, MapUtils.encode(enemyHQ));
+            LauncherSquadrons.setWave(1, MapUtils.encode(enemyHQ));
         }
         if (enemyLoc.length >= 3) {
-            LauncherWave.setWave(2, MapUtils.encode(enemyLoc[2]));
+            LauncherSquadrons.setWave(2, MapUtils.encode(enemyLoc[2]));
         } else {
-            LauncherWave.setWave(2, MapUtils.encode(enemyHQ));
+            LauncherSquadrons.setWave(2, MapUtils.encode(enemyHQ));
         }
         if (enemyLoc.length >= 4) {
-            LauncherWave.setWave(3, MapUtils.encode(enemyLoc[3]));
+            LauncherSquadrons.setWave(3, MapUtils.encode(enemyLoc[3]));
         } else {
-            LauncherWave.setWave(3, MapUtils.encode(enemyHQ));
+            LauncherSquadrons.setWave(3, MapUtils.encode(enemyHQ));
         }
         if (enemyLoc.length >= 5) {
-            LauncherWave.setWave(4, MapUtils.encode(enemyLoc[4]));
+            LauncherSquadrons.setWave(4, MapUtils.encode(enemyLoc[4]));
         } else {
-            LauncherWave.setWave(4, MapUtils.encode(enemyHQ));
+            LauncherSquadrons.setWave(4, MapUtils.encode(enemyHQ));
         }
         if (enemyLoc.length >= 6) {
-            LauncherWave.setWave(5, MapUtils.encode(enemyLoc[5]));
+            LauncherSquadrons.setWave(5, MapUtils.encode(enemyLoc[5]));
         } else {
-            LauncherWave.setWave(5, MapUtils.encode(enemyHQ));
+            LauncherSquadrons.setWave(5, MapUtils.encode(enemyHQ));
         }
         // END TEST CODE
     }
@@ -110,9 +110,9 @@ public class SHQHandler extends StructureHandler {
         updateLimits();
         updateOreCounts();
         // TEST CODE
-        LauncherWave.resetCounts();
-        rc.setIndicatorString(2, Clock.getRoundNum() + ": Launcher Squadron 2: " + LauncherWave.getSquadCount(2));
-        rc.setIndicatorString(1, Clock.getRoundNum() + ": Launcher Squadron 1: " + LauncherWave.getSquadCount(1));
+        LauncherSquadrons.resetCounts();
+        rc.setIndicatorString(2, Clock.getRoundNum() + ": Launcher Squadron 2: " + LauncherSquadrons.getSquadCount(2));
+        rc.setIndicatorString(1, Clock.getRoundNum() + ": Launcher Squadron 1: " + LauncherSquadrons.getSquadCount(1));
 
         Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
         Distribution.spendBytecodesCalculating(7500);

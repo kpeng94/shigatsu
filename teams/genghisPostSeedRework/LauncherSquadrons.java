@@ -2,7 +2,7 @@ package genghisPostSeedRework;
 
 import battlecode.common.*;
 
-public class LauncherWave {
+public class LauncherSquadrons {
 
     // Currently 6 squadrons; can be changed to any number.
     private static final int[] WAVE_OFFSETS = { 100, 101, 102, 103, 104, 105 };

@@ -49,13 +49,13 @@ public class ULauncherHandler extends UnitHandler {
 		myWaveNumber = Comm.readBlock(Comm.getLauncherId(), Comm.WAVENUM_OFFSET);
 		
 		// TEST CODE
-		LauncherWave.setSquadNumber(myWaveNumber % 6);
+		LauncherSquadrons.setSquadNumber(myWaveNumber % 6);
 	}
 
 	protected static void execute() throws GameActionException {
 		executeUnit();
 		Count.incrementBuffer(Comm.getLauncherId());
-		LauncherWave.launcherRoleCall();
+		LauncherSquadrons.launcherRoleCall();
 		int minDistance = Integer.MAX_VALUE;
 		
 		int numMyTowers = rc.senseTowerLocations().length;
@@ -110,8 +110,8 @@ public class ULauncherHandler extends UnitHandler {
 
 	private static void rushCode() throws GameActionException {
 	    // TEST CODE
-		MapLocation destination = MapUtils.decode(LauncherWave.getWave(LauncherWave.squadronNumber) & 0xFFFF);
-		rc.setIndicatorString(0, "I am in squadron " + LauncherWave.squadronNumber + " going to " + destination);
+		MapLocation destination = MapUtils.decode(LauncherSquadrons.getWave(LauncherSquadrons.squadronNumber) & 0xFFFF);
+		rc.setIndicatorString(0, "I am in squadron " + LauncherSquadrons.squadronNumber + " going to " + destination);
 		NavTangentBug.setDest(destination);
 		NavTangentBug.calculate(2500);
 		if (rc.isCoreReady()

@@ -84,7 +84,8 @@ public class SHQHandler extends StructureHandler {
 		
 		RobotInfo[] nearbyRobots = Handler.rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED, Handler.myTeam);
 		Supply.incExpiration();
-		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD, nearbyRobots);
+		Supply.distributeHQSupply();
+//		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD, nearbyRobots);
 		
 		for (int i = nearbyRobots.length; --i >= 0;) {
 			RobotInfo robot = nearbyRobots[i];

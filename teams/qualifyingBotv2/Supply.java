@@ -15,7 +15,7 @@ public class Supply {
 		RobotInfo[] nearbyRobots = Handler.rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED, Handler.myTeam);
 		for (int i = nearbyRobots.length; --i >= 0;) {
 			RobotInfo robot = nearbyRobots[i];
-			if (robot.type == RobotType.MISSILE || robot.type.isBuilding) continue;
+			if (robot.type == RobotType.MISSILE || robot.type.isBuilding || robot.type == RobotType.DRONE) continue;
 			if (robot.type == RobotType.COMMANDER) {
 				commander = robot;
 				continue;
@@ -59,7 +59,7 @@ public class Supply {
 		
 		for (int i = nearbyRobots.length; --i >= 0;) {
 			RobotInfo robot = nearbyRobots[i];
-			if (robot.type == RobotType.MISSILE || robot.type.isBuilding) continue;
+			if (robot.type == RobotType.MISSILE || robot.type.isBuilding || robot.type == RobotType.DRONE) continue;
 			if (robot.type == RobotType.COMMANDER) {
 				commander = robot;
 				continue;
@@ -96,11 +96,9 @@ public class Supply {
 	
 	private static int NUM_SUPPLIER_OFF = 0;
 	private static int LAST_UPDATED_OFF = 1;
-	private static int LOC_X_OFF = 2;
-	private static int LOC_Y_OFF = 3;
+	private static int LOC_OFF = 2;
 	private static int TAR_ACTIVE = 10;
-	private static int TAR_X_OFF = 11;
-	private static int TAR_Y_OFF = 12;
+	private static int TAR_LOC_OFF = 11;
 	private static int TAR_TYPE_OFF = 13;
 	
 	private static MapLocation dumpLoc;
@@ -123,14 +121,11 @@ public class Supply {
 	 */
 	public static void distributeHQSupply() throws GameActionException {
 		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
-		Handler.rc.setIndicatorString(0, "Supplier x: " + Comm.readBlock(getSupplierId(), LOC_X_OFF));
-		Handler.rc.setIndicatorString(1, "Supplier y: " + Comm.readBlock(getSupplierId(), LOC_Y_OFF));
 		
-		if (!supplierNeeded()) {
-			MapLocation supplierLoc = new MapLocation(Comm.readBlock(getSupplierId(), LOC_X_OFF),
-				Comm.readBlock(getSupplierId(), LOC_Y_OFF));
+		if (!supplierNeeded() && Comm.readBlock(getSupplierId(), TAR_ACTIVE) == 1) {
+			MapLocation supplierLoc = MapUtils.decode(Comm.readBlock(getSupplierId(), LOC_OFF));
 			if (Handler.myLoc.distanceSquaredTo(supplierLoc) < GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED && Handler.rc.senseRobotAtLocation(supplierLoc) != null) {
-				Handler.rc.transferSupplies((int) Handler.rc.getSupplyLevel(), supplierLoc);
+				Handler.rc.transferSupplies((int) Handler.rc.getSupplyLevel() - 1000, supplierLoc);
 			}
 		}
 	}
@@ -141,10 +136,11 @@ public class Supply {
 	 * Writes the dump criteria (location and type of robot to receive supply)
 	 */
 	public static void dumpSupplyTo(MapLocation loc, RobotType unit) throws GameActionException {
-		Comm.writeBlock(getSupplierId(), TAR_ACTIVE, 1);
-		Comm.writeBlock(getSupplierId(), TAR_X_OFF, loc.x);
-		Comm.writeBlock(getSupplierId(), TAR_Y_OFF, loc.y);
-		Comm.writeBlock(getSupplierId(), TAR_TYPE_OFF, unit.ordinal());
+		if (Comm.readBlock(getSupplierId(), TAR_ACTIVE) == 0) {
+			Comm.writeBlock(getSupplierId(), TAR_ACTIVE, 1);
+			Comm.writeBlock(getSupplierId(), TAR_LOC_OFF, MapUtils.encode(loc));
+			Comm.writeBlock(getSupplierId(), TAR_TYPE_OFF, unit.ordinal());
+		}
 	}
 	
 	/**
@@ -204,9 +200,7 @@ public class Supply {
 	/** Reads the dump target criteria for the supplier */
 	private static void checkDumpDetails() throws GameActionException {
 		if (Comm.readBlock(getSupplierId(), TAR_ACTIVE) == 1) {
-			dumpLoc = new MapLocation(
-					Comm.readBlock(getSupplierId(), TAR_X_OFF),
-					Comm.readBlock(getSupplierId(), TAR_Y_OFF));
+			dumpLoc = MapUtils.decode(Comm.readBlock(getSupplierId(), TAR_LOC_OFF));
 			dumpTarget = RobotType.values()[Comm.readBlock(getSupplierId(), TAR_TYPE_OFF)];
 		} else {
 			dumpLoc = null;
@@ -218,13 +212,13 @@ public class Supply {
 	 * Supplier dumps on any unit nearby that satisfies the dump target criteria
 	 */
 	private static void dumpIfPossible(int supplyLevel) throws GameActionException {
-		if (dumpLoc != null && dumpTarget != null/* && Handler.myLoc.distanceSquaredTo(dumpLoc) < 2 * GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED*/) {
+		if (dumpLoc != null && dumpTarget != null && Handler.myLoc.distanceSquaredTo(dumpLoc) < GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED) {
 			RobotInfo[] allies = Handler.rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED, Handler.myTeam);
 			for (RobotInfo ally: allies) {
 				if (ally.type == dumpTarget) {
 					int toTransfer = 2 * supplyLevel - supplyBeforeLeaving;
 					Handler.rc.transferSupplies(toTransfer, ally.location);
-					Comm.writeBlock(getSupplierId(), TAR_ACTIVE, 0);
+					deactivateDump();
 					supplyBeforeLeaving = 0;
 					return;
 				}
@@ -235,8 +229,7 @@ public class Supply {
 	/** Supplier checks in */
 	private static void update() throws GameActionException {
 		Comm.writeBlock(getSupplierId(), LAST_UPDATED_OFF, 0);
-		Comm.writeBlock(getSupplierId(), LOC_X_OFF, Handler.myLoc.x);
-		Comm.writeBlock(getSupplierId(), LOC_Y_OFF, Handler.myLoc.y);
+		Comm.writeBlock(getSupplierId(), LOC_OFF, MapUtils.encode(Handler.myLoc));
 	}
 	
 	/*-------------------------------- COMM FUNCTIONS --------------------------------*/

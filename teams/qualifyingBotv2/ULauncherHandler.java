@@ -106,7 +106,6 @@ public class ULauncherHandler extends UnitHandler {
 	private static void rushCode() throws GameActionException {
 		MapLocation destination = closestLocation;
 		NavTangentBug.setDest(destination);
-		Supply.dumpSupplyTo(destination, RobotType.LAUNCHER);
 		NavTangentBug.calculate(2500);
 		if (rc.isCoreReady()
 				&& rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam).length == 0) {
@@ -116,6 +115,9 @@ public class ULauncherHandler extends UnitHandler {
 			} else if (nextMove != Direction.NONE) {
 				NavSimple.walkTowards(nextMove);
 			}
+		}
+		if (rc.getSupplyLevel() < 100) {
+			Supply.dumpSupplyTo(myLoc, RobotType.LAUNCHER);
 		}
 	}
 

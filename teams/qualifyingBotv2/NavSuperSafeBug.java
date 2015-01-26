@@ -178,6 +178,9 @@ public class NavSuperSafeBug {
 				if (enemy.type == RobotType.LAUNCHER && loc.distanceSquaredTo(enemy.location) <= 18) {
 					return false;
 				}
+				if (enemy.type == RobotType.MISSILE && loc.distanceSquaredTo(enemy.location) <= 8) {
+					return false;
+				}
 			}
 		}
 		

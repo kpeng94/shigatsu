@@ -48,6 +48,7 @@ public class Supply {
 	
 	private static MapLocation dumpLoc;
 	private static RobotType dumpTarget;
+	private static int supplyBeforeLeaving;
 	
 	/* The following functions should be called by HQ */
 	
@@ -112,6 +113,7 @@ public class Supply {
 	 */
 	public static void initSupplier() throws GameActionException {
 		Comm.writeBlock(getSupplierId(), NUM_SUPPLIER_OFF, 1);
+		supplyBeforeLeaving = 0;
 	}
 	
 	/**
@@ -121,6 +123,9 @@ public class Supply {
 	 */
 	public static void execSupplier() throws GameActionException {
 		int mySupply = (int) Handler.rc.getSupplyLevel();
+		if (mySupply > supplyBeforeLeaving) {
+			supplyBeforeLeaving = mySupply;
+		}
 		
 		checkDumpDetails();
 		
@@ -133,10 +138,9 @@ public class Supply {
 				Direction nextDir = NavSuperSafeBug.dirToBugIn(dumpLoc);
 				if (nextDir != null && nextDir != Direction.NONE)
 					Handler.rc.move(nextDir);
+				dumpIfPossible(mySupply);
 			}
 		}
-		
-		dumpIfPossible(mySupply);
 		update();
 	}
 	
@@ -157,11 +161,14 @@ public class Supply {
 	 * Supplier dumps on any unit nearby that satisfies the dump target criteria
 	 */
 	private static void dumpIfPossible(int supplyLevel) throws GameActionException {
-		if (dumpLoc != null && dumpTarget != null && Handler.myLoc.distanceSquaredTo(dumpLoc) < 2 * GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED) {
+		if (dumpLoc != null && dumpTarget != null/* && Handler.myLoc.distanceSquaredTo(dumpLoc) < 2 * GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED*/) {
 			RobotInfo[] allies = Handler.rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED, Handler.myTeam);
 			for (RobotInfo ally: allies) {
 				if (ally.type == dumpTarget) {
-					Handler.rc.transferSupplies(supplyLevel, ally.location);
+					int toTransfer = 2 * supplyLevel - supplyBeforeLeaving;
+					Handler.rc.transferSupplies(toTransfer, ally.location);
+					Comm.writeBlock(getSupplierId(), TAR_ACTIVE, 0);
+					supplyBeforeLeaving = 0;
 					return;
 				}
 			}

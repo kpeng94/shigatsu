@@ -36,14 +36,15 @@ public class Supply {
 				if (neededSupply > 0) {
 					Handler.rc.transferSupplies((availableSupply > neededSupply ? neededSupply : availableSupply), commander.location);
 				}
-			} else {
-				double over = Handler.rc.getSupplyLevel() - avgSupply;
-				double under = avgSupply - minSupply;
-				if (over > threshold && under >= over) {
-					Handler.rc.transferSupplies((int) over, minLocation);
-				} else if (under > threshold && over > under) {
-					Handler.rc.transferSupplies((int) under, minLocation);
-				}
+			}
+		}
+		if (Handler.rc.getSupplyLevel() > avgSupply) { // Should transfer supply
+			double over = Handler.rc.getSupplyLevel() - avgSupply;
+			double under = avgSupply - minSupply;
+			if (over > threshold && under >= over) {
+				Handler.rc.transferSupplies((int) over, minLocation);
+			} else if (under > threshold && over > under) {
+				Handler.rc.transferSupplies((int) under, minLocation);
 			}
 		}
 	}
@@ -79,14 +80,15 @@ public class Supply {
 				if (neededSupply > 0) {
 					Handler.rc.transferSupplies((availableSupply > neededSupply ? neededSupply : availableSupply), commander.location);
 				}
-			} else {
-				double over = Handler.rc.getSupplyLevel() - avgSupply;
-				double under = avgSupply - minSupply;
-				if (over > threshold && under >= over) {
-					Handler.rc.transferSupplies((int) over, minLocation);
-				} else if (under > threshold && over > under) {
-					Handler.rc.transferSupplies((int) under, minLocation);
-				}
+			}
+		}
+		if (Handler.rc.getSupplyLevel() > avgSupply) { // Should transfer supply
+			double over = Handler.rc.getSupplyLevel() - avgSupply;
+			double under = avgSupply - minSupply;
+			if (over > threshold && under >= over) {
+				Handler.rc.transferSupplies((int) over, minLocation);
+			} else if (under > threshold && over > under) {
+				Handler.rc.transferSupplies((int) under, minLocation);
 			}
 		}
 	}	

@@ -295,7 +295,7 @@ public class UCommanderHandler extends UnitHandler {
 				Direction nextMove = NavTangentBug.getNextMove();
 				if (rc.getHealth() <= 150 && lastLauncherLocation != null && myLoc.add(nextMove).distanceSquaredTo(lastLauncherLocation) <= 24) return;
 				if (nextMove != Direction.NONE) {
-					NavSimple.walkTowardsDirected(nextMove);
+					NavSimple.walkTowards(nextMove);
 				}
 			}
 			prevNavTangent = true;

@@ -24,9 +24,7 @@ public class Attack {
 		MapLocation minMissileLoc = null;
 		for (int i = enemies.length; --i >= 0;) {
 			RobotInfo enemy = enemies[i];
-			if (enemies[i].type == RobotType.MISSILE) { // Focus lower hp
-				// missiles, followed by
-				// closer missiles
+			if (enemies[i].type == RobotType.MISSILE) { // Focus lower hp missiles, followed by closer missiles
 				if (enemy.health == 1) { // insta kill low hp missile
 					Handler.rc.attackLocation(enemy.location);
 					return;
@@ -38,8 +36,7 @@ public class Attack {
 					minMissileLoc = enemy.location;
 				}
 			} else {
-				if (enemy.health < Handler.typ.attackPower) { // insta kill low
-					// hp enemy
+				if (enemy.health < Handler.typ.attackPower) { // insta kill low hp enemy
 					Handler.rc.attackLocation(enemy.location);
 					return;
 				}
@@ -54,6 +51,75 @@ public class Attack {
 		if (minDist == 999999) { // only missiles
 			Handler.rc.attackLocation(minMissileLoc);
 		} else {
+			Handler.rc.attackLocation(minLoc);
+		}
+	}
+	
+	//  Priorities:
+	//	missiles with 1 hp
+	//	enemies that can be killed in 1 shot
+	//  enemy with the lowest action time
+	//	closest enemy
+	//  next acting missile
+	//	lowest hp enemy
+	//	lowest hp missile
+	//	closest missile
+	public static void tryAttackLowestDelay(RobotInfo[] enemies) throws GameActionException {
+		if (enemies.length == 0)
+			return;
+
+		int minDist = 999999;
+		int minHP = 999999;
+		int minTurnsUntilAction = 999999;
+		MapLocation minLoc = null;
+
+		int minMissileDist = 999999;
+		int minMissileHP = 999999;
+		int minMissileTurnsUntilAction = 999999;
+		MapLocation minMissileLoc = null;
+		for (int i = enemies.length; --i >= 0;) {
+			RobotInfo enemy = enemies[i];
+			if (enemies[i].type == RobotType.MISSILE) { // Focus lower hp missiles, followed by closer missiles
+				if (enemy.health == 1) { // insta kill low hp missile
+					Handler.rc.attackLocation(enemy.location);
+					return;
+				}
+				double moveDelay = enemy.coreDelay;
+				int turnsUntilMove = moveDelay > 1.0 ?  MAGICI - (int) (MAGICD - (moveDelay - 1.0)): 0;
+				int dist = enemy.location.distanceSquaredTo(Handler.myLoc);
+				if (turnsUntilMove < minMissileTurnsUntilAction || (turnsUntilMove == minMissileTurnsUntilAction && enemy.health < minMissileHP)
+						|| (turnsUntilMove == minMissileTurnsUntilAction && enemy.health == minMissileHP && dist < minMissileDist)) {
+					minMissileDist = dist;
+					minMissileHP = (int) enemy.health;
+					minMissileLoc = enemy.location;
+					minMissileTurnsUntilAction = turnsUntilMove;
+				}
+			} else {
+				if (enemy.health < Handler.typ.attackPower) { // insta kill low hp enemy
+					Handler.rc.attackLocation(enemy.location);
+					return;
+				}
+				int supplyTurns = numberOfTurnsOfSupply(enemy);
+				int turnsUntilAction = 0;
+				int dist = enemy.location.distanceSquaredTo(Handler.myLoc);
+				if (dist <= enemy.type.attackRadiusSquared || (enemy.type == RobotType.LAUNCHER && dist <= 18)) { // Enemy is in range to attack
+					turnsUntilAction = numTurnsUntilAction(enemy, enemy.weaponDelay, supplyTurns);
+				} else { // Check enemy movement
+					turnsUntilAction = numTurnsUntilAction(enemy, enemy.coreDelay, supplyTurns);		
+				}
+				if (turnsUntilAction < minTurnsUntilAction || (turnsUntilAction == minTurnsUntilAction && dist < minDist)
+						|| (turnsUntilAction == minTurnsUntilAction && dist == minDist && enemy.health < minHP)) {
+					minDist = dist;
+					minHP = (int) enemy.health;
+					minLoc = enemy.location;
+					minTurnsUntilAction = turnsUntilAction;
+				}
+			}
+		}
+		if (minDist == 999999) { // only missiles
+			Handler.rc.attackLocation(minMissileLoc);
+		} else {
+			Handler.rc.setIndicatorString(0, Clock.getRoundNum() + " " + minLoc + " " + minTurnsUntilAction);
 			Handler.rc.attackLocation(minLoc);
 		}
 	}
@@ -137,6 +203,28 @@ public class Attack {
 		}
 	}
 	
+	// Number of turns for an enemy's delay to reduce down to <= 1
+		public static int numTurnsUntilAction(RobotInfo enemy, double delay, int supplyTurns) {
+			if (delay <= 1.0) return 0;
+			delay -= 1.0;
+			if (delay > supplyTurns) {
+				return supplyTurns + MAGICI - (int) (MAGICD - (delay - supplyTurns) / 0.5);
+			} else {
+				return MAGICI - (int) (MAGICD - delay); // Ceiling of delay
+			}
+		}
+		
+		// Calculates the number of turns it takes for the delay to reduce down to <= 1
+		public static int numTurnsUntilAction(double delay, int supplyTurns) {
+			if (delay <= 1.0) return 0;
+			delay -= 1.0;
+			if (delay > supplyTurns) {
+				return supplyTurns + MAGICI - (int) (MAGICD - (delay - supplyTurns) / 0.5);
+			} else {
+				return MAGICI - (int) (MAGICD - delay); // Ceiling of delay
+			}
+		}
+	
 	// Two magic constants used for fast ceil
 	public static final double MAGICD = 32768.;
 	public static final int MAGICI = 32768;
@@ -148,7 +236,7 @@ public class Attack {
 		int turns = 0;
 		int dist = Handler.myLoc.distanceSquaredTo(enemy.location);
 		double maxCore = enemy.coreDelay;
-		double lastCoreChange = 0;
+		double lastCoreChange = enemy.coreDelay;
 		MapLocation check = enemy.location;
 		while (dist > enemy.type.attackRadiusSquared) { // enemy has to move into range before attacking
 			Direction dir = check.directionTo(Handler.myLoc);

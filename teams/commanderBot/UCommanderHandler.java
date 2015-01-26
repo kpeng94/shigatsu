@@ -10,6 +10,7 @@ public class UCommanderHandler extends UnitHandler {
 	public static final int HQ_SPLASH_THRESHOLD = 75;
 	public static final int ALLY_RADIUS = 15;
 	public static final int AGGRO_FLASH_THRESHOLD = 50;
+	public static final int LAUNCHER_DANGER_RESET_THRESHOLD = 25;
 	
 	public static int prevRally; // Previously rally point value (to determine when to update)
 	public static MapLocation rallyPoint; // Commander rally point
@@ -20,6 +21,9 @@ public class UCommanderHandler extends UnitHandler {
 	
 	public static boolean prevNavTangent; // Whether the previous navigation was tangent bug or not
 	public static boolean justFlashed;
+	
+	public static MapLocation lastLauncherLocation; // Weighted avg location of the last launcher blob spotted
+	public static int lastLauncherRound; // round last seen a launcher at
 	
 	public static int safeTurns; // Number of safe turns in a row
 	
@@ -49,6 +53,8 @@ public class UCommanderHandler extends UnitHandler {
 		prevNavTangent = true;
 		justFlashed = false;
 		safeTurns = 0;
+		lastLauncherLocation = null;
+		lastLauncherRound = 0;
 	}
 
 	protected static void execute() throws GameActionException {
@@ -68,6 +74,10 @@ public class UCommanderHandler extends UnitHandler {
 		sensedEnemies = rc.senseNearbyRobots(typ.sensorRadiusSquared, otherTeam);
 		nearbyAllies = rc.senseNearbyRobots(ALLY_RADIUS, myTeam);
 
+		if (Clock.getRoundNum() - lastLauncherRound > LAUNCHER_DANGER_RESET_THRESHOLD) { // Reset old launcher locations
+			lastLauncherLocation = null;
+		}
+		
 //		if (Clock.getRoundNum() >= rc.readBroadcast(Comm.FINAL_PUSH_ROUND_CHAN)) { // FINAL PUSH!!! (ignore micro for most part)
 //			if (rc.isWeaponReady()) {
 //				Attack.tryAttackPrioritizeTowers();
@@ -115,7 +125,11 @@ public class UCommanderHandler extends UnitHandler {
 	}
 	
 	protected static void attackMicro() throws GameActionException {
-		Attack.tryAttackClosestButKillIfPossible(attackableEnemies);
+		if (rc.hasLearnedSkill(CommanderSkillType.HEAVY_HANDS)) {
+			Attack.tryAttackLowestDelay(attackableEnemies);
+		} else {
+			Attack.tryAttackClosestButKillIfPossible(attackableEnemies);
+		}
 	}
 	
 	protected static void moveMicro() throws GameActionException {
@@ -132,6 +146,10 @@ public class UCommanderHandler extends UnitHandler {
 		int missileSeen = 0;
 		int missileClose = 0;
 		
+		int launcherx = 0;
+		int launchery = 0;
+		int launchernum = 0;
+		
 		double afterMoveDelay = rc.getCoreDelay() + typ.movementDelay;
 		int turnsUntilNextMove = Attack.numTurnsUntilAction(afterMoveDelay);
 		
@@ -139,6 +157,10 @@ public class UCommanderHandler extends UnitHandler {
 			RobotInfo enemy = sensedEnemies[i];
 			int dist = myLoc.distanceSquaredTo(enemy.location);
 			if (enemy.type == RobotType.LAUNCHER) {
+				launcherx += enemy.location.x;
+				launchery += enemy.location.y;
+				launchernum++;
+						
 				int numMissiles = enemy.missileCount;
 				if (numMissiles > 0) { // has missiles to shoot
 					if (dist <= 18) {
@@ -217,6 +239,11 @@ public class UCommanderHandler extends UnitHandler {
 			}
 		}
 		
+		if (launchernum > 0) { // seen a launcher
+			lastLauncherLocation = new MapLocation(launcherx / launchernum, launchery / launchernum);
+			lastLauncherRound = Clock.getRoundNum();
+		}
+		
 		rc.setIndicatorString(1, Clock.getRoundNum() + " " + immediateDamage + " " + soonDamage);
 		// Run if in too much immediate danger
 		boolean flashSuccess = false;
@@ -232,11 +259,12 @@ public class UCommanderHandler extends UnitHandler {
 				NavSimple.walkTowardsSafe(runDir);
 			} else if (missileSeen == 0 && soonDamage < rc.getHealth() / 5 &&
 					((rc.getSupplyLevel() > 150 && rc.getHealth() > 50) || (rc.getSupplyLevel() <= 150 && rc.getHealth() > 100))) { // Safe for a while, try to move closer
-				if (target == null || attackableEnemies.length >= 2 || sensedEnemies.length >= 5) return;
+				if (target == null || attackableEnemies.length >= 3 || sensedEnemies.length >= 10) return;
 				if (rc.getSupplyLevel() <= 50 && rc.getCoreDelay() > 0) return;
 				rc.setIndicatorString(2, Clock.getRoundNum() + " walking forward");
-//				if (rand.nextAnd(31) == 0) NavSafeBug.resetDir(); // Randomly reset dir just in case we are stuck
+				if (rand.nextAnd(31) == 0) NavSafeBug.resetDir(); // Randomly reset dir just in case we are stuck
 				Direction towardsDir = NavSafeBug.dirToBugIn(target.location);
+				if (rc.getHealth() <= 150 && lastLauncherLocation != null && myLoc.add(towardsDir).distanceSquaredTo(lastLauncherLocation) <= 24) return;
 				if (towardsDir != Direction.NONE) {
 					rc.move(towardsDir);
 				}
@@ -255,6 +283,7 @@ public class UCommanderHandler extends UnitHandler {
 		int HQ_threshold = enemyTowers.length >= 5 ? HQ_SPLASH_THRESHOLD : (enemyTowers.length >= 2 ? HQ_LARGE_THRESHOLD : HQ_SMALL_THRESHOLD);
 		if ((closestTower == null || myLoc.distanceSquaredTo(closestTower) > TOWER_THRESHOLD) && myLoc.distanceSquaredTo(enemyHQ) > HQ_threshold) { // Out of range, resume tangent bugging
 			Direction towardsRally = myLoc.directionTo(rallyPoint);
+			rc.setIndicatorString(2, Clock.getRoundNum() + " tangenting");
 			if (safeTurns >= AGGRO_FLASH_THRESHOLD && rc.getFlashCooldown() == 0 && flashTowardsDirSafe(towardsRally)) { // Successfully flashed in forward
 				justFlashed = true;
 			} else {
@@ -264,6 +293,7 @@ public class UCommanderHandler extends UnitHandler {
 				}
 				NavTangentBug.calculate(2500);
 				Direction nextMove = NavTangentBug.getNextMove();
+				if (rc.getHealth() <= 150 && lastLauncherLocation != null && myLoc.add(nextMove).distanceSquaredTo(lastLauncherLocation) <= 24) return;
 				if (nextMove != Direction.NONE) {
 					NavSimple.walkTowardsDirected(nextMove);
 				}
@@ -271,9 +301,11 @@ public class UCommanderHandler extends UnitHandler {
 			prevNavTangent = true;
 		} else { // in danger range, safe bug around
 			if (prevNavTangent) {
+				rc.setIndicatorString(2, Clock.getRoundNum() + " bugging and reset dir");
 				NavSafeBug.resetDir();
 			}
 			Direction dir = NavSafeBug.dirToBugIn(rallyPoint);
+			if (rc.getHealth() <= 150 && lastLauncherLocation != null && myLoc.add(dir).distanceSquaredTo(lastLauncherLocation) <= 24) return;
 			if (dir != Direction.NONE) {
 				rc.move(dir);
 			}

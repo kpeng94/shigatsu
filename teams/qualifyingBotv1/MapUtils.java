@@ -67,5 +67,49 @@ public class MapUtils {
 	public static Direction[] dirsSemiCircleRev(Direction dir) {
 		return new Direction[]{dir.rotateLeft().rotateLeft(), dir.rotateRight().rotateRight(), dir.rotateLeft(), dir.rotateRight(), dir};
 	}
+	
+	// Super naive, too lazy to think about symmetries
+	public static int[] getMinMapSize() {
+		int minX = 0;
+		int minY = 0;
+		MapLocation[] myTowers = Handler.rc.senseTowerLocations();
+		for (int i = Handler.enemyTowers.length; --i >= 0;) {
+			for (int j = myTowers.length; --j >= 0;) {
+				int dx = Handler.enemyTowers[i].x - myTowers[j].x;
+				int dy = Handler.enemyTowers[i].y - myTowers[j].y;
+				dx = dx >= 0 ? dx: -dx;
+				dy = dy >= 0 ? dy: -dy;
+				if (dx > minX) {
+					minX = dx;
+				}
+				if (dy > minY) {
+					minY = dy;
+				}
+			}
+			int dx = Handler.enemyTowers[i].x - Handler.myHQ.x;
+			int dy = Handler.enemyTowers[i].y - Handler.myHQ.y;
+			dx = dx >= 0 ? dx: -dx;
+			dy = dy >= 0 ? dy: -dy;
+			if (dx > minX) {
+				minX = dx;
+			}
+			if (dy > minY) {
+				minY = dy;
+			}
+		}
+		int dx = Handler.enemyHQ.x - Handler.myHQ.x;
+		int dy = Handler.enemyHQ.y - Handler.myHQ.y;
+		dx = dx >= 0 ? dx: -dx;
+		dy = dy >= 0 ? dy: -dy;
+		if (dx > minX) {
+			minX = dx;
+		}
+		if (dy > minY) {
+			minY = dy;
+		}
+		
+		int[] xy = {minX, minY};
+		return xy;
+	}
 
 }

@@ -41,7 +41,7 @@ public class UDroneHandler extends UnitHandler {
 //			attackState = true;
 //		}
 		Count.incrementBuffer(Comm.getDroneId());
-		
+
 		if (isSupplier) {
 			Supply.execSupplier();
 			return;
@@ -83,6 +83,7 @@ public class UDroneHandler extends UnitHandler {
 				}
 			}
 		}
+		
 		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
 	}
 	

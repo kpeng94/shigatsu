@@ -78,6 +78,7 @@ public class Attack {
 		int minDist = 999999;
 		int minHP = 999999;
 		int minTurnsUntilAction = 999999;
+		boolean minIsStructure = true;
 		MapLocation minLoc = null;
 
 		int minMissileDist = 999999;
@@ -106,6 +107,7 @@ public class Attack {
 					Handler.rc.attackLocation(enemy.location);
 					return;
 				}
+				if (!minIsStructure && enemy.type.isBuilding) continue;
 				int supplyTurns = numberOfTurnsOfSupply(enemy);
 				int turnsUntilAction = 0;
 				int dist = enemy.location.distanceSquaredTo(Handler.myLoc);
@@ -120,6 +122,7 @@ public class Attack {
 					minHP = (int) enemy.health;
 					minLoc = enemy.location;
 					minTurnsUntilAction = turnsUntilAction;
+					minIsStructure = enemy.type.isBuilding;
 				}
 			}
 		}

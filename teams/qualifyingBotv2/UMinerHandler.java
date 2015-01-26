@@ -50,11 +50,18 @@ public class UMinerHandler extends UnitHandler {
     protected static void execute() throws GameActionException {
         executeUnit();
         Count.incrementBuffer(Comm.getMinerId());
-        RobotInfo[] enemies = rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam);
+        RobotInfo[] attackableEnemies = rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam);
+        RobotInfo[] sensedEnemies = rc.senseNearbyRobots(typ.sensorRadiusSquared, otherTeam);
+        RobotInfo[] sensedAllies = rc.senseNearbyRobots(15, myTeam);
+
         if (rc.isWeaponReady()) {
-            Attack.tryAttackClosestButKillIfPossible(enemies);
+            Attack.tryAttackClosestButKillIfPossible(attackableEnemies);
         }
-        if (rc.isCoreReady() && enemies.length == 0) {
+nav:    if (rc.isCoreReady() && attackableEnemies.length == 0) {
+            // Check if there are any dangerous enemies
+            if(sensedEnemies.length != 0 && minerRetreat(sensedEnemies, sensedAllies))
+                break nav;
+            
             // Moving to frontier
             if (movingToFrontier) {
                 minerNav();
@@ -119,7 +126,7 @@ public class UMinerHandler extends UnitHandler {
             }
         }
 
-        Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
+        Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD, sensedAllies);
         Distribution.spendBytecodesCalculating(Handler.rc.getSupplyLevel() > 50 ? 7500 : 2500);
 
     }
@@ -192,7 +199,7 @@ public class UMinerHandler extends UnitHandler {
             if (prevNavTangent) {
                 NavSafeBug.resetDir();
             }
-            if(frontierLocation == null || frontierLocation.equals(myLoc)){
+            if (frontierLocation == null || frontierLocation.equals(myLoc)) {
                 movingToFrontier = false;
                 return;
             }
@@ -206,6 +213,34 @@ public class UMinerHandler extends UnitHandler {
             }
             prevNavTangent = false;
         }
+    }
+
+    private static boolean minerRetreat(RobotInfo[] enemies, RobotInfo[] allies) throws GameActionException {
+        int totalX = 0;
+        int totalY = 0;
+        int dangerousEnemies = 0;
+        double dangerNum = 0;
+        for (int i = enemies.length; --i >= 0;) {
+            RobotInfo enemy = enemies[i];
+            if (!enemy.type.isBuilding) {
+                totalX += enemy.location.x;
+                totalY += enemy.location.y;
+                dangerousEnemies++;
+                if(enemy.type == RobotType.MISSILE || enemy.type == RobotType.LAUNCHER || enemy.type == RobotType.COMMANDER){
+                    dangerNum += 999; // Get the hell out of there
+                } else {
+                    dangerNum += enemy.type.attackPower / enemy.type.attackDelay;
+                }
+            }
+        }
+        if ((allies.length + 1) > dangerNum)
+            return false;
+        usingBFS = false;
+        prevNavTangent = true;
+        lastTangentStart = null;
+        MapLocation averageEnemyLocation = new MapLocation(totalX / dangerousEnemies, totalY / dangerousEnemies);
+        NavSimple.walkTowardsSafe(myLoc.directionTo(averageEnemyLocation).opposite());
+        return true;
     }
 
 }

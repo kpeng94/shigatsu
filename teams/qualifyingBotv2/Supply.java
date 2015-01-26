@@ -62,6 +62,7 @@ public class Supply {
 			if (robot.type == RobotType.MISSILE || robot.type.isBuilding || robot.type == RobotType.DRONE) continue;
 			if (robot.type == RobotType.COMMANDER) {
 				commander = robot;
+				numBots++;
 				continue;
 			}
 			totalSupply += robot.supplyLevel;
@@ -78,6 +79,7 @@ public class Supply {
 				int neededSupply = (int) (20 * (Handler.rc.getRoundLimit() - Clock.getRoundNum()) - commander.supplyLevel);
 				int availableSupply = (int) (Handler.rc.getSupplyLevel() - avgSupply);
 				if (neededSupply > 0) {
+					Handler.rc.setIndicatorString(2, Clock.getRoundNum() + " transfered supply to commadner " + neededSupply + " " + availableSupply + " " + avgSupply);
 					Handler.rc.transferSupplies((availableSupply > neededSupply ? neededSupply : availableSupply), commander.location);
 				}
 			}

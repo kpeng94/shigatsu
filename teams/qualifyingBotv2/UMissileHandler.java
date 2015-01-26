@@ -6,20 +6,16 @@ public class UMissileHandler extends UnitHandler {
 
 //	private static int BASE_SCORE = 59;
 	private static RobotInfo[] enemies;
-	private static MapLocation destination = null;
-	private static MapLocation nearbyStructure = null;
-	private static MapLocation nearbyUnit = null;
 	private static Direction nextDir = null;
 	private static int timeSinceSpawned;
 
 	public static void loop(RobotController rcon) {
-		try {
-			init(rcon);
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.out.println(typ + " Initialization Exception");
-		}
-
+		rc = rcon;
+		otherTeam = rc.getTeam().opponent();
+		enemyHQ = rc.senseEnemyHQLocation();
+		nextDir = rc.senseHQLocation().directionTo(enemyHQ);
+		timeSinceSpawned = 0;
+		
 		while (true) {
 			try {
 				execute();
@@ -31,43 +27,25 @@ public class UMissileHandler extends UnitHandler {
 		}
 	}
 
-	protected static void init(RobotController rcon) throws GameActionException {
-		rc = rcon;
-		otherTeam = rc.getTeam().opponent();
-		enemyHQ = rc.senseEnemyHQLocation();
-		nextDir = rc.senseHQLocation().directionTo(enemyHQ);
-		timeSinceSpawned = 0;
-	}
-
 	// Currently completely ineffective against kiting.
 	protected static void execute() throws GameActionException {
 		myLoc = rc.getLocation();
 		
+		MapLocation destination = null;
+		MapLocation nearbyStructure = null;
+		MapLocation nearbyUnit = null;
+		
 		enemies = rc.senseNearbyRobots(2 * (5 - timeSinceSpawned) * (5 - timeSinceSpawned), otherTeam);
-		for (int i = 0; i < enemies.length && i < 5; i++) {
-			if (enemies[i].type.isBuilding) {
-				nearbyStructure = enemies[i].location;
+		int max = enemies.length >= 5 ? 5 : enemies.length;
+		for (int i = max; --i >= 0;) {
+			RobotInfo enemy = enemies[i];
+			if (enemy.type.isBuilding) {
+				nearbyStructure = enemy.location;
 				break;
-			} else if (enemies[i].type != RobotType.MISSILE) {
-				nearbyUnit = enemies[i].location;
+			} else if (enemy.type != RobotType.MISSILE) {
+				nearbyUnit = enemy.location;
 			}
 		}
-		
-		// Get information about enemies
-//		if (destination == null) {
-//			enemies = rc.senseNearbyRobots(24, otherTeam);
-//			for (int i = 0; i < enemies.length && i < 8; i++) {
-//				if (enemies[i].type.isBuilding) {
-//					nearbyStructure = enemies[i].location;
-//					break;
-//				} else if (enemies[i].type != RobotType.MISSILE) {
-//					nearbyUnit = enemies[i].location;
-//				}
-//			}
-//			if (enemies.length > 0) {
-//				destination = enemies[0].location;
-//			}
-//		}
 		
 		if (nearbyStructure != null) {
 			destination = nearbyStructure;
@@ -77,7 +55,6 @@ public class UMissileHandler extends UnitHandler {
 			destination = enemyHQ;
 		}
 		
-		// About 270 bytecodes left here.
 		if (destination.distanceSquaredTo(myLoc) <= 2) {
 			rc.explode();
 		}
@@ -97,9 +74,6 @@ public class UMissileHandler extends UnitHandler {
 		}
 		
 		// Reset locations and update the counter
-		destination = null;
-		nearbyStructure = null;
-		nearbyUnit = null;
 		timeSinceSpawned++;
 	}
 }

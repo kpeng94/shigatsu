@@ -81,7 +81,7 @@ public class USoldierHandler extends UnitHandler {
 			}
 		}
 		
-		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD);
+		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD, nearbyAllies);
 		
 	}
 	

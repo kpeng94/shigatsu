@@ -5,8 +5,7 @@ import battlecode.common.*;
 public class ULauncherHandler extends UnitHandler {
 	public static final int LAUNCHER_RUSH_COUNT = 3;
 	public static final int PROXIMITY_DIST = 52;
-
-	private static MapLocation closestLocation;
+	
 	private static LauncherState state = LauncherState.RALLY;
 	private static LauncherState nextState;
 	private static boolean rallied = false;
@@ -15,7 +14,9 @@ public class ULauncherHandler extends UnitHandler {
 	private static MapLocation rallyPoint;
 
 	private static RobotInfo[] sensedEnemies;
+	private static MapLocation closestLocation;
 	private static RobotInfo closestEnemy = null;
+	private static MapLocation closestTower = null;
 	
 	private enum LauncherState {
 		NEW,
@@ -53,29 +54,21 @@ public class ULauncherHandler extends UnitHandler {
 	protected static void execute() throws GameActionException {
 		executeUnit();
 		Count.incrementBuffer(Comm.getLauncherId());
-		int minDistance = Integer.MAX_VALUE;
-		
-		int numMyTowers = rc.senseTowerLocations().length;
 		
 		if (Clock.getRoundNum() >= 1500) {
 			state = LauncherState.RUSH;
 		}
 		
-		if (enemyTowers.length == 0 || (Clock.getRoundNum() >= 1750 && numMyTowers < enemyTowers.length)) {
-			closestLocation = enemyHQ;
-		}
-		if (Clock.getRoundNum() < 1750 || numMyTowers >= enemyTowers.length) {
-			for (int i = enemyTowers.length; --i >= 0;) {
-				int distFromMe = myLoc.distanceSquaredTo(enemyTowers[i]);
-				int distanceFromHQ = myHQ.distanceSquaredTo(enemyTowers[i]);
-				if (distFromMe <= PROXIMITY_DIST && distFromMe < minDistance) {
-					closestLocation = enemyTowers[i];
-					minDistance = distFromMe;
-				} else if (distanceFromHQ < minDistance) {
-					closestLocation = enemyTowers[i];
-					minDistance = distanceFromHQ;
-				}
+		if (enemyTowers.length > 0) {
+			closestTower = Attack.getClosestTower();
+			if (myLoc.distanceSquaredTo(closestTower) < myLoc.distanceSquaredTo(enemyHQ)) {
+				closestLocation = closestTower;
+			} else {
+				closestLocation = enemyHQ;
 			}
+		} else {
+			closestTower = null;
+			closestLocation = enemyHQ;
 		}
 		
 		if (decideAttack()) {
@@ -100,6 +93,10 @@ public class ULauncherHandler extends UnitHandler {
 				break;
 			}
 		}
+		
+		if (rc.getSupplyLevel() < 1000) {
+			Supply.dumpSupplyTo(myLoc, RobotType.LAUNCHER);
+		}
 
 		if (nextState != null) {
 			state = nextState;
@@ -120,9 +117,6 @@ public class ULauncherHandler extends UnitHandler {
 			} else if (nextMove != Direction.NONE) {
 				NavSimple.walkTowards(nextMove);
 			}
-		}
-		if (rc.getSupplyLevel() < 100) {
-			Supply.dumpSupplyTo(myLoc, RobotType.LAUNCHER);
 		}
 	}
 

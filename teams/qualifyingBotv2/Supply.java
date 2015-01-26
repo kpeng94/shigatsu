@@ -95,7 +95,7 @@ public class Supply {
 /*-------------------------------- SUPPLIER FUNCTIONS --------------------------------*/
 	
 	private static int NUM_SUPPLIER_OFF = 0;
-	private static int LAST_UPDATED_OFF = 1;
+//	private static int LAST_UPDATED_OFF = 1;
 	private static int LOC_OFF = 2;
 	private static int TAR_ACTIVE = 10;
 	private static int TAR_LOC_OFF = 11;
@@ -111,8 +111,9 @@ public class Supply {
 	 * Increments the time since the supplier last checked in
 	 */
 	public static void incExpiration() throws GameActionException {
-		int age = Comm.readBlock(getSupplierId(), LAST_UPDATED_OFF);
-		Comm.writeBlock(getSupplierId(), LAST_UPDATED_OFF, age + 1);
+//		int age = Comm.readBlock(getSupplierId(), LAST_UPDATED_OFF);
+//		Comm.writeBlock(getSupplierId(), LAST_UPDATED_OFF, age + 1);
+		Comm.writeBlock(getSupplierId(), NUM_SUPPLIER_OFF, 0);
 	}
 
 	/**
@@ -158,7 +159,7 @@ public class Supply {
 	 * it's been a while since the supplier checked in
 	 */
 	public static boolean supplierNeeded() throws GameActionException {
-		return Comm.readBlock(getSupplierId(), NUM_SUPPLIER_OFF) < 1 || Comm.readBlock(getSupplierId(), LAST_UPDATED_OFF) > 5;
+		return Comm.readBlock(getSupplierId(), NUM_SUPPLIER_OFF) < 1;
 	}
 	
 	/**
@@ -228,7 +229,9 @@ public class Supply {
 	
 	/** Supplier checks in */
 	private static void update() throws GameActionException {
-		Comm.writeBlock(getSupplierId(), LAST_UPDATED_OFF, 0);
+//		Comm.writeBlock(getSupplierId(), LAST_UPDATED_OFF, 0);
+		int numSuppliers = Comm.readBlock(getSupplierId(), NUM_SUPPLIER_OFF);
+		Comm.writeBlock(getSupplierId(), NUM_SUPPLIER_OFF, numSuppliers + 1);
 		Comm.writeBlock(getSupplierId(), LOC_OFF, MapUtils.encode(Handler.myLoc));
 	}
 	

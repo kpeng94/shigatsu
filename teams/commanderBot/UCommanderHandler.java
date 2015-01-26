@@ -259,12 +259,12 @@ public class UCommanderHandler extends UnitHandler {
 				NavSimple.walkTowardsSafe(runDir);
 			} else if (missileSeen == 0 && soonDamage < rc.getHealth() / 5 &&
 					((rc.getSupplyLevel() > 150 && rc.getHealth() > 50) || (rc.getSupplyLevel() <= 150 && rc.getHealth() > 100))) { // Safe for a while, try to move closer
-				if (target == null || attackableEnemies.length >= 2 || sensedEnemies.length >= 5) return;
+				if (target == null || attackableEnemies.length >= 3 || sensedEnemies.length >= 10) return;
 				if (rc.getSupplyLevel() <= 50 && rc.getCoreDelay() > 0) return;
 				rc.setIndicatorString(2, Clock.getRoundNum() + " walking forward");
 				if (rand.nextAnd(31) == 0) NavSafeBug.resetDir(); // Randomly reset dir just in case we are stuck
 				Direction towardsDir = NavSafeBug.dirToBugIn(target.location);
-				if (lastLauncherLocation != null && myLoc.distanceSquaredTo(lastLauncherLocation) > myLoc.add(towardsDir).distanceSquaredTo(lastLauncherLocation)) return;
+				if (rc.getHealth() <= 150 && lastLauncherLocation != null && myLoc.add(towardsDir).distanceSquaredTo(lastLauncherLocation) <= 24) return;
 				if (towardsDir != Direction.NONE) {
 					rc.move(towardsDir);
 				}
@@ -293,7 +293,7 @@ public class UCommanderHandler extends UnitHandler {
 				}
 				NavTangentBug.calculate(2500);
 				Direction nextMove = NavTangentBug.getNextMove();
-				if (lastLauncherLocation != null && myLoc.distanceSquaredTo(lastLauncherLocation) > myLoc.add(nextMove).distanceSquaredTo(lastLauncherLocation)) return;
+				if (rc.getHealth() <= 150 && lastLauncherLocation != null && myLoc.add(nextMove).distanceSquaredTo(lastLauncherLocation) <= 24) return;
 				if (nextMove != Direction.NONE) {
 					NavSimple.walkTowardsDirected(nextMove);
 				}
@@ -305,7 +305,7 @@ public class UCommanderHandler extends UnitHandler {
 				NavSafeBug.resetDir();
 			}
 			Direction dir = NavSafeBug.dirToBugIn(rallyPoint);
-			if (lastLauncherLocation != null && myLoc.distanceSquaredTo(lastLauncherLocation) > myLoc.add(dir).distanceSquaredTo(lastLauncherLocation)) return;
+			if (rc.getHealth() <= 150 && lastLauncherLocation != null && myLoc.add(dir).distanceSquaredTo(lastLauncherLocation) <= 24) return;
 			if (dir != Direction.NONE) {
 				rc.move(dir);
 			}

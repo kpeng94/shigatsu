@@ -108,10 +108,10 @@ public class UMinerHandler extends UnitHandler {
                         else {
                             frontierLocation = null;
                             if (rc.canMove(checkDir)) {
-                                rc.move(checkDir);
+                                NavSimple.walkTowardsSafe(checkDir);
                             } else {
                                 checkDir = MapUtils.dirs[rand.nextAnd(7)];
-                                NavSimple.walkTowards(checkDir);
+                                NavSimple.walkTowardsSafe(checkDir);
                             }
                         }
                     }

@@ -47,11 +47,15 @@ public class ULauncherHandler extends UnitHandler {
 		typ = RobotType.LAUNCHER;
 		rallyPoint = MapUtils.pointSection(myHQ, enemyHQ, 0.75);
 		myWaveNumber = Comm.readBlock(Comm.getLauncherId(), Comm.WAVENUM_OFFSET);
+		
+		// TEST CODE
+		LauncherWave.setSquadNumber(myWaveNumber % 6);
 	}
 
 	protected static void execute() throws GameActionException {
 		executeUnit();
 		Count.incrementBuffer(Comm.getLauncherId());
+		LauncherWave.launcherRoleCall();
 		int minDistance = Integer.MAX_VALUE;
 		
 		int numMyTowers = rc.senseTowerLocations().length;
@@ -105,14 +109,16 @@ public class ULauncherHandler extends UnitHandler {
 	}
 
 	private static void rushCode() throws GameActionException {
-		MapLocation destination = closestLocation;
+	    // TEST CODE
+		MapLocation destination = MapUtils.decode(LauncherWave.getWave(LauncherWave.squadronNumber) & 0xFFFF);
+		rc.setIndicatorString(0, "I am in squadron " + LauncherWave.squadronNumber + " going to " + destination);
 		NavTangentBug.setDest(destination);
 		NavTangentBug.calculate(2500);
 		if (rc.isCoreReady()
 				&& rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam).length == 0) {
 			Direction nextMove = NavTangentBug.getNextMove();
-			if (myLoc.distanceSquaredTo(closestLocation) <= 52) {
-				NavSimple.walkTowardsSafe(myLoc.directionTo(closestLocation));
+			if (myLoc.distanceSquaredTo(destination) <= 52) {
+				NavSimple.walkTowardsSafe(myLoc.directionTo(destination));
 			} else if (nextMove != Direction.NONE) {
 				NavSimple.walkTowards(nextMove);
 			}

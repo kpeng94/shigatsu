@@ -12,8 +12,7 @@ public class UMissileHandler extends UnitHandler {
 	public static void loop(RobotController rcon) {
 		rc = rcon;
 		otherTeam = rc.getTeam().opponent();
-		enemyHQ = rc.senseEnemyHQLocation();
-		nextDir = rc.senseHQLocation().directionTo(enemyHQ);
+		myTeam = rc.getTeam();
 		timeSinceSpawned = 0;
 		
 		while (true) {
@@ -30,13 +29,15 @@ public class UMissileHandler extends UnitHandler {
 	// Currently completely ineffective against kiting.
 	protected static void execute() throws GameActionException {
 		myLoc = rc.getLocation();
-		
-		MapLocation destination = null;
+
 		MapLocation nearbyStructure = null;
 		MapLocation nearbyUnit = null;
 		
-		enemies = rc.senseNearbyRobots(2 * (5 - timeSinceSpawned) * (5 - timeSinceSpawned), otherTeam);
-		int max = enemies.length >= 5 ? 5 : enemies.length;
+		int radius = 2 * (5 - timeSinceSpawned) * (5 - timeSinceSpawned);
+		
+		enemies = rc.senseNearbyRobots(radius, otherTeam);
+		int numEnemies = enemies.length;
+		int max = numEnemies >= 5 ? 5 : numEnemies;
 		for (int i = max; --i >= 0;) {
 			RobotInfo enemy = enemies[i];
 			if (enemy.type.isBuilding) {
@@ -48,18 +49,31 @@ public class UMissileHandler extends UnitHandler {
 		}
 		
 		if (nearbyStructure != null) {
-			destination = nearbyStructure;
+			nextDir = myLoc.directionTo(nearbyStructure);
+			if (nearbyStructure.distanceSquaredTo(myLoc) <= 2) {
+				rc.explode();
+			}
 		} else if (nearbyUnit != null) {
-			destination = nearbyUnit;
-		} else {
-			destination = enemyHQ;
+			nextDir = myLoc.directionTo(nearbyUnit);
+			if (nearbyUnit.distanceSquaredTo(myLoc) <= 2) {
+				rc.explode();
+			}
+		} else if (numEnemies > 0) {
+			MapLocation loc = enemies[0].location;
+			nextDir = myLoc.directionTo(loc);
+			if (loc.distanceSquaredTo(myLoc) <= 2) {
+				rc.explode();
+			}
+		} else if (nextDir == null) {
+			RobotInfo[] allies = rc.senseNearbyRobots(radius, myTeam);
+			if (allies.length > 0) {
+				nextDir = allies[0].location.directionTo(myLoc);
+			} else {
+				rc.explode();
+			}
 		}
 		
-		if (destination.distanceSquaredTo(myLoc) <= 2) {
-			rc.explode();
-		}
 		if (rc.isCoreReady()) {
-			nextDir = myLoc.directionTo(destination);
 			if (rc.canMove(nextDir)) {
 				rc.move(nextDir);
 			} else if (rc.canMove(nextDir.rotateRight())) {

@@ -94,7 +94,9 @@ public class NavSuperSafeBug {
 			Direction away = nearbyEnemies[0].location.directionTo(Handler.myLoc);
 			Direction[] dirs = MapUtils.dirsAround(away);
 			for (int i = dirs.length; --i >= 0;) {
-				if (Handler.rc.canMove(dirs[i])) {
+				Direction testDir = dirs[i];
+				MapLocation testLoc = Handler.myLoc.add(testDir);
+				if (Handler.rc.canMove(testDir) && safeTile(testLoc)) {
 					return dirs[i];
 				}
 			}

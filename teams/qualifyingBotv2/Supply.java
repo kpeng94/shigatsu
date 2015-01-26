@@ -125,8 +125,10 @@ public class Supply {
 		
 		if (!supplierNeeded() && Comm.readBlock(getSupplierId(), TAR_ACTIVE) == 1) {
 			MapLocation supplierLoc = MapUtils.decode(Comm.readBlock(getSupplierId(), LOC_OFF));
-			if (Handler.myLoc.distanceSquaredTo(supplierLoc) < GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED && Handler.rc.senseRobotAtLocation(supplierLoc) != null) {
-				Handler.rc.transferSupplies((int) Handler.rc.getSupplyLevel() - 1000, supplierLoc);
+			int mySupply = (int) Handler.rc.getSupplyLevel();
+			if (Handler.myLoc.distanceSquaredTo(supplierLoc) < GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED && Handler.rc.senseRobotAtLocation(supplierLoc) != null
+					&& mySupply > 1000) {
+				Handler.rc.transferSupplies(mySupply - 1000, supplierLoc);
 			}
 		}
 	}
@@ -216,8 +218,8 @@ public class Supply {
 		if (dumpLoc != null && dumpTarget != null && Handler.myLoc.distanceSquaredTo(dumpLoc) < GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED) {
 			RobotInfo[] allies = Handler.rc.senseNearbyRobots(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED, Handler.myTeam);
 			for (RobotInfo ally: allies) {
-				if (ally.type == dumpTarget) {
-					int toTransfer = 2 * supplyLevel - supplyBeforeLeaving;
+				int toTransfer = 2 * supplyLevel - supplyBeforeLeaving;
+				if (ally.type == dumpTarget && toTransfer > 0) {
 					Handler.rc.transferSupplies(toTransfer, ally.location);
 					deactivateDump();
 					supplyBeforeLeaving = 0;

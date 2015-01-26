@@ -89,9 +89,8 @@ public class NavSuperSafeBug {
 				}
 			}
 		}
-		RobotInfo[] nearbyEnemies = Handler.rc.senseNearbyRobots(24, Handler.otherTeam);
-		if (nearbyEnemies.length > 0) {
-			Direction away = nearbyEnemies[0].location.directionTo(Handler.myLoc);
+		if (enemies.length > 0) {
+			Direction away = enemies[0].location.directionTo(Handler.myLoc);
 			Direction[] dirs = MapUtils.dirsAround(away);
 			for (int i = dirs.length; --i >= 0;) {
 				Direction testDir = dirs[i];

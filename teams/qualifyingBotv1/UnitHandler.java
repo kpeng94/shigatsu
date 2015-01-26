@@ -10,6 +10,8 @@ public abstract class UnitHandler extends Handler {
 	
 	protected static void executeUnit() {
 		executeGeneral();
+		
+		myLoc = rc.getLocation();
 	}
 
 }

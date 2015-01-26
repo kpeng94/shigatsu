@@ -1,4 +1,4 @@
-package commanderBot;
+package qualifyingBotv1;
 
 import battlecode.common.*;
 

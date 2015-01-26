@@ -24,15 +24,16 @@ public class Spawner {
 		Count.incrementBoth(countBlock);
 	}
 	
-	public static void trySpawn(Direction dir, RobotType typ, int countBlock) throws GameActionException {
+	public static boolean trySpawn(Direction dir, RobotType typ, int countBlock) throws GameActionException {
 		Direction[] dirs = MapUtils.dirsAroundRev(dir);
 		for (int i = dirs.length; --i >= 0;) {
 			if (Handler.rc.canSpawn(dirs[i], typ)) {
 				spawn(dirs[i], typ, countBlock);
-				return;
+				return true;
 			}
 		}
-	}
+		return false;
+	}	
 	
 	// Checks build array in reverse order
 	public static Direction checkBuildArray(Direction[] dirs, RobotType typ) {

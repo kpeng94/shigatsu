@@ -38,6 +38,12 @@ public class Comm {
 	public static final int GAINED_ORE_CHAN = 33;
 //	public static final int AVG5_SPENT_ORE_CHAN = 34;
 //	public static final int AVG5_GAINED_ORE_CHAN = 35;
+
+	// Commander Info
+	public static final int COMMANDER_RALLY_DEST_CHAN = 40;
+	public static final int COMMANDER_NUM_CHAN = 41;
+	public static final int COMMANDER_RALLY_ROUND_CHAN = 42;
+
 	
 	// Apparently offset 1 = count
 	// offset 2 = intended count

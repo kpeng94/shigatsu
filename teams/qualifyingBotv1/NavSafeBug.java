@@ -15,6 +15,11 @@ public class NavSafeBug {
 	public static Direction startingDir;
 	public static MapLocation startingDest;
 	public static traceDir prevTrace = traceDir.NONE;
+
+	public static void resetDir() {
+		tracing = traceDir.NONE;
+		prevTrace = traceDir.NONE;
+	}
 	
 	public static Direction dirToBugIn(MapLocation dest) {
 		if (Handler.myLoc.equals(dest)) return Direction.NONE;

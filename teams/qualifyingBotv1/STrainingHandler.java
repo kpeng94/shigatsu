@@ -3,6 +3,7 @@ package qualifyingBotv1;
 import battlecode.common.*;
 
 public class STrainingHandler extends StructureHandler {
+	public static final int MAX_COMMANDERS = 4;
 
 	public static void loop(RobotController rcon) {
 		try {
@@ -27,8 +28,20 @@ public class STrainingHandler extends StructureHandler {
 		initStructure(rcon);
 	}
 
-	protected static void execute() {
+	protected static void execute() throws GameActionException {
 		executeStructure();
+		Count.incrementBuffer(Comm.getTrainingId());
+		if (rc.isCoreReady() && rc.readBroadcast(Comm.COMMANDER_NUM_CHAN) < MAX_COMMANDERS) { // Try to spawn
+			trySpawn();
+		}
+	}
+	
+	protected static void trySpawn() throws GameActionException {
+		if (Count.getCount(Comm.getCommanderId()) < Count.getLimit(Comm.getCommanderId())) {
+			if (Spawner.trySpawn(myLoc.directionTo(enemyHQ), RobotType.COMMANDER, Comm.getCommanderId())) { // Spawned
+				rc.broadcast(Comm.COMMANDER_NUM_CHAN, rc.readBroadcast(Comm.COMMANDER_NUM_CHAN) + 1);
+			}
+		}
 	}
 	
 }

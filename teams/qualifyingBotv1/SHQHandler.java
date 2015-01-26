@@ -43,8 +43,9 @@ public class SHQHandler extends StructureHandler {
 
 		prevOre = GameConstants.ORE_INITIAL_AMOUNT;
 
-		countChans = new int[]{Comm.getBeaverId(), Comm.getMinerId(), Comm.getLauncherId(), Comm.getSoldierId(),
-				Comm.getMinerfactId(), Comm.getBarrackId(), Comm.getHeliId(), Comm.getAeroId(), Comm.getSupplyId()};
+		countChans = new int[]{Comm.getBeaverId(), Comm.getMinerId(), Comm.getLauncherId(), Comm.getSoldierId(), Comm.getCommanderId(),
+				Comm.getComputerId(), Comm.getDroneId(), Comm.getMinerfactId(), Comm.getBarrackId(), Comm.getHeliId(), Comm.getAeroId(),
+				Comm.getTechId(), Comm.getTrainingId(), Comm.getSupplyId()};
 
 		initCounts();
 
@@ -79,6 +80,16 @@ public class SHQHandler extends StructureHandler {
 		updateLimits();
 		updateOreCounts();
 
+		rc.broadcast(Comm.COMMANDER_RALLY_DEST_CHAN, MapUtils.encode(enemyHQ));
+//		for (int i = nearbyRobots.length; --i >= 0;) {
+//			RobotInfo robot = nearbyRobots[i];
+//			if (robot.type == RobotType.COMMANDER) {
+//				int neededSupply = (int) (20 * (rc.getRoundLimit() - Clock.getRoundNum()) - robot.supplyLevel);
+//				if (neededSupply > 0) {
+//					rc.transferSupplies((int) (rc.getSupplyLevel() > neededSupply ? neededSupply : rc.getSupplyLevel()), robot.location);
+//				}
+//			}
+//		}		
 		Supply.incExpiration();
 		Supply.distributeHQSupply();
 		Distribution.spendBytecodesCalculating(7500);
@@ -167,6 +178,9 @@ public class SHQHandler extends StructureHandler {
 			Count.setLimit(Comm.getBeaverId(), 2);
 			Count.setLimit(Comm.getBarrackId(), 1);
 			Count.setLimit(Comm.getSoldierId(), 5);
+			Count.setLimit(Comm.getTechId(), 1);
+			Count.setLimit(Comm.getTrainingId(), 1);
+			Count.setLimit(Comm.getCommanderId(), 1);
 		} else if (Count.getCount(Comm.getBeaverId()) == 1) { // 1 beaver
 			Count.setLimit(Comm.getMinerfactId(), 1);
 			Count.setLimit(Comm.getMinerId(), 10);

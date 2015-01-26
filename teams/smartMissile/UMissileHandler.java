@@ -43,7 +43,7 @@ public class UMissileHandler extends UnitHandler {
 	protected static void execute() throws GameActionException {
 		myLoc = rc.getLocation();
 		
-		enemies = rc.senseNearbyRobots((5 - timeSinceSpawned) * (5 - timeSinceSpawned), otherTeam);
+		enemies = rc.senseNearbyRobots(2 * (5 - timeSinceSpawned) * (5 - timeSinceSpawned), otherTeam);
 		for (int i = 0; i < enemies.length && i < 5; i++) {
 			if (enemies[i].type.isBuilding) {
 				nearbyStructure = enemies[i].location;

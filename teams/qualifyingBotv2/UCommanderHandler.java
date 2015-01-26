@@ -4,10 +4,10 @@ import battlecode.common.*;
 
 public class UCommanderHandler extends UnitHandler {
 	// Thresholds for when to stop safebugging around towers and HQ
-	public static final int TOWER_THRESHOLD = 35;
-	public static final int HQ_SMALL_THRESHOLD = 35;
-	public static final int HQ_LARGE_THRESHOLD = 55;
-	public static final int HQ_SPLASH_THRESHOLD = 75;
+	public static final int TOWER_THRESHOLD = 52;
+	public static final int HQ_SMALL_THRESHOLD = 52;
+	public static final int HQ_LARGE_THRESHOLD = 75;
+	public static final int HQ_SPLASH_THRESHOLD = 100;
 	public static final int ALLY_RADIUS = 15;
 	public static final int AGGRO_FLASH_THRESHOLD = 50;
 	public static final int LAUNCHER_DANGER_RESET_THRESHOLD = 25;
@@ -261,7 +261,7 @@ public class UCommanderHandler extends UnitHandler {
 					((rc.getSupplyLevel() > 150 && rc.getHealth() > 50) || (rc.getSupplyLevel() <= 150 && rc.getHealth() > 100))) { // Safe for a while, try to move closer
 				if (target == null || attackableEnemies.length >= 3 || sensedEnemies.length >= 10) return;
 				if (rc.getSupplyLevel() <= 50 && rc.getCoreDelay() > 0) return;
-				if (rand.nextAnd(31) == 0) NavSafeBug.resetDir(); // Randomly reset dir just in case we are stuck
+//				if (rand.nextAnd(31) == 0) NavSafeBug.resetDir(); // Randomly reset dir just in case we are stuck
 				Direction towardsDir = NavSafeBug.dirToBugIn(target.location);
 				if (rc.getHealth() <= 150 && lastLauncherLocation != null && myLoc.add(towardsDir).distanceSquaredTo(lastLauncherLocation) <= 24) return;
 				if (towardsDir != Direction.NONE) {
@@ -284,7 +284,7 @@ public class UCommanderHandler extends UnitHandler {
 		if ((closestTower == null || myLoc.distanceSquaredTo(closestTower) > TOWER_THRESHOLD) && myLoc.distanceSquaredTo(enemyHQ) > HQ_threshold) { // Out of range, resume tangent bugging
 			Direction towardsRally = myLoc.directionTo(rallyPoint);
 			rc.setIndicatorString(2, Clock.getRoundNum() + " tangenting");
-			if (safeTurns >= AGGRO_FLASH_THRESHOLD && rc.getFlashCooldown() == 0 && flashTowardsDirSafe(towardsRally)) { // Successfully flashed in forward
+			if (safeTurns >= AGGRO_FLASH_THRESHOLD && NavTangentBug.tracing == false && rc.getFlashCooldown() == 0 && flashTowardsDirSafe(towardsRally)) { // Successfully flashed in forward
 				justFlashed = true;
 			} else {
 				if (!prevNavTangent || justFlashed || safeTurns <= 1) {

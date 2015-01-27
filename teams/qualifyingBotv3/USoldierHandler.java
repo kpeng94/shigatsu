@@ -231,7 +231,7 @@ public class USoldierHandler extends UnitHandler {
 				numSoldiers++;
 			}
 		}
-		if (numSoldiers > sensedEnemies.length) {
+		if (numSoldiers > 3 * sensedEnemies.length) {
 			return true;
 		}
 		

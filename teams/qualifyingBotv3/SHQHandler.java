@@ -17,6 +17,8 @@ public class SHQHandler extends StructureHandler {
 	private static int[] countChans;
 
 	private static int currentLauncherWave = 1;
+	
+	private static boolean seenTanks = false;
 
 	public static void loop(RobotController rcon) {
 		try {
@@ -53,6 +55,7 @@ public class SHQHandler extends StructureHandler {
 		Count.setLimit(Comm.getDroneId(), 1); // Maintain 1 drone
 		Comm.writeBlock(Comm.getLauncherId(), Comm.WAVENUM_OFFSET, currentLauncherWave);
 		rc.broadcast(Comm.FINAL_PUSH_ROUND_CHAN, rc.getRoundLimit() * 7 / 8);
+		seenTanks = (((int) rc.getTeamMemory()[0]) == 1);
 	}
 
 	protected static void execute() throws GameActionException {
@@ -170,28 +173,54 @@ public class SHQHandler extends StructureHandler {
 	}
 
 	protected static void updateBuildStates() throws GameActionException {
-		if (Count.getCount(Comm.getLauncherId()) >= 1) {
-			Count.setLimit(Comm.getSupplyId(), 10 * Count.getLimit(Comm.getAeroId()));
-		} else if (Count.getCount(Comm.getSoldierId()) >= 10) {
-			Count.setLimit(Comm.getLauncherId(), 999);
-			Count.setLimit(Comm.getSoldierId(), 50);
-		} else if (Count.getCount(Comm.getMinerId()) >= 10) { // 10 miners
-			Count.setLimit(Comm.getHeliId(), 1);
-			Count.setLimit(Comm.getAeroId(), 1);
-			Count.setLimit(Comm.getMinerId(), 40);
-			Count.setLimit(Comm.getLauncherId(), 999);
-			Count.setLimit(Comm.getSoldierId(), 20);
-		} else if (Count.getCount(Comm.getMinerfactId()) == 1) { // 1 mining fact
-			Count.setLimit(Comm.getBeaverId(), 2);
-			Count.setLimit(Comm.getBarrackId(), 1);
-			Count.setLimit(Comm.getSoldierId(), 5);
-			Count.setLimit(Comm.getTechId(), 1);
-			Count.setLimit(Comm.getTrainingId(), 1);
-			Count.setLimit(Comm.getCommanderId(), 1);
-		} else if (Count.getCount(Comm.getBeaverId()) == 1) { // 1 beaver
-			Count.setLimit(Comm.getMinerfactId(), 1);
-			Count.setLimit(Comm.getMinerId(), 10);
+		if (!seenTanks && myHQ.distanceSquaredTo(enemyHQ) < 3000) {
+			if (Count.getCount(Comm.getLauncherId()) >= 1) {
+				Count.setLimit(Comm.getSupplyId(), 10 * Count.getLimit(Comm.getAeroId()));
+			} else if (Count.getCount(Comm.getSoldierId()) >= 10) {
+				Count.setLimit(Comm.getLauncherId(), 999);
+				Count.setLimit(Comm.getSoldierId(), 40);
+			} else if (Count.getCount(Comm.getMinerId()) >= 10) { // 10 miners
+				Count.setLimit(Comm.getHeliId(), 1);
+				Count.setLimit(Comm.getAeroId(), 1);
+				Count.setLimit(Comm.getMinerId(), 30);
+				Count.setLimit(Comm.getLauncherId(), 999);
+				Count.setLimit(Comm.getSoldierId(), 10);
+			} else if (Count.getCount(Comm.getMinerfactId()) == 1) { // 1 mining fact
+				Count.setLimit(Comm.getBeaverId(), 2);
+				Count.setLimit(Comm.getBarrackId(), 1);
+				Count.setLimit(Comm.getSoldierId(), 5);
+				Count.setLimit(Comm.getTechId(), 1);
+				Count.setLimit(Comm.getTrainingId(), 1);
+				Count.setLimit(Comm.getCommanderId(), 1);
+			} else if (Count.getCount(Comm.getBeaverId()) == 1) { // 1 beaver
+				Count.setLimit(Comm.getMinerfactId(), 1);
+				Count.setLimit(Comm.getMinerId(), 10);
+			}
+		} else {
+			if (Count.getCount(Comm.getLauncherId()) >= 1) {
+				Count.setLimit(Comm.getSupplyId(), 10 * Count.getLimit(Comm.getAeroId()));
+//			} else if (Count.getCount(Comm.getSoldierId()) >= 10) {
+//				Count.setLimit(Comm.getLauncherId(), 999);
+//				Count.setLimit(Comm.getSoldierId(), 50);
+			} else if (Count.getCount(Comm.getMinerId()) >= 10) { // 10 miners
+				Count.setLimit(Comm.getHeliId(), 1);
+				Count.setLimit(Comm.getAeroId(), 1);
+				Count.setLimit(Comm.getMinerId(), 30);
+				Count.setLimit(Comm.getLauncherId(), 999);
+//				Count.setLimit(Comm.getSoldierId(), 20);
+			} else if (Count.getCount(Comm.getMinerfactId()) == 1) { // 1 mining fact
+				Count.setLimit(Comm.getBeaverId(), 2);
+//				Count.setLimit(Comm.getBarrackId(), 1);
+//				Count.setLimit(Comm.getSoldierId(), 5);
+				Count.setLimit(Comm.getTechId(), 1);
+				Count.setLimit(Comm.getTrainingId(), 1);
+				Count.setLimit(Comm.getCommanderId(), 1);
+			} else if (Count.getCount(Comm.getBeaverId()) == 1) { // 1 beaver
+				Count.setLimit(Comm.getMinerfactId(), 1);
+				Count.setLimit(Comm.getMinerId(), 10);
+			}
 		}
+		
 
 		if (rc.getRoundLimit() - Clock.getRoundNum() < 250) {
 			Count.setLimit(Comm.getHandwashId(), 1);

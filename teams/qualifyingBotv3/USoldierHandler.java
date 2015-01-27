@@ -63,14 +63,22 @@ public class USoldierHandler extends UnitHandler {
 					NavTangentBug.calculate(2500);
 					Direction dir = NavTangentBug.getNextMove();
 					if (dir != Direction.NONE) {
-						NavSimple.walkTowards(dir);
+						if (myLoc.distanceSquaredTo(towerDest) > 35) {
+							NavSimple.walkTowardsSafe(dir);
+						} else {
+							NavSimple.walkTowards(dir);
+						}
 					}
 				} else {
 					NavTangentBug.setDest(enemyHQ);
 					NavTangentBug.calculate(2500);
 					Direction dir = NavTangentBug.getNextMove();
 					if (dir != Direction.NONE) {
-						NavSimple.walkTowards(dir);
+						if (myLoc.distanceSquaredTo(enemyHQ) > 35) {
+							NavSimple.walkTowardsSafe(dir);
+						} else {
+							NavSimple.walkTowards(dir);
+						}
 					}
 				}
 			}
@@ -200,8 +208,8 @@ public class USoldierHandler extends UnitHandler {
 					int curPosInfo = NavBFS.readMapDataUncached(rc.readBroadcast(Comm.SURROUND_RALLY_MAP_CHAN), MapUtils.encode(myLoc));
 					if (curPosInfo != 0) {
 						Direction dir = MapUtils.dirs[curPosInfo & 0x00000007];
-						if (rc.canMove(dir) && NavSafeBug.safeTile(myLoc.add(dir))) {
-							rc.move(dir);
+						if (rc.canMove(dir)) {
+							NavSimple.walkTowardsSafe(dir);
 							return;
 						}
 					}
@@ -215,7 +223,7 @@ public class USoldierHandler extends UnitHandler {
 			}
 			Direction dir = NavSafeBug.dirToBugIn(enemyHQ);
 			if (dir != Direction.NONE) {
-				rc.move(dir);
+				NavSimple.walkTowardsSafe(dir);
 			}
 		}
 	}

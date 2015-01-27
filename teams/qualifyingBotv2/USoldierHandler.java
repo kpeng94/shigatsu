@@ -51,7 +51,8 @@ public class USoldierHandler extends UnitHandler {
 			}
 		}
 		
-		if (Clock.getRoundNum() >= 1800) {
+		int pushRound = rc.readBroadcast(Comm.FINAL_PUSH_ROUND_CHAN);
+		if (pushRound > 0 && Clock.getRoundNum() >= pushRound) { // final push!!!
 			if (rc.isWeaponReady()) {
 				Attack.tryAttackPrioritizeTowers();
 			}

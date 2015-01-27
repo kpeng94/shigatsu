@@ -3,7 +3,7 @@ package qualifyingBotv2;
 import battlecode.common.*;
 
 public class NavSafeBug {
-	private static enum traceDir {
+	public static enum traceDir {
 		LEFT,
 		RIGHT,
 		NONE
@@ -27,6 +27,9 @@ public class NavSafeBug {
 		MapLocation forwardLoc = Handler.myLoc.add(forwardDir);
 
 		if (tracing == traceDir.NONE || (tracing != traceDir.NONE && !dest.equals(startingDest))) {
+			startingDist = Handler.myLoc.distanceSquaredTo(dest);
+			startingDir = forwardDir;
+			startingDest = dest;
 			if (Handler.rc.canMove(forwardDir) && safeTile(forwardLoc)) { // can move forward
 				return forwardDir;
 			} else { // start tracing
@@ -42,9 +45,6 @@ public class NavSafeBug {
 					}
 					prevTrace = tracing;
 				}
-				startingDist = Handler.myLoc.distanceSquaredTo(dest);
-				startingDir = forwardDir;
-				startingDest = dest;
 				Direction testDir = forwardDir;
 				for (int i = 7; --i >= 0;) {
 					if (tracing == traceDir.LEFT) {

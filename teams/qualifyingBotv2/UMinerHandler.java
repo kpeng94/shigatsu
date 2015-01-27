@@ -163,7 +163,7 @@ nav:    if (rc.isCoreReady() && attackableEnemies.length == 0) {
                         Mining.resetFrontier();
                     }
                 }
-                NavSimple.walkTowardsDirected(myLoc.directionTo(path[pathIndex]));
+                NavSimple.walkTowards(myLoc.directionTo(path[pathIndex]));
             }
             // Or if we're using Tangent Bug to get there, continue
             // doing so.

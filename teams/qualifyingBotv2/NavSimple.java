@@ -23,6 +23,17 @@ public class NavSimple {
 		}
 	}
 	
+	public static void walkTowardsSafeAll(Direction dir) throws GameActionException {
+		Direction[] dirs = MapUtils.dirsAroundRev(dir);
+		for (int i = dirs.length; --i >= 0;) {
+			Direction d = dirs[i];
+			if (Handler.rc.canMove(d) && NavSafeBug.safeTile(Handler.myLoc.add(d))) {
+				Handler.rc.move(d);
+				return;
+			}
+		}
+	}
+	
 	public static void walkRandom() throws GameActionException {
 		walkPriority(MapUtils.dirsAround(MapUtils.dirs[Handler.rand.nextAnd(7)]));
 	}

@@ -3,7 +3,7 @@ package qualifyingBotv2;
 import battlecode.common.*;
 
 public class UDroneHandler extends UnitHandler {
-	private static boolean attackState = false;
+//	private static boolean attackState = false;
 //	private static boolean isSupplier;
 
 	public static void loop(RobotController rcon) {

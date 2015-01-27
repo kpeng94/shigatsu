@@ -52,6 +52,7 @@ public class SHQHandler extends StructureHandler {
 		Count.setLimit(Comm.getBeaverId(), 1); // Maintain 1 beaver
 		Count.setLimit(Comm.getDroneId(), 1); // Maintain 1 drone
 		Comm.writeBlock(Comm.getLauncherId(), Comm.WAVENUM_OFFSET, currentLauncherWave);
+		rc.broadcast(Comm.FINAL_PUSH_ROUND_CHAN, rc.getRoundLimit() * 7 / 8);
 	}
 
 	protected static void execute() throws GameActionException {

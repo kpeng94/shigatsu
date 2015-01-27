@@ -23,6 +23,7 @@ public class Comm {
 	public static final int GARBAGE_CHAN = 2;
 	public static final int LAST_GARBAGE_TURN_CHAN = 3;
 	public static final int TASK_CHAN = 4;
+	public static final int FINAL_PUSH_ROUND_CHAN = 10;
 	
 	// Maps
 	public static final int HQ_MAP_CHAN = 20;

@@ -4,11 +4,10 @@ import battlecode.common.*;
 
 public class ULauncherHandler extends UnitHandler {
 	public static final int LAUNCHER_RUSH_COUNT = 3;
-	public static final int PROXIMITY_DIST = 52;
+	public static final int PROXIMITY_DIST = 75;
 	
 	private static LauncherState state = LauncherState.RALLY;
 	private static LauncherState nextState;
-	private static boolean rallied = false;
 	private static int numberOfLaunchersRallied = 0;
 	private static int myWaveNumber = 1;
 	private static MapLocation rallyPoint;
@@ -16,7 +15,7 @@ public class ULauncherHandler extends UnitHandler {
 	private static RobotInfo[] sensedEnemies;
 	private static MapLocation closestLocation;
 	private static RobotInfo closestEnemy = null;
-	private static MapLocation closestTower = null;
+	private static int numMissilesToShoot = 3;
 	
 	private enum LauncherState {
 		NEW,
@@ -55,19 +54,53 @@ public class ULauncherHandler extends UnitHandler {
 		executeUnit();
 		Count.incrementBuffer(Comm.getLauncherId());
 		
-		if (Clock.getRoundNum() >= 1500) {
+		int pushRound = rc.readBroadcast(Comm.FINAL_PUSH_ROUND_CHAN);
+		if (pushRound > 0 && Clock.getRoundNum() >= pushRound) {
 			state = LauncherState.RUSH;
 		}
 		
-		if (enemyTowers.length > 0) {
-			closestTower = Attack.getClosestTower();
-			if (myLoc.distanceSquaredTo(closestTower) < myLoc.distanceSquaredTo(enemyHQ)) {
-				closestLocation = closestTower;
+		int numMyTowers = rc.senseTowerLocations().length;
+		int numEnemyTowers = enemyTowers.length;
+		
+		if (numEnemyTowers > 0) {
+			int minToMe = 999999;
+			int minToHQ = 999999;
+			MapLocation closestToMe = null;
+			MapLocation closestToHQ = null;
+			for (int i = enemyTowers.length; --i >= 0;) {
+				MapLocation tower = enemyTowers[i];
+				if (numEnemyTowers >= 5 && tower.distanceSquaredTo(enemyHQ) <= 52) continue;
+				int distToMe = myLoc.distanceSquaredTo(tower);
+				int distToHQ = myHQ.distanceSquaredTo(tower);
+				if (distToMe < minToMe) {
+					minToMe = distToMe;
+					closestToMe = tower;
+				}
+				if (distToHQ < minToHQ) {
+					minToHQ = distToHQ;
+					closestToHQ = tower;
+				}
+			}
+			
+			int enemyHQDist = myLoc.distanceSquaredTo(enemyHQ);
+			if (pushRound > 0 && Clock.getRoundNum() >= pushRound && numEnemyTowers < 5 && minToMe < enemyHQDist) {
+				minToMe = enemyHQDist;
+				closestToMe = enemyHQ;
+			}
+			
+			if (minToMe <= PROXIMITY_DIST) { // Close enough to a structure to siege
+				closestLocation = closestToMe;
 			} else {
-				closestLocation = enemyHQ;
+				if (pushRound > 0 && Clock.getRoundNum() >= pushRound && numEnemyTowers < 5 && numMyTowers < numEnemyTowers) { // final push!!!
+					closestLocation = enemyHQ;
+				}
+				if (minToMe <= myLoc.distanceSquaredTo(closestToHQ) / 2) { // twice as close to structure
+					closestLocation = closestToMe;
+				} else {
+					closestLocation = closestToHQ;
+				}
 			}
 		} else {
-			closestTower = null;
 			closestLocation = enemyHQ;
 		}
 		
@@ -112,10 +145,10 @@ public class ULauncherHandler extends UnitHandler {
 		if (rc.isCoreReady()
 				&& rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam).length == 0) {
 			Direction nextMove = NavTangentBug.getNextMove();
-			if (myLoc.distanceSquaredTo(closestLocation) <= 75) {
+			if (myLoc.distanceSquaredTo(closestLocation) <= PROXIMITY_DIST) {
 				NavSimple.walkTowardsSafe(myLoc.directionTo(closestLocation));
 			} else if (nextMove != Direction.NONE) {
-				NavSimple.walkTowards(nextMove);
+				NavSimple.walkTowardsSafeAll(nextMove);
 			}
 		}
 	}
@@ -129,9 +162,7 @@ public class ULauncherHandler extends UnitHandler {
 			if (rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam).length == 0) {
 				Direction nextMove = NavTangentBug.getNextMove();
 				if (nextMove != Direction.NONE) {
-					NavSimple.walkTowards(nextMove);
-				} else {
-					rallied = true;
+					NavSimple.walkTowardsSafeAll(nextMove);
 				}
 			}
 		}
@@ -156,9 +187,49 @@ public class ULauncherHandler extends UnitHandler {
 
 	public static boolean decideAttack() {
 		sensedEnemies = rc.senseNearbyRobots(typ.sensorRadiusSquared, otherTeam);
+		boolean isNonWimpyEnemy = false;
+		numMissilesToShoot = 3;
+		int numWimpy = 0;
 		if (sensedEnemies.length > 0) {
+			int minDist = 999999;
+			closestEnemy = null;
+			for (int i = sensedEnemies.length; --i >= 0;) {
+				RobotInfo enemy = sensedEnemies[i];
+				MapLocation enemyLoc = enemy.location;
+				int enemyDist = Handler.myLoc.distanceSquaredTo(enemyLoc);
+				if (enemyDist < minDist) {
+					minDist = enemyDist ;
+					closestEnemy = sensedEnemies[i];
+				}
+				if (!isNonWimpyEnemy) {
+					if (enemy.type.isBuilding || enemy.type == RobotType.COMMANDER || enemy.type == RobotType.TANK || enemy.type == RobotType.LAUNCHER) {
+						isNonWimpyEnemy = true;
+					} else {
+						numWimpy++;
+					}
+				}
+			}
 			closestEnemy = Attack.getClosestEnemy(sensedEnemies);			
 		}
+		
+		if (!isNonWimpyEnemy && sensedEnemies.length > 0) {
+			RobotInfo[] allies = rc.senseNearbyRobots(typ.sensorRadiusSquared, myTeam);
+			int numMissiles = 0;
+			for (int i = allies.length; --i >= 0;) {
+				if (allies[i].type == RobotType.MISSILE) {
+					numMissiles++;
+				}
+			}
+			if (numMissiles >= 2 * numWimpy) {
+				numMissilesToShoot = 0;
+			} else {
+				int remaining = 2 * numWimpy - numMissiles;
+				numMissilesToShoot = remaining >= 3 ? 3 : remaining;
+			}
+		}
+		
+		rc.setIndicatorString(0, "" + numMissilesToShoot);
+		
 		if (sensedEnemies.length > 0 || closestLocation.distanceSquaredTo(myLoc) <= 52) {
 			return true;
 		}
@@ -176,14 +247,17 @@ public class ULauncherHandler extends UnitHandler {
 		} else {
 			dir = myLoc.directionTo(closestLocation);
 		}
-		if (rc.canLaunch(dir)) {
+		if (numMissilesToShoot > 0 && rc.canLaunch(dir)) {
 			rc.launchMissile(dir);
+			numMissilesToShoot--;
 		}
-		if (rc.canLaunch(dir.rotateLeft())) {
+		if (numMissilesToShoot > 0 && rc.canLaunch(dir.rotateLeft())) {
 			rc.launchMissile(dir.rotateLeft());
+			numMissilesToShoot--;
 		}
-		if (rc.canLaunch(dir.rotateRight())) {
+		if (numMissilesToShoot > 0 && rc.canLaunch(dir.rotateRight())) {
 			rc.launchMissile(dir.rotateRight());
+			numMissilesToShoot--;
 		}
 	}
 	

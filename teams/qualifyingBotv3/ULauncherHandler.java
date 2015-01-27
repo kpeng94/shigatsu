@@ -16,6 +16,7 @@ public class ULauncherHandler extends UnitHandler {
 	private static MapLocation closestLocation;
 	private static RobotInfo closestEnemy = null;
 	private static int numMissilesToShoot = 3;
+	private static int numEnemyMissiles = 0;
 	
 	private enum LauncherState {
 		NEW,
@@ -54,9 +55,9 @@ public class ULauncherHandler extends UnitHandler {
 		Count.incrementBuffer(Comm.getLauncherId());
 		
 		int pushRound = rc.readBroadcast(Comm.FINAL_PUSH_ROUND_CHAN);
-//		if (pushRound > 0 && Clock.getRoundNum() >= pushRound) {
+		if (Count.getLimit(Comm.getSoldierId()) > 0 && pushRound > 0 && Clock.getRoundNum() >= pushRound) {
 			state = LauncherState.RUSH;
-//		}
+		}
 		
 		int numMyTowers = rc.senseTowerLocations().length;
 		int numEnemyTowers = enemyTowers.length;
@@ -175,10 +176,11 @@ public class ULauncherHandler extends UnitHandler {
 	}
 
 	public static boolean decideAttack() {
-		sensedEnemies = rc.senseNearbyRobots(typ.sensorRadiusSquared, otherTeam);
+		sensedEnemies = rc.senseNearbyRobots(35, otherTeam);
 		boolean isNonWimpyEnemy = false;
 		numMissilesToShoot = 3;
 		int numWimpy = 0;
+		numEnemyMissiles = 0;
 		if (sensedEnemies.length > 0) {
 			int minDist = 999999;
 			closestEnemy = null;
@@ -186,6 +188,10 @@ public class ULauncherHandler extends UnitHandler {
 				RobotInfo enemy = sensedEnemies[i];
 				MapLocation enemyLoc = enemy.location;
 				int enemyDist = Handler.myLoc.distanceSquaredTo(enemyLoc);
+				if (enemy.type == RobotType.MISSILE) { // dont shoot missiles at missiles
+					numEnemyMissiles++;
+					continue;
+				}
 				if (enemyDist < minDist) {
 					minDist = enemyDist ;
 					closestEnemy = sensedEnemies[i];
@@ -198,10 +204,9 @@ public class ULauncherHandler extends UnitHandler {
 					}
 				}
 			}
-			closestEnemy = Attack.getClosestEnemy(sensedEnemies);			
 		}
 		
-		if (!isNonWimpyEnemy && sensedEnemies.length > 0) {
+		if (!isNonWimpyEnemy && sensedEnemies.length > numEnemyMissiles) { // There are non missile enemies
 			RobotInfo[] allies = rc.senseNearbyRobots(typ.sensorRadiusSquared, myTeam);
 			int numMissiles = 0;
 			for (int i = allies.length; --i >= 0;) {
@@ -229,10 +234,10 @@ public class ULauncherHandler extends UnitHandler {
 
 	public static void launcherAttack() throws GameActionException {
 		Direction dir;
-		if (sensedEnemies.length > 0) {
+		if (sensedEnemies.length > numEnemyMissiles) {
 			dir = myLoc.directionTo(closestEnemy.location);
 		} else {
-			if (myLoc.distanceSquaredTo(closestLocation) > 45) {
+			if (myLoc.distanceSquaredTo(closestLocation) > 40) {
 				return;
 			}
 			dir = myLoc.directionTo(closestLocation);
@@ -261,16 +266,23 @@ public class ULauncherHandler extends UnitHandler {
 				}
 			}
 		} else { // There are nearby enemies
-			if (rc.getMissileCount() == 0) { // Out of missiles
-				NavSimple.walkTowardsSafe(closestEnemy.location.directionTo(myLoc));
-			} else if (rc.getMissileCount() <= 2) { // low on missiles
-				if (myLoc.distanceSquaredTo(closestEnemy.location) <= 18) {
-					NavSimple.walkTowardsSafe(closestEnemy.location.directionTo(myLoc));
+			if (sensedEnemies.length > numEnemyMissiles) {
+				if (rc.getMissileCount() == 0) { // Out of missiles
+//					if (!closestEnemy.type.isBuilding && myLoc.distanceSquaredTo(closestEnemy.location) <= 30) {
+//						rc.setIndicatorString(0, Clock.getRoundNum() + " RUNNING AWAY");
+						NavSimple.walkTowardsSafe(closestEnemy.location.directionTo(myLoc));
+//					}
+				} else if (rc.getMissileCount() <= 3) { // low on missiles
+					if (myLoc.distanceSquaredTo(closestEnemy.location) <= 18) {
+						NavSimple.walkTowardsSafe(closestEnemy.location.directionTo(myLoc));
+					}
+				} else {
+					if (myLoc.distanceSquaredTo(closestEnemy.location) <= 15) {
+						NavSimple.walkTowardsSafe(closestEnemy.location.directionTo(myLoc));
+					}
 				}
 			} else {
-				if (myLoc.distanceSquaredTo(closestEnemy.location) <= 15) {
-					NavSimple.walkTowardsSafe(closestEnemy.location.directionTo(myLoc));
-				}
+				NavSimple.walkTowardsSafe(sensedEnemies[0].location.directionTo(myLoc));
 			}
 		}
 //		if (closestEnemy != null && rc.isCoreReady()) {

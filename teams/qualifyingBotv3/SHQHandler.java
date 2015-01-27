@@ -201,12 +201,12 @@ public class SHQHandler extends StructureHandler {
     }
 
     protected static void updateBuildStates() throws GameActionException {
-        if (!seenTanks && myHQ.distanceSquaredTo(enemyHQ) < 3000) {
+        if (!seenTanks && !canSurroundHQ) {
             if (Count.getCount(Comm.getLauncherId()) >= 1) {
                 Count.setLimit(Comm.getSupplyId(), 10 * Count.getLimit(Comm.getAeroId()));
             } else if (Count.getCount(Comm.getSoldierId()) >= 10) {
                 Count.setLimit(Comm.getLauncherId(), 999);
-                Count.setLimit(Comm.getSoldierId(), 40);
+                Count.setLimit(Comm.getSoldierId(), 30);
             } else if (Count.getCount(Comm.getMinerId()) >= 10) { // 10 miners
                 Count.setLimit(Comm.getHeliId(), 1);
                 Count.setLimit(Comm.getAeroId(), 1);

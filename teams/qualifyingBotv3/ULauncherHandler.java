@@ -55,9 +55,9 @@ public class ULauncherHandler extends UnitHandler {
 		Count.incrementBuffer(Comm.getLauncherId());
 		
 		int pushRound = rc.readBroadcast(Comm.FINAL_PUSH_ROUND_CHAN);
-		if (Count.getLimit(Comm.getSoldierId()) > 0 && pushRound > 0 && Clock.getRoundNum() >= pushRound) {
+//		if (pushRound > 0 && Clock.getRoundNum() >= pushRound) {
 			state = LauncherState.RUSH;
-		}
+//		}
 		
 		int numMyTowers = rc.senseTowerLocations().length;
 		int numEnemyTowers = enemyTowers.length;
@@ -268,11 +268,8 @@ public class ULauncherHandler extends UnitHandler {
 		} else { // There are nearby enemies
 			if (sensedEnemies.length > numEnemyMissiles) {
 				if (rc.getMissileCount() == 0) { // Out of missiles
-//					if (!closestEnemy.type.isBuilding && myLoc.distanceSquaredTo(closestEnemy.location) <= 30) {
-//						rc.setIndicatorString(0, Clock.getRoundNum() + " RUNNING AWAY");
-						NavSimple.walkTowardsSafe(closestEnemy.location.directionTo(myLoc));
-//					}
-				} else if (rc.getMissileCount() <= 3) { // low on missiles
+					NavSimple.walkTowardsSafe(closestEnemy.location.directionTo(myLoc));
+				} else if (rc.getMissileCount() <= 2) { // low on missiles
 					if (myLoc.distanceSquaredTo(closestEnemy.location) <= 18) {
 						NavSimple.walkTowardsSafe(closestEnemy.location.directionTo(myLoc));
 					}

@@ -53,7 +53,7 @@ public class UMinerHandler extends UnitHandler {
         RobotInfo[] attackableEnemies = rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam);
         RobotInfo[] sensedEnemies = rc.senseNearbyRobots(typ.sensorRadiusSquared, otherTeam);
         RobotInfo[] sensedAllies = rc.senseNearbyRobots(15, myTeam);
-
+        
         if (rc.isWeaponReady()) {
             Attack.tryAttackClosestButKillIfPossible(attackableEnemies);
         }

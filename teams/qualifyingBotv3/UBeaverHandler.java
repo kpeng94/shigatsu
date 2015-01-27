@@ -3,7 +3,7 @@ package qualifyingBotv3;
 import battlecode.common.*;
 
 public class UBeaverHandler extends UnitHandler {
-	private static RobotType[] buildTyps = {RobotType.MINERFACTORY, RobotType.BARRACKS, RobotType.HELIPAD, RobotType.AEROSPACELAB,
+	private static RobotType[] buildTyps = {RobotType.HANDWASHSTATION, RobotType.MINERFACTORY, RobotType.BARRACKS, RobotType.HELIPAD, RobotType.AEROSPACELAB,
 		RobotType.TECHNOLOGYINSTITUTE, RobotType.TRAININGFIELD, RobotType.SUPPLYDEPOT};
 	private static int[] buildChans;
 	
@@ -33,7 +33,7 @@ public class UBeaverHandler extends UnitHandler {
 		Spawner.HQxMod = myHQ.x % 2;
 		Spawner.HQyMod = myHQ.y % 2;
 		
-		buildChans = new int[]{Comm.getMinerfactId(), Comm.getBarrackId(), Comm.getHeliId(), Comm.getAeroId(),
+		buildChans = new int[]{Comm.getHandwashId(), Comm.getMinerfactId(), Comm.getBarrackId(), Comm.getHeliId(), Comm.getAeroId(),
 				Comm.getTechId(), Comm.getTrainingId(), Comm.getSupplyId()};
 	}
 
@@ -48,7 +48,9 @@ public class UBeaverHandler extends UnitHandler {
 		
 		if (rc.isCoreReady()) {
 			if (!tryBuild()) {
-				if (myLoc.distanceSquaredTo(myHQ) > 15) {
+				int bestDist = 5 + Clock.getRoundNum() / 20;
+				bestDist = bestDist > 50 ? 50 : bestDist;
+				if (myLoc.distanceSquaredTo(myHQ) > bestDist) {
 					NavSimple.walkTowards(myLoc.directionTo(myHQ));
 				} else {
 					NavSimple.walkRandom();

@@ -3,7 +3,7 @@ package qualifyingBotv3;
 import battlecode.common.*;
 
 public class ULauncherHandler extends UnitHandler {
-	public static final int LAUNCHER_RUSH_COUNT = 3;
+	public static final int LAUNCHER_RUSH_COUNT = 4;
 	public static final int PROXIMITY_DIST = 75;
 	
 	private static LauncherState state = LauncherState.RALLY;
@@ -11,7 +11,7 @@ public class ULauncherHandler extends UnitHandler {
 	private static int numberOfLaunchersRallied = 0;
 	private static int myWaveNumber = 1;
 	private static MapLocation rallyPoint;
-
+	
 	private static RobotInfo[] sensedEnemies;
 	private static MapLocation closestLocation;
 	private static RobotInfo closestEnemy = null;
@@ -45,9 +45,8 @@ public class ULauncherHandler extends UnitHandler {
 
 	protected static void init(RobotController rcon) throws GameActionException {
 		initUnit(rcon);
-		typ = RobotType.LAUNCHER;
-		rallyPoint = MapUtils.pointSection(myHQ, enemyHQ, 0.75);
 		myWaveNumber = Comm.readBlock(Comm.getLauncherId(), Comm.WAVENUM_OFFSET);
+		rallyPoint = MapUtils.pointSection(myHQ, enemyHQ, 0.75);
 	}
 
 	protected static void execute() throws GameActionException {
@@ -55,9 +54,9 @@ public class ULauncherHandler extends UnitHandler {
 		Count.incrementBuffer(Comm.getLauncherId());
 		
 		int pushRound = rc.readBroadcast(Comm.FINAL_PUSH_ROUND_CHAN);
-		if (pushRound > 0 && Clock.getRoundNum() >= pushRound) {
+//		if (pushRound > 0 && Clock.getRoundNum() >= pushRound) {
 			state = LauncherState.RUSH;
-		}
+//		}
 		
 		int numMyTowers = rc.senseTowerLocations().length;
 		int numEnemyTowers = enemyTowers.length;
@@ -69,7 +68,6 @@ public class ULauncherHandler extends UnitHandler {
 			MapLocation closestToHQ = null;
 			for (int i = enemyTowers.length; --i >= 0;) {
 				MapLocation tower = enemyTowers[i];
-				if (numEnemyTowers >= 5 && tower.distanceSquaredTo(enemyHQ) <= 52) continue;
 				int distToMe = myLoc.distanceSquaredTo(tower);
 				int distToHQ = myHQ.distanceSquaredTo(tower);
 				if (distToMe < minToMe) {
@@ -82,19 +80,17 @@ public class ULauncherHandler extends UnitHandler {
 				}
 			}
 			
-			int enemyHQDist = myLoc.distanceSquaredTo(enemyHQ);
-			if (pushRound > 0 && Clock.getRoundNum() >= pushRound && numEnemyTowers < 5 && minToMe < enemyHQDist) {
-				minToMe = enemyHQDist;
-				closestToMe = enemyHQ;
-			}
-			
 			if (minToMe <= PROXIMITY_DIST) { // Close enough to a structure to siege
 				closestLocation = closestToMe;
 			} else {
 				if (pushRound > 0 && Clock.getRoundNum() >= pushRound && numEnemyTowers < 5 && numMyTowers < numEnemyTowers) { // final push!!!
 					closestLocation = enemyHQ;
 				}
-				if (minToMe <= myLoc.distanceSquaredTo(closestToHQ) / 2) { // twice as close to structure
+//				if (numEnemyTowers < 3 && myLoc.distanceSquaredTo(enemyHQ) < minToMe) {
+//					System.out.println("WAT");
+//					closestLocation = enemyHQ;
+//				}
+				if (minToMe <= myLoc.distanceSquaredTo(closestToHQ)) { // twice as close to structure
 					closestLocation = closestToMe;
 				} else {
 					closestLocation = closestToHQ;
@@ -167,14 +163,7 @@ public class ULauncherHandler extends UnitHandler {
 			}
 		}
 		numberOfLaunchersRallied = Count.getCountAtRallyPoint(Comm.getLauncherId(), myWaveNumber);
-		//        rc.setIndicatorString(1, "My wave number is: " + myWaveNumber + ". The number of tanks that rallied is given by: " + numberOfTanksRallied);
-		//        rc.setIndicatorString(2, "My loc is " + myLoc + "my dist is " + );
-		// TODO: figure out this heuristic better
-
 		if (myLoc.distanceSquaredTo(rallyPoint) <= typ.sensorRadiusSquared) {
-			//            rc.setIndicatorString(0, "At clock turn " + Clock.getRoundNum()
-			//                    + ", I am rallying to the rally point at: " + rallyPoint
-			//                    + " and my rallied boolean is: " + rallied);
 			Count.incrementAtRallyPoint(Comm.getLauncherId(), myWaveNumber);
 		}
 		if (numberOfLaunchersRallied >= LAUNCHER_RUSH_COUNT) {
@@ -228,8 +217,6 @@ public class ULauncherHandler extends UnitHandler {
 			}
 		}
 		
-		rc.setIndicatorString(0, "" + numMissilesToShoot);
-		
 		if (sensedEnemies.length > 0 || closestLocation.distanceSquaredTo(myLoc) <= 52) {
 			return true;
 		}
@@ -245,6 +232,9 @@ public class ULauncherHandler extends UnitHandler {
 		if (sensedEnemies.length > 0) {
 			dir = myLoc.directionTo(closestEnemy.location);
 		} else {
+			if (myLoc.distanceSquaredTo(closestLocation) > 45) {
+				return;
+			}
 			dir = myLoc.directionTo(closestLocation);
 		}
 		if (numMissilesToShoot > 0 && rc.canLaunch(dir)) {
@@ -263,9 +253,12 @@ public class ULauncherHandler extends UnitHandler {
 	
 	public static void launcherMove() throws GameActionException {
 		if (sensedEnemies.length == 0) { // No nearby enemies
-			Direction dir = NavSafeBug.dirToBugIn(closestLocation);
-			if (dir != Direction.NONE) {
-				rc.move(dir);
+			Direction toClosest = myLoc.directionTo(closestLocation);
+			if (NavSafeBug.safeTile(myLoc.add(toClosest))) {
+				Direction dir = NavSafeBug.dirToBugIn(closestLocation);
+				if (dir != Direction.NONE) {
+					rc.move(dir);
+				}
 			}
 		} else { // There are nearby enemies
 			if (rc.getMissileCount() == 0) { // Out of missiles

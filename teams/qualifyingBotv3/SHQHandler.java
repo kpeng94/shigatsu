@@ -174,11 +174,12 @@ public class SHQHandler extends StructureHandler {
 			Count.setLimit(Comm.getSupplyId(), 10 * Count.getLimit(Comm.getAeroId()));
 		} else if (Count.getCount(Comm.getSoldierId()) >= 10) {
 			Count.setLimit(Comm.getLauncherId(), 999);
-			Count.setLimit(Comm.getSoldierId(), 100);
-		} else if (Count.getCount(Comm.getMinerId()) >= 5) { // 5 miners
+			Count.setLimit(Comm.getSoldierId(), 50);
+		} else if (Count.getCount(Comm.getMinerId()) >= 10) { // 10 miners
 			Count.setLimit(Comm.getHeliId(), 1);
 			Count.setLimit(Comm.getAeroId(), 1);
 			Count.setLimit(Comm.getMinerId(), 40);
+			Count.setLimit(Comm.getLauncherId(), 999);
 			Count.setLimit(Comm.getSoldierId(), 20);
 		} else if (Count.getCount(Comm.getMinerfactId()) == 1) { // 1 mining fact
 			Count.setLimit(Comm.getBeaverId(), 2);
@@ -192,15 +193,19 @@ public class SHQHandler extends StructureHandler {
 			Count.setLimit(Comm.getMinerId(), 10);
 		}
 
+		if (rc.getRoundLimit() - Clock.getRoundNum() < 250) {
+			Count.setLimit(Comm.getHandwashId(), 1);
+		}
+		
 		if (Count.getCountAtRallyPoint(Comm.getLauncherId(), currentLauncherWave) >= ULauncherHandler.LAUNCHER_RUSH_COUNT) {
 			currentLauncherWave++;
 			Count.incrementWaveNum(Comm.getLauncherId());
 		}
 	}
 
-	private static final int TURN_COUNTER = 150;
+	private static final int TURN_COUNTER = 100;
 	private static double[] oreCounts = new double[TURN_COUNTER];
-	private static final int ORE_THRESHOLD = 1500;
+	private static final int ORE_THRESHOLD = 1000;
 	private static int turnCooldown = 0;
 
 	/**
@@ -232,7 +237,7 @@ public class SHQHandler extends StructureHandler {
 				turnCooldown = 0;
 			}
 			int aeroCount = Count.getCount(Comm.getAeroId());
-			if (aeroCount >= 1 && aeroCount >= Count.getLimit(Comm.getAeroId())) {
+			if (aeroCount >= 1 && aeroCount >= Count.getLimit(Comm.getAeroId()) && aeroCount < 5) {
 				Count.setLimit(Comm.getAeroId(), aeroCount + 1);
 				turnCooldown = 0;
 			}

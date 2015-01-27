@@ -12,6 +12,7 @@ public class UCommanderHandler extends UnitHandler {
 	public static final int ALLY_RADIUS = 15;
 	public static final int AGGRO_FLASH_THRESHOLD = 50;
 	public static final int LAUNCHER_DANGER_RESET_THRESHOLD = 25;
+	public static final int SAFE_NAV_THRESHOLD = 100;
 	
 	public static int prevRally; // Previously rally point value (to determine when to update)
 	public static MapLocation rallyPoint; // Commander rally point
@@ -27,6 +28,7 @@ public class UCommanderHandler extends UnitHandler {
 	public static int lastLauncherRound; // round last seen a launcher at
 	
 	public static int safeTurns; // Number of safe turns in a row
+	public static int lastSafeNavTurn;
 	
 	public static void loop(RobotController rcon) {
 		try {
@@ -56,6 +58,7 @@ public class UCommanderHandler extends UnitHandler {
 		safeTurns = 0;
 		lastLauncherLocation = null;
 		lastLauncherRound = 0;
+		lastSafeNavTurn = 0;
 	}
 
 	protected static void execute() throws GameActionException {
@@ -282,7 +285,7 @@ public class UCommanderHandler extends UnitHandler {
 		safeTurns++;
 		MapLocation closestTower = Attack.getClosestTower();
 		int HQ_threshold = enemyTowers.length >= 5 ? HQ_SPLASH_THRESHOLD : (enemyTowers.length >= 2 ? HQ_LARGE_THRESHOLD : HQ_SMALL_THRESHOLD);
-		if ((closestTower == null || myLoc.distanceSquaredTo(closestTower) > TOWER_THRESHOLD) && myLoc.distanceSquaredTo(enemyHQ) > HQ_threshold) { // Out of range, resume tangent bugging
+		if ((Clock.getRoundNum() - lastSafeNavTurn > SAFE_NAV_THRESHOLD) && (closestTower == null || myLoc.distanceSquaredTo(closestTower) > TOWER_THRESHOLD) && myLoc.distanceSquaredTo(enemyHQ) > HQ_threshold) { // Out of range, resume tangent bugging
 			Direction towardsRally = myLoc.directionTo(rallyPoint);
 			rc.setIndicatorString(2, Clock.getRoundNum() + " tangenting");
 			if (safeTurns >= AGGRO_FLASH_THRESHOLD && NavTangentBug.tracing == false && rc.getFlashCooldown() == 0 && flashTowardsDirSafe(towardsRally)) { // Successfully flashed in forward
@@ -301,6 +304,9 @@ public class UCommanderHandler extends UnitHandler {
 			}
 			prevNavTangent = true;
 		} else { // in danger range, safe bug around
+			if (!(closestTower == null || myLoc.distanceSquaredTo(closestTower) > TOWER_THRESHOLD) || !(myLoc.distanceSquaredTo(enemyHQ) > HQ_threshold)) {
+				lastSafeNavTurn = Clock.getRoundNum();
+			}
 			if (prevNavTangent) {
 				NavSafeBug.resetDir();
 				if (NavTangentBug.tracing) {
@@ -308,11 +314,13 @@ public class UCommanderHandler extends UnitHandler {
 					Direction temp = NavTangentBug.prevDir[MapUtils.encode(myLoc)];
 					if (temp != null) {
 						NavSafeBug.prevDir = NavTangentBug.prevDir[MapUtils.encode(myLoc)].opposite();
+					} else {
+						NavSafeBug.prevDir = myLoc.directionTo(closestTower);
 					}
 				}
 			}
+//			rc.setIndicatorString(0, Clock.getRoundNum() + " rallyPoint " + rallyPoint);
 			Direction dir = NavSafeBug.dirToBugIn(rallyPoint);
-			rc.setIndicatorString(0, Clock.getRoundNum() + " in nav " + rallyPoint + " " + dir);
 			if (rc.getHealth() <= 150 && lastLauncherLocation != null && myLoc.add(dir).distanceSquaredTo(lastLauncherLocation) <= 24) return;
 			if (dir != Direction.NONE) {
 				rc.move(dir);

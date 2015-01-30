@@ -136,6 +136,32 @@ public class ULauncherHandler extends UnitHandler {
 	}
 
 	private static void rushCode() throws GameActionException {
+		for (int i = 6; --i >= 0;) {
+			int towerData = rc.readBroadcast(Comm.TOWER0_LOC + i);
+			if (towerData > 0) {
+				MapLocation towerLoc = MapUtils.decode(towerData);
+				boolean alive = false;
+				for (int j = enemyTowers.length; --j >= 0;) {
+					MapLocation tower = enemyTowers[j];
+					if (towerLoc.equals(tower)) {
+						alive = true;
+						break;
+					}
+				}
+				if (alive) {
+					int baseBlock = rc.readBroadcast(Comm.TOWER0_MAP + i);
+					int data = NavBFS.readMapDataUncached(baseBlock, MapUtils.encode(myLoc));
+					if (data > 0) { // Has path
+						Direction dir = MapUtils.dirs[data & 0x7];
+						if (rc.isCoreReady()) {
+							NavSimple.walkTowardsSafeAll(dir);
+						}
+						return;
+					}
+				}
+			}
+		}
+		
 		MapLocation destination = closestLocation;
 		NavTangentBug.setDest(destination);
 		NavTangentBug.calculate(2500);

@@ -26,11 +26,8 @@ public class Comm {
 	public static final int FINAL_PUSH_ROUND_CHAN = 10;
 	
 	// Maps
-	public static final int HQ_MAP_CHAN = 20;
 	public static final int SURROUND_RALLY_MAP_CHAN = 21;
 	public static final int SURROUND_RALLY_DEST_CHAN = 22;
-	public static final int TANK_RALLY_MAP_CHAN = 23;
-	public static final int TANK_RALLY_DEST_CHAN = 24;
 	
 	// Ore Info
 	public static final int SPENT_ORE_BUFFER_CHAN = 30;
@@ -44,6 +41,11 @@ public class Comm {
 	public static final int COMMANDER_RALLY_DEST_CHAN = 40;
 	public static final int COMMANDER_NUM_CHAN = 41;
 	public static final int COMMANDER_RALLY_ROUND_CHAN = 42;
+
+	public static final int HQ_LOC = 45;
+	public static final int HQ_MAP = 46;	
+	public static final int TOWER0_LOC = 50;
+	public static final int TOWER0_MAP = 56;
 
 	
 	// Apparently offset 1 = count

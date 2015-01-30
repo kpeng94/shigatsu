@@ -18,9 +18,6 @@ public class SHQHandler extends StructureHandler {
 
     private static int currentLauncherWave = 1;
 
-    private static boolean seenTanks = false;
-    private static boolean canSurroundHQ;
-
     public static void loop(RobotController rcon) {
         try {
             init(rcon);
@@ -42,26 +39,28 @@ public class SHQHandler extends StructureHandler {
 
     protected static void init(RobotController rcon) throws GameActionException {
         initStructure(rcon);
-        rc.broadcast(Comm.HQ_MAP_CHAN, NavBFS.newBFSTask(myHQ));
 
         prevOre = GameConstants.ORE_INITIAL_AMOUNT;
 
-        countChans = new int[] { Comm.getBeaverId(), Comm.getMinerId(), Comm.getLauncherId(), Comm.getSoldierId(), Comm.getCommanderId(), Comm.getComputerId(), Comm.getDroneId(), Comm.getMinerfactId(), Comm.getBarrackId(), Comm.getHeliId(), Comm.getAeroId(), Comm.getTechId(), Comm.getTrainingId(), Comm.getSupplyId() };
+        countChans = new int[] { Comm.getBeaverId(), Comm.getMinerId(), Comm.getLauncherId(), Comm.getSoldierId(), Comm.getMinerfactId(), Comm.getBarrackId(), Comm.getHeliId(), Comm.getAeroId(), Comm.getSupplyId() };
 
         initCounts();
         enemyTowers = rc.senseEnemyTowerLocations();
-        canSurroundHQ = checkSurroundability();
 
         Count.setLimit(Comm.getBeaverId(), 1); // Maintain 1 beaver
-        Count.setLimit(Comm.getDroneId(), 1); // Maintain 1 drone
         Comm.writeBlock(Comm.getLauncherId(), Comm.WAVENUM_OFFSET, currentLauncherWave);
         rc.broadcast(Comm.FINAL_PUSH_ROUND_CHAN, rc.getRoundLimit() * 7 / 8);
-        seenTanks = (((int) rc.getTeamMemory()[0]) == 1);
     }
 
     protected static void execute() throws GameActionException {
         executeStructure();
         updateTowers();
+        
+//        if (Clock.getRoundNum() < 6) {
+//        	int i = Clock.getRoundNum();
+//           	rc.broadcast(Comm.TOWER0_LOC + i, MapUtils.encode(enemyTowers[i]));
+//           	rc.broadcast(Comm.TOWER0_MAP + i, NavBFS.newBFSTask(enemyTowers[i]));
+//        }
         
         for (int i = countChans.length; --i >= 0;) {
             Count.resetBuffer(countChans[i]);
@@ -104,31 +103,6 @@ public class SHQHandler extends StructureHandler {
             }
         }
         Distribution.spendBytecodesCalculating(7500);
-    }
-
-    private static final int SURROUND_RANGE = 97;
-
-    protected static boolean checkSurroundability() {
-        int singletons = 0;
-        for (int j = enemyTowers.length; --j >= 0;) {
-            int currentClose = 0;
-            if(enemyTowers[j].distanceSquaredTo(enemyHQ) <= SURROUND_RANGE)
-                currentClose++;
-            for (int i = enemyTowers.length; --i >= 0;) {
-                if (currentClose == 2) {
-                    break;
-                }
-                if (!enemyTowers[i].equals(enemyTowers[j]) && enemyTowers[i].distanceSquaredTo(enemyTowers[j]) <= SURROUND_RANGE)
-                    currentClose++;
-            }
-            if (currentClose == 1)
-                singletons++;
-            if(currentClose == 0)
-                return false;
-        }
-        if(singletons <= 2)
-            return true;
-        return false;
     }
 
     protected static void calculateAttackable() {
@@ -213,47 +187,14 @@ public class SHQHandler extends StructureHandler {
                 Count.setLimit(Comm.getMinerId(), 30);
                 Count.setLimit(Comm.getLauncherId(), 999);
                 Count.setLimit(Comm.getSoldierId(), 10);
-            } else if (Count.getCount(Comm.getMinerfactId()) == 1) { // 1 mining
-                                                                     // fact
+            } else if (Count.getCount(Comm.getMinerfactId()) == 1) { // 1 mining fact
                 Count.setLimit(Comm.getBeaverId(), 2);
                 Count.setLimit(Comm.getBarrackId(), 1);
                 Count.setLimit(Comm.getSoldierId(), 5);
-                Count.setLimit(Comm.getTechId(), 1);
-                Count.setLimit(Comm.getTrainingId(), 1);
-                Count.setLimit(Comm.getCommanderId(), 1);
             } else if (Count.getCount(Comm.getBeaverId()) == 1) { // 1 beaver
                 Count.setLimit(Comm.getMinerfactId(), 1);
                 Count.setLimit(Comm.getMinerId(), 10);
             }
-//        } else {
-//            if (Count.getCount(Comm.getLauncherId()) >= 1) {
-//                Count.setLimit(Comm.getSupplyId(), 10 * Count.getLimit(Comm.getAeroId()));
-//                // } else if (Count.getCount(Comm.getSoldierId()) >= 10) {
-//                // Count.setLimit(Comm.getLauncherId(), 999);
-//                // Count.setLimit(Comm.getSoldierId(), 50);
-//            } else if (Count.getCount(Comm.getMinerId()) >= 10) { // 10 miners
-//                Count.setLimit(Comm.getHeliId(), 1);
-//                Count.setLimit(Comm.getAeroId(), 1);
-//                Count.setLimit(Comm.getMinerId(), 30);
-//                Count.setLimit(Comm.getLauncherId(), 999);
-//                // Count.setLimit(Comm.getSoldierId(), 20);
-//            } else if (Count.getCount(Comm.getMinerfactId()) == 1) { // 1 mining
-//                                                                     // fact
-//                Count.setLimit(Comm.getBeaverId(), 2);
-//                // Count.setLimit(Comm.getBarrackId(), 1);
-//                // Count.setLimit(Comm.getSoldierId(), 5);
-//                Count.setLimit(Comm.getTechId(), 1);
-//                Count.setLimit(Comm.getTrainingId(), 1);
-//                Count.setLimit(Comm.getCommanderId(), 1);
-//            } else if (Count.getCount(Comm.getBeaverId()) == 1) { // 1 beaver
-//                Count.setLimit(Comm.getMinerfactId(), 1);
-//                Count.setLimit(Comm.getMinerId(), 10);
-//            }
-//        }
-
-        if (rc.getRoundLimit() - Clock.getRoundNum() < 250) {
-            Count.setLimit(Comm.getHandwashId(), 1);
-        }
 
         if (Count.getCountAtRallyPoint(Comm.getLauncherId(), currentLauncherWave) >= ULauncherHandler.LAUNCHER_RUSH_COUNT) {
             currentLauncherWave++;

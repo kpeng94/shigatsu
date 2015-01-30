@@ -3,8 +3,7 @@ package awesomeSuperNavBot;
 import battlecode.common.*;
 
 public class UBeaverHandler extends UnitHandler {
-	private static RobotType[] buildTyps = {RobotType.HANDWASHSTATION, RobotType.MINERFACTORY, RobotType.BARRACKS, RobotType.HELIPAD, RobotType.AEROSPACELAB,
-		RobotType.TECHNOLOGYINSTITUTE, RobotType.TRAININGFIELD, RobotType.SUPPLYDEPOT};
+	private static RobotType[] buildTyps = {RobotType.MINERFACTORY, RobotType.BARRACKS, RobotType.HELIPAD, RobotType.AEROSPACELAB, RobotType.SUPPLYDEPOT};
 	private static int[] buildChans;
 	
 	public static int curBuildingChan;
@@ -33,8 +32,7 @@ public class UBeaverHandler extends UnitHandler {
 		Spawner.HQxMod = myHQ.x % 2;
 		Spawner.HQyMod = myHQ.y % 2;
 		
-		buildChans = new int[]{Comm.getHandwashId(), Comm.getMinerfactId(), Comm.getBarrackId(), Comm.getHeliId(), Comm.getAeroId(),
-				Comm.getTechId(), Comm.getTrainingId(), Comm.getSupplyId()};
+		buildChans = new int[]{Comm.getMinerfactId(), Comm.getBarrackId(), Comm.getHeliId(), Comm.getAeroId(), Comm.getSupplyId()};
 	}
 
 	protected static void execute() throws GameActionException {

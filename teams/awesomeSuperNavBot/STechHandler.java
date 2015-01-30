@@ -29,15 +29,5 @@ public class STechHandler extends StructureHandler {
 
 	protected static void execute() throws GameActionException {
 		executeStructure();
-		Count.incrementBuffer(Comm.getTechId());
-		if (rc.isCoreReady()) { // Try to spawn
-			trySpawn();
-		}
-	}
-	
-	protected static void trySpawn() throws GameActionException {
-		if (Count.getCount(Comm.getComputerId()) < Count.getLimit(Comm.getComputerId())) {
-			Spawner.trySpawn(myLoc.directionTo(enemyHQ).opposite(), RobotType.COMPUTER, Comm.getComputerId());
-		}
 	}
 }

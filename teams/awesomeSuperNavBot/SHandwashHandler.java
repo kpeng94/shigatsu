@@ -29,7 +29,6 @@ public class SHandwashHandler extends StructureHandler {
 
 	protected static void execute() throws GameActionException {
 		executeStructure();
-		Count.incrementBuffer(Comm.getHandwashId());
 	}
 	
 }

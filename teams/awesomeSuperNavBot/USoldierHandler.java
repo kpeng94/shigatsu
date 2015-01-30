@@ -9,7 +9,6 @@ public class USoldierHandler extends UnitHandler {
 	public static RobotInfo[] attackableEnemies;
 	public static RobotInfo[] nearbyAllies;
 
-	public static MapLocation rallyPoint = null;
 	public static boolean surround = false;
 	
 	public static void loop(RobotController rcon) {
@@ -43,13 +42,6 @@ public class USoldierHandler extends UnitHandler {
 		attackableEnemies = rc.senseNearbyRobots(typ.attackRadiusSquared, otherTeam);
 		sensedEnemies = rc.senseNearbyRobots(typ.sensorRadiusSquared, otherTeam);
 		nearbyAllies = rc.senseNearbyRobots(ALLY_RADIUS, myTeam);
-		
-		if (rallyPoint == null) { // Check if rally point exists
-			int rally = rc.readBroadcast(Comm.SURROUND_RALLY_DEST_CHAN);
-			if (rally > 0) {
-				rallyPoint = MapUtils.decode(rally);
-			}
-		}
 		
 		int pushRound = rc.readBroadcast(Comm.FINAL_PUSH_ROUND_CHAN);
 		if (pushRound > 0 && Clock.getRoundNum() >= pushRound) { // final push!!!
@@ -91,7 +83,7 @@ public class USoldierHandler extends UnitHandler {
 		}
 		
 		Supply.spreadSupplies(Supply.DEFAULT_THRESHOLD, nearbyAllies);
-		
+		Distribution.spendBytecodesCalculating(Handler.rc.getSupplyLevel() > 50 ? 7500 : 2500);
 	}
 	
 	// Soldier Micro
@@ -200,32 +192,52 @@ public class USoldierHandler extends UnitHandler {
 	
 	protected static void soldierNav() throws GameActionException {
 		if (rc.isCoreReady()) {
-			if (rallyPoint != null) {
-				if (!surround && myLoc.distanceSquaredTo(rallyPoint) <= 8) {
-					surround = true;
+			if (!NavSafeBug.safeTile(myLoc.add(myLoc.directionTo(enemyHQ)))) {
+				MapLocation next = myLoc.add(myLoc.directionTo(enemyHQ));
+				if (next.distanceSquaredTo(enemyHQ) <= GameConstants.HQ_BUFFED_ATTACK_RADIUS_SQUARED) {
+					int hqData = rc.readBroadcast(Comm.HQ_LOC);
+					if (hqData == 0) { // Never seen HQ
+						rc.broadcast(Comm.HQ_LOC, MapUtils.encode(enemyHQ));
+						rc.broadcast(Comm.HQ_MAP, NavBFS.newBFSTask(myLoc));
+					}
 				}
-				if (!surround) {
-					int curPosInfo = NavBFS.readMapDataUncached(rc.readBroadcast(Comm.SURROUND_RALLY_MAP_CHAN), MapUtils.encode(myLoc));
-					if (curPosInfo != 0) {
-						Direction dir = MapUtils.dirs[curPosInfo & 0x00000007];
-						if (rc.canMove(dir)) {
-							NavSimple.walkTowardsSafe(dir);
-							return;
+				
+				for (int i = enemyTowers.length; --i >= 0;) {
+					MapLocation tower = enemyTowers[i];
+					if (next.distanceSquaredTo(tower) <= RobotType.TOWER.attackRadiusSquared) {
+						boolean seen = false;
+						int j = 0;
+						while (j < 6) {
+							int towerData = rc.readBroadcast(Comm.TOWER0_LOC + j);
+							if (towerData > 0) {
+								MapLocation towerLoc = MapUtils.decode(towerData);
+								if (towerLoc.equals(tower)) {
+									seen = true;
+									break;
+								}
+							} else {
+								break;
+							}
+							j++;
+						}
+
+						if (!seen) {
+							rc.broadcast(Comm.TOWER0_LOC + j, MapUtils.encode(tower));
+							rc.broadcast(Comm.TOWER0_MAP + j, NavBFS.newBFSTask(myLoc));
 						}
 					}
 				}
-			}
-			if (rallyPoint == null && !NavSafeBug.safeTile(myLoc.add(myLoc.directionTo(enemyHQ)))) {
-				rallyPoint = myLoc;
 				surround = true;
-				rc.broadcast(Comm.SURROUND_RALLY_MAP_CHAN, NavBFS.newBFSTask(myLoc));
-				rc.broadcast(Comm.SURROUND_RALLY_DEST_CHAN, MapUtils.encode(myLoc));
 			}
 			Direction dir = NavSafeBug.dirToBugIn(enemyHQ);
 			if (dir != Direction.NONE) {
 				NavSimple.walkTowardsSafe(dir);
 			}
 		}
+	}
+	
+	protected static void checkTowers() throws GameActionException {
+		
 	}
 
 	// Two magic constants used for fast ceil
